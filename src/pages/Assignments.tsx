@@ -42,10 +42,12 @@ export default function Assignments() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    fetchAssignments();
-    fetchUsers();
-    checkAdminStatus();
-  }, []);
+    if (user) {
+      fetchAssignments();
+      fetchUsers();
+      checkAdminStatus();
+    }
+  }, [user]);
 
   const checkAdminStatus = async () => {
     if (!user) return;
@@ -54,7 +56,7 @@ export default function Assignments() {
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "admin")
-      .single();
+      .maybeSingle();
     setIsAdmin(!!data);
   };
 
