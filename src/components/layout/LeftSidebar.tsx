@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { 
   BookOpen, 
   ClipboardList, 
@@ -16,6 +17,8 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import { useEditMode } from "@/contexts/EditModeContext";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const navigationItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -34,6 +37,37 @@ const navigationItems = [
 
 export function LeftSidebar() {
   const { isAdmin } = useEditMode();
+  const { user } = useAuth();
+  const [userName, setUserName] = useState("Student");
+  const [userRole, setUserRole] = useState("Student");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+
+        if (profileData?.full_name) {
+          setUserName(profileData.full_name);
+        }
+
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+
+        if (roleData?.role) {
+          setUserRole(roleData.role.charAt(0).toUpperCase() + roleData.role.slice(1));
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
   
   return (
     <nav className="flex flex-col h-full p-4 space-y-2 relative" aria-label="Main navigation">
@@ -47,8 +81,8 @@ export function LeftSidebar() {
             <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-accent animate-pulse" />
           </div>
           <div>
-            <p className="font-semibold text-sidebar-foreground">Jacob Anderson</p>
-            <p className="text-xs text-muted-foreground">Student</p>
+            <p className="font-semibold text-sidebar-foreground">{userName}</p>
+            <p className="text-xs text-muted-foreground">{userRole}</p>
           </div>
         </div>
       </div>

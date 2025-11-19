@@ -299,16 +299,16 @@ export default function Timetable() {
       </div>
 
       {/* Calendar Grid */}
-      <Card className="p-6">
+      <Card className="p-6 bg-white dark:bg-card">
         <div className="grid grid-cols-7 gap-2">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <div key={day} className="text-center font-semibold text-sm py-2 text-muted-foreground">
+            <div key={day} className="text-center font-semibold text-sm py-2 text-foreground">
               {day}
             </div>
           ))}
           
           {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-            <div key={`empty-${i}`} className="min-h-[120px] border border-border/30" />
+            <div key={`empty-${i}`} className="min-h-[120px] border border-gray-200 dark:border-border/30 bg-gray-50 dark:bg-background" />
           ))}
           
           {daysInMonth.map((date) => {
@@ -318,12 +318,12 @@ export default function Timetable() {
             return (
               <div
                 key={date.toISOString()}
-                className={`min-h-[120px] border border-border/30 p-2 hover:bg-muted/50 cursor-pointer transition-colors ${
+                className={`min-h-[120px] border border-gray-200 dark:border-border/30 p-2 hover:bg-gray-100 dark:hover:bg-muted/50 cursor-pointer transition-colors bg-white dark:bg-background ${
                   !isSameMonth(date, currentDate) ? "opacity-50" : ""
-                } ${isToday ? "bg-primary/5 border-primary" : ""}`}
+                } ${isToday ? "bg-primary/10 border-primary" : ""}`}
                 onClick={() => isAdmin && handleDateClick(date)}
               >
-                <div className="font-semibold text-sm mb-1">
+                <div className="font-semibold text-sm mb-1 text-foreground">
                   {format(date, "d")}
                 </div>
                 <div className="space-y-1">
