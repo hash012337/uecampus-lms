@@ -9,6 +9,7 @@ import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEditMode } from "@/contexts/EditModeContext";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Course {
@@ -23,6 +24,7 @@ interface Course {
 
 export default function Dashboard() {
   const { isEditMode } = useEditMode();
+  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [stats, setStats] = useState({
     totalActivity: 64,
@@ -38,17 +40,48 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [coursesRes, statsRes] = await Promise.all([
-        supabase.from("courses").select("*").limit(6),
-        supabase.from("dashboard_stats").select("*").single()
-      ]);
+      if (!user) return;
 
-      if (coursesRes.data) setCourses(coursesRes.data);
-      if (statsRes.data) setStats({
-        totalActivity: statsRes.data.total_activity,
-        inProgress: statsRes.data.in_progress,
-        completed: statsRes.data.completed,
-        upcoming: statsRes.data.upcoming
+      // Fetch enrolled courses for user
+      const { data: enrollmentsData } = await supabase
+        .from("enrollments")
+        .select("course_id, progress, courses(*)")
+        .eq("user_id", user.id)
+        .limit(6);
+
+      if (enrollmentsData) {
+        const coursesWithProgress = enrollmentsData.map(e => ({
+          ...e.courses,
+          progress: e.progress || 0
+        }));
+        setCourses(coursesWithProgress as Course[]);
+      }
+
+      // Calculate real stats
+      const { data: allEnrollments } = await supabase
+        .from("enrollments")
+        .select("*")
+        .eq("user_id", user.id);
+
+      const { data: progressData } = await supabase
+        .from("progress_tracking")
+        .select("*")
+        .eq("user_id", user.id);
+
+      const { data: assignmentsData } = await supabase
+        .from("assignments")
+        .select("*");
+
+      const inProgress = allEnrollments?.filter(e => e.status === "active" && (e.progress || 0) < 100).length || 0;
+      const completed = allEnrollments?.filter(e => (e.progress || 0) >= 100).length || 0;
+      const upcoming = assignmentsData?.filter(a => a.status === "pending").length || 0;
+      const totalActivity = (progressData?.length || 0) + (assignmentsData?.length || 0);
+
+      setStats({
+        totalActivity,
+        inProgress,
+        completed,
+        upcoming
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
