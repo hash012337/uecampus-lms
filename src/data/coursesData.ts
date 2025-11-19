@@ -727,1032 +727,2663 @@ export const allCoursesData: Course[] = [
     rating: 4.6,
     enrolledStudents: 190
   },
+
+  // B. Master's / Postgraduate Degrees (10 courses)
   {
-    id: "bsc-graphic-design",
-    title: "BSc in Graphic Design",
-    code: "BSGD-014",
-    category: "Bachelor's Programs",
-    subcategory: "Design",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Design Institute",
-    description: "Creative program focusing on visual communication, design principles, and digital media.",
-    overview: "Prepares students for careers in graphic design, advertising, and multimedia.",
+    id: "mba-uecampus",
+    title: "Master of Business Administration (MBA)",
+    code: "MBA-001",
+    category: "Master's Programs",
+    subcategory: "Business Administration",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online/Hybrid",
+    partner: "UeCampus / EIE",
+    description: "Premier MBA program covering all aspects of business management and leadership.",
+    overview: "Comprehensive business education designed for aspiring executives and business leaders.",
     learningOutcomes: [
-      "Create compelling visual designs for various media",
-      "Understand design theory and principles",
-      "Utilize design software effectively",
-      "Develop a professional portfolio",
-      "Collaborate on design projects"
+      "Lead organizations through complex business challenges",
+      "Develop strategic vision and execution plans",
+      "Apply financial analysis to business decisions",
+      "Manage cross-functional teams effectively",
+      "Drive innovation and organizational change"
     ],
     modules: [
-      "Design Fundamentals",
-      "Digital Media",
-      "Typography",
-      "Color Theory",
-      "User Experience Design",
-      "Branding",
-      "Illustration",
-      "Web Design",
-      "Motion Graphics",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Portfolio of design work",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Graphic Designer",
-      "Art Director",
-      "Web Designer",
-      "Brand Strategist",
-      "Multimedia Artist"
-    ],
-    fees: {
-      tuition: "$10,000 - $13,000 per year",
-      installments: true
-    },
-    accreditation: "Design Institute Accredited",
-    rating: 4.5,
-    enrolledStudents: 200
-  },
-  {
-    id: "bsc-business-analytics",
-    title: "BSc in Business Analytics",
-    code: "BSBA-015",
-    category: "Bachelor's Programs",
-    subcategory: "Business Analytics",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Business School",
-    description: "Program focusing on data analysis, business intelligence, and decision-making.",
-    overview: "Equips students with skills to analyze data and drive business strategies.",
-    learningOutcomes: [
-      "Analyze business data to inform decisions",
-      "Utilize analytics tools and software",
-      "Develop data-driven business strategies",
-      "Communicate insights effectively",
-      "Work collaboratively in teams"
-    ],
-    modules: [
-      "Business Statistics",
-      "Data Visualization",
-      "Predictive Analytics",
-      "Data Mining",
-      "Business Intelligence",
+      "Strategic Management",
+      "Financial Management",
+      "Marketing Management",
       "Operations Management",
-      "Capstone Project"
+      "Leadership & Organizational Behavior",
+      "Business Analytics",
+      "Corporate Finance",
+      "Entrepreneurship & Innovation",
+      "International Business",
+      "Business Ethics",
+      "Capstone Business Simulation",
+      "MBA Dissertation"
     ],
     entryRequirements: [
-      "High school diploma with strong math background",
-      "Basic computer skills",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Bachelor's degree in any field",
+      "Minimum 2 years work experience",
+      "English proficiency (IELTS 6.5 or equivalent)",
+      "GMAT/GRE (may be waived with experience)"
     ],
     careerOpportunities: [
-      "Business Analyst",
-      "Data Analyst",
-      "Operations Analyst",
-      "Consultant",
-      "Market Research Analyst"
+      "Chief Executive Officer",
+      "General Manager",
+      "Business Development Director",
+      "Strategy Consultant",
+      "Operations Director",
+      "Entrepreneur"
     ],
     fees: {
-      tuition: "$11,000 - $14,000 per year",
+      tuition: "$18,000 - $25,000 total program",
       installments: true
     },
-    accreditation: "Business School Accredited",
-    rating: 4.6,
-    enrolledStudents: 210
+    accreditation: "UeCampus / EIE Accredited",
+    rating: 4.8,
+    enrolledStudents: 520
   },
   {
-    id: "bsc-cybersecurity",
-    title: "BSc in Cybersecurity",
-    code: "BSCS-016",
-    category: "Bachelor's Programs",
-    subcategory: "Cybersecurity",
-    level: "Undergraduate",
-    duration: "3-4 years",
+    id: "msit-master",
+    title: "MSc in Information Technology (MSIT)",
+    code: "MSIT-002",
+    category: "Master's Programs",
+    subcategory: "Information Technology",
+    level: "Postgraduate",
+    duration: "1-2 years",
     mode: "Online",
-    partner: "Cyber Institute",
-    description: "Focuses on protecting systems and networks from cyber threats.",
-    overview: "Prepares students for careers in cybersecurity and information assurance.",
+    partner: "UeCampus",
+    description: "Advanced IT program focusing on emerging technologies and enterprise architecture.",
+    overview: "Prepares IT professionals for leadership roles in technology-driven organizations.",
     learningOutcomes: [
-      "Identify and mitigate cybersecurity risks",
-      "Implement security measures and protocols",
-      "Conduct security assessments",
-      "Respond to security incidents",
-      "Understand legal and ethical issues in cybersecurity"
+      "Design enterprise IT architectures",
+      "Implement advanced cloud solutions",
+      "Lead IT transformation projects",
+      "Apply cybersecurity best practices",
+      "Manage IT governance and compliance"
     ],
     modules: [
-      "Introduction to Cybersecurity",
-      "Network Security",
-      "Ethical Hacking",
-      "Digital Forensics",
-      "Security Management",
-      "Capstone Project"
+      "Advanced Software Engineering",
+      "Enterprise Architecture",
+      "Cloud Computing & DevOps",
+      "IT Security & Risk Management",
+      "Big Data & Analytics",
+      "Artificial Intelligence",
+      "IT Project Management",
+      "IT Strategy & Governance",
+      "Emerging Technologies",
+      "Research Methods",
+      "Master's Thesis",
+      "Industry Capstone"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Basic understanding of computer systems",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Bachelor's in IT or related field",
+      "Work experience in IT preferred",
+      "English proficiency (IELTS 6.5 or equivalent)",
+      "Programming knowledge"
     ],
     careerOpportunities: [
-      "Cybersecurity Analyst",
-      "Information Security Manager",
-      "Network Security Engineer",
-      "Security Consultant"
+      "IT Director",
+      "Chief Technology Officer",
+      "Enterprise Architect",
+      "IT Consultant",
+      "Solutions Architect",
+      "Technology Manager"
     ],
     fees: {
-      tuition: "$12,000 - $15,000 per year",
+      tuition: "$16,000 - $22,000 total program",
       installments: true
     },
-    accreditation: "Cyber Institute Accredited",
+    accreditation: "UeCampus Accredited",
     rating: 4.7,
+    enrolledStudents: 380
+  },
+  {
+    id: "msda-master",
+    title: "MSc / MS in Data Analytics",
+    code: "MSDA-003",
+    category: "Master's Programs",
+    subcategory: "Data Analytics",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Advanced analytics program combining statistics, machine learning, and business intelligence.",
+    overview: "Develops expertise in transforming data into strategic business insights.",
+    learningOutcomes: [
+      "Build advanced predictive models",
+      "Implement machine learning algorithms",
+      "Design data-driven strategies",
+      "Lead analytics teams and projects",
+      "Communicate complex insights effectively"
+    ],
+    modules: [
+      "Advanced Statistics",
+      "Machine Learning",
+      "Deep Learning",
+      "Big Data Analytics",
+      "Data Mining Techniques",
+      "Predictive Modeling",
+      "Business Analytics",
+      "Data Visualization",
+      "Natural Language Processing",
+      "Analytics Strategy",
+      "Research Project",
+      "Master's Dissertation"
+    ],
+    entryRequirements: [
+      "Bachelor's in quantitative field",
+      "Strong mathematical background",
+      "Programming experience (Python/R)",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Senior Data Scientist",
+      "Analytics Manager",
+      "Chief Data Officer",
+      "Machine Learning Engineer",
+      "Analytics Consultant",
+      "Research Scientist"
+    ],
+    fees: {
+      tuition: "$17,000 - $23,000 total program",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.8,
+    enrolledStudents: 410
+  },
+  {
+    id: "msai-ml-master",
+    title: "MSc in Artificial Intelligence & Machine Learning",
+    code: "MSAI-004",
+    category: "Master's Programs",
+    subcategory: "Artificial Intelligence",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Cutting-edge program in AI, machine learning, and intelligent systems.",
+    overview: "Prepares students for leadership in AI development and implementation.",
+    learningOutcomes: [
+      "Design and implement AI systems",
+      "Develop advanced machine learning models",
+      "Apply deep learning to real-world problems",
+      "Understand AI ethics and governance",
+      "Lead AI transformation initiatives"
+    ],
+    modules: [
+      "Foundations of AI",
+      "Advanced Machine Learning",
+      "Deep Learning & Neural Networks",
+      "Computer Vision",
+      "Natural Language Processing",
+      "Reinforcement Learning",
+      "AI Ethics & Governance",
+      "AI System Design",
+      "Robotics & Automation",
+      "AI Research Methods",
+      "AI Capstone Project",
+      "Master's Thesis"
+    ],
+    entryRequirements: [
+      "Bachelor's in Computer Science, IT, or related field",
+      "Strong programming skills",
+      "Mathematical foundation (linear algebra, calculus)",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "AI Research Scientist",
+      "Machine Learning Engineer",
+      "AI Solutions Architect",
+      "Computer Vision Engineer",
+      "NLP Engineer",
+      "AI Product Manager"
+    ],
+    fees: {
+      tuition: "$18,000 - $24,000 total program",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.9,
+    enrolledStudents: 350
+  },
+  {
+    id: "msf-finance-master",
+    title: "MSc in Finance / Master of Science in Finance (MSF)",
+    code: "MSF-005",
+    category: "Master's Programs",
+    subcategory: "Finance",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Advanced finance program covering investments, corporate finance, and financial markets.",
+    overview: "Prepares finance professionals for senior roles in financial services and corporate finance.",
+    learningOutcomes: [
+      "Conduct advanced financial analysis",
+      "Manage investment portfolios",
+      "Apply financial risk management techniques",
+      "Develop corporate financial strategies",
+      "Lead financial decision-making"
+    ],
+    modules: [
+      "Advanced Corporate Finance",
+      "Investment Analysis & Portfolio Management",
+      "Derivatives & Risk Management",
+      "Financial Econometrics",
+      "Mergers & Acquisitions",
+      "International Finance",
+      "Fixed Income Securities",
+      "Alternative Investments",
+      "Financial Modeling",
+      "Behavioral Finance",
+      "Finance Research Methods",
+      "Master's Dissertation"
+    ],
+    entryRequirements: [
+      "Bachelor's in Finance, Economics, or related field",
+      "Strong quantitative skills",
+      "English proficiency (IELTS 6.5 or equivalent)",
+      "Finance work experience preferred"
+    ],
+    careerOpportunities: [
+      "Investment Manager",
+      "Financial Risk Manager",
+      "Corporate Finance Director",
+      "Hedge Fund Manager",
+      "Financial Consultant",
+      "Chief Financial Officer"
+    ],
+    fees: {
+      tuition: "$19,000 - $26,000 total program",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.7,
+    enrolledStudents: 330
+  },
+  {
+    id: "msc-management",
+    title: "MSc in Management",
+    code: "MSCM-006",
+    category: "Master's Programs",
+    subcategory: "Management",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Comprehensive management program for aspiring leaders and managers.",
+    overview: "Develops strategic management capabilities and leadership skills for diverse organizational contexts.",
+    learningOutcomes: [
+      "Apply strategic management frameworks",
+      "Lead organizational change initiatives",
+      "Manage complex projects and teams",
+      "Make data-driven business decisions",
+      "Develop innovative business solutions"
+    ],
+    modules: [
+      "Strategic Management",
+      "Organizational Behavior",
+      "Leadership & Change Management",
+      "Operations & Supply Chain Management",
+      "Financial Decision Making",
+      "Marketing Strategy",
+      "Human Resource Strategy",
+      "Business Analytics",
+      "Innovation Management",
+      "Global Business Management",
+      "Management Research",
+      "Management Dissertation"
+    ],
+    entryRequirements: [
+      "Bachelor's degree in any field",
+      "Work experience preferred",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Senior Manager",
+      "Operations Director",
+      "Strategy Manager",
+      "Management Consultant",
+      "Business Analyst",
+      "General Manager"
+    ],
+    fees: {
+      tuition: "$16,000 - $21,000 total program",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.6,
+    enrolledStudents: 390
+  },
+  {
+    id: "msc-marketing",
+    title: "MSc in Marketing",
+    code: "MSCMKT-007",
+    category: "Master's Programs",
+    subcategory: "Marketing",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Advanced marketing program focusing on digital strategies and consumer insights.",
+    overview: "Prepares marketing professionals for leadership roles in the digital marketing era.",
+    learningOutcomes: [
+      "Develop comprehensive marketing strategies",
+      "Lead digital transformation initiatives",
+      "Analyze consumer behavior and market trends",
+      "Manage brand portfolios",
+      "Apply marketing analytics and AI"
+    ],
+    modules: [
+      "Strategic Marketing Management",
+      "Digital Marketing Strategy",
+      "Consumer Behavior & Insights",
+      "Brand Strategy & Management",
+      "Marketing Analytics",
+      "Social Media & Content Marketing",
+      "Customer Experience Management",
+      "Marketing Research Methods",
+      "International Marketing",
+      "Marketing Innovation",
+      "Marketing Dissertation",
+      "Industry Project"
+    ],
+    entryRequirements: [
+      "Bachelor's degree in any field",
+      "Marketing experience preferred",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Marketing Director",
+      "Brand Manager",
+      "Digital Marketing Head",
+      "Marketing Consultant",
+      "Chief Marketing Officer",
+      "Product Marketing Manager"
+    ],
+    fees: {
+      tuition: "$17,000 - $22,000 total program",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.7,
+    enrolledStudents: 310
+  },
+  {
+    id: "macc-info-systems",
+    title: "Master of Accounting - Information Systems",
+    code: "MACC-IS-008",
+    category: "Master's Programs",
+    subcategory: "Accounting",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Specialized accounting program integrating information systems and data analytics.",
+    overview: "Combines advanced accounting with IT systems knowledge for modern finance roles.",
+    learningOutcomes: [
+      "Apply accounting information systems",
+      "Analyze financial data using technology",
+      "Implement internal controls and audits",
+      "Manage accounting technology projects",
+      "Lead digital transformation in finance"
+    ],
+    modules: [
+      "Advanced Financial Accounting",
+      "Accounting Information Systems",
+      "Data Analytics for Accountants",
+      "IT Audit & Controls",
+      "Enterprise Resource Planning (ERP)",
+      "Financial Data Management",
+      "Fraud Examination",
+      "Accounting Technology",
+      "Tax Information Systems",
+      "Business Intelligence",
+      "Research Methods",
+      "Master's Project"
+    ],
+    entryRequirements: [
+      "Bachelor's in Accounting or related field",
+      "CPA or relevant certification preferred",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accounting Systems Manager",
+      "IT Auditor",
+      "Financial Systems Analyst",
+      "ERP Consultant",
+      "Controller",
+      "Finance Technology Director"
+    ],
+    fees: {
+      tuition: "$18,000 - $24,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Accredited",
+    rating: 4.6,
     enrolledStudents: 180
   },
   {
-    id: "bsc-healthcare-management",
-    title: "BSc in Healthcare Management",
-    code: "BSHM-017",
-    category: "Bachelor's Programs",
-    subcategory: "Healthcare",
-    level: "Undergraduate",
-    duration: "3-4 years",
+    id: "ms-hrm",
+    title: "Master of Science in Human Resource Management (MS HRM)",
+    code: "MSHRM-009",
+    category: "Master's Programs",
+    subcategory: "Human Resources",
+    level: "Postgraduate",
+    duration: "1-2 years",
     mode: "Online",
-    partner: "Health School",
-    description: "Program focusing on management principles in healthcare settings.",
-    overview: "Prepares students for leadership roles in healthcare organizations.",
+    partner: "UeCampus",
+    description: "Advanced HR program focusing on strategic talent management and organizational development.",
+    overview: "Prepares HR professionals for strategic leadership roles in human capital management.",
     learningOutcomes: [
-      "Understand healthcare systems and policies",
-      "Manage healthcare operations effectively",
-      "Analyze healthcare data",
-      "Implement quality improvement initiatives",
-      "Communicate effectively in healthcare settings"
+      "Develop strategic HR initiatives",
+      "Lead organizational transformation",
+      "Apply HR analytics and metrics",
+      "Manage talent acquisition and retention",
+      "Navigate employment law and compliance"
     ],
     modules: [
-      "Healthcare Systems",
-      "Healthcare Management",
-      "Health Policy",
-      "Quality Improvement",
-      "Healthcare Finance",
-      "Capstone Project"
+      "Strategic Human Resource Management",
+      "Talent Management & Succession Planning",
+      "HR Analytics & Metrics",
+      "Organizational Development",
+      "Leadership Development",
+      "Compensation & Benefits Strategy",
+      "Employment Law & Ethics",
+      "International HRM",
+      "Change Management",
+      "Employee Relations",
+      "HR Research Methods",
+      "HRM Capstone"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in healthcare management",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Bachelor's degree in HR or related field",
+      "HR experience preferred",
+      "English proficiency (IELTS 6.5 or equivalent)"
     ],
     careerOpportunities: [
-      "Healthcare Manager",
-      "Health Services Administrator",
-      "Healthcare Consultant",
-      "Policy Analyst"
+      "HR Director",
+      "Talent Management Director",
+      "Chief People Officer",
+      "HR Consultant",
+      "Organizational Development Manager",
+      "HR Business Partner"
     ],
     fees: {
-      tuition: "$11,500 - $14,500 per year",
+      tuition: "$16,500 - $21,500 total program",
       installments: true
     },
-    accreditation: "Health School Accredited",
+    accreditation: "UeCampus Accredited",
     rating: 4.5,
-    enrolledStudents: 170
+    enrolledStudents: 290
   },
   {
-    id: "bsc-supply-chain-management",
-    title: "BSc in Supply Chain Management",
-    code: "BSCM-018",
-    category: "Bachelor's Programs",
-    subcategory: "Supply Chain",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Logistics Institute",
-    description: "Focuses on logistics, operations, and supply chain management.",
-    overview: "Prepares students for careers in supply chain and logistics.",
+    id: "mba-specializations",
+    title: "MBA Specializations (Accounting & Finance, HRM, International Business, Supply Chain)",
+    code: "MBA-SPEC-010",
+    category: "Master's Programs",
+    subcategory: "Business Administration",
+    level: "Postgraduate",
+    duration: "1-2 years",
+    mode: "Online/Hybrid",
+    partner: "PPA / EIE",
+    description: "MBA program with specialized tracks in key business disciplines.",
+    overview: "Comprehensive MBA with focused specialization tracks for targeted career advancement.",
     learningOutcomes: [
-      "Understand supply chain processes",
-      "Manage logistics operations",
-      "Analyze supply chain data",
-      "Implement supply chain strategies",
-      "Work collaboratively in teams"
+      "Apply MBA core competencies",
+      "Develop expertise in chosen specialization",
+      "Lead functional business areas",
+      "Implement strategic initiatives",
+      "Drive business transformation"
     ],
     modules: [
-      "Introduction to Supply Chain Management",
-      "Logistics Management",
-      "Operations Management",
-      "Data Analysis for Supply Chain",
-      "Capstone Project"
+      "Core MBA Modules (Strategy, Finance, Marketing, Operations)",
+      "Specialization Track 1: Accounting & Finance (Advanced Financial Reporting, Corporate Finance)",
+      "Specialization Track 2: HRM (Strategic HR, Talent Management)",
+      "Specialization Track 3: International Business (Global Strategy, Cross-cultural Management)",
+      "Specialization Track 4: Supply Chain (Logistics, Procurement, Operations)",
+      "Business Analytics",
+      "Leadership Development",
+      "Specialized Capstone Project"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Basic understanding of business principles",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Bachelor's degree in any field",
+      "Minimum 2 years work experience",
+      "English proficiency (IELTS 6.5 or equivalent)",
+      "GMAT/GRE (may be waived)"
     ],
     careerOpportunities: [
-      "Supply Chain Manager",
-      "Logistics Coordinator",
-      "Operations Analyst",
-      "Procurement Specialist"
+      "Functional Director (Finance, HR, Operations, Supply Chain)",
+      "Business Unit Manager",
+      "Strategy Consultant",
+      "International Business Manager",
+      "Supply Chain Director",
+      "CFO / CHRO"
     ],
     fees: {
-      tuition: "$10,500 - $13,500 per year",
+      tuition: "$19,000 - $27,000 total program",
       installments: true
     },
-    accreditation: "Logistics Institute Accredited",
-    rating: 4.6,
-    enrolledStudents: 160
+    accreditation: "PPA / EIE Accredited",
+    rating: 4.7,
+    enrolledStudents: 450
   },
+
+  // C. Doctorate / PhD / DBA Programs (8 courses)
   {
-    id: "bsc-project-management",
-    title: "BSc in Project Management",
-    code: "BSPM-019",
-    category: "Bachelor's Programs",
-    subcategory: "Project Management",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Management School",
-    description: "Focuses on project management principles and practices.",
-    overview: "Prepares students for careers in project management across various industries.",
+    id: "dba-uecampus",
+    title: "Doctor of Business Administration (DBA)",
+    code: "DBA-001",
+    category: "Doctoral Programs",
+    subcategory: "Business Administration",
+    level: "Doctorate",
+    duration: "3-5 years",
+    mode: "Online/Hybrid",
+    partner: "UeCampus / Walsh",
+    description: "Professional doctorate for senior executives and business leaders.",
+    overview: "Research-focused program applying advanced business knowledge to organizational challenges.",
     learningOutcomes: [
-      "Plan and execute projects effectively",
-      "Manage project teams",
-      "Analyze project risks",
-      "Communicate project status to stakeholders",
-      "Implement project management tools"
+      "Conduct original business research",
+      "Apply advanced theoretical frameworks to practice",
+      "Lead organizational transformation",
+      "Publish research in academic journals",
+      "Contribute to business knowledge"
     ],
     modules: [
-      "Project Management Fundamentals",
-      "Risk Management",
-      "Agile Project Management",
-      "Project Scheduling",
-      "Capstone Project"
+      "Research Philosophy & Design",
+      "Advanced Quantitative Methods",
+      "Advanced Qualitative Methods",
+      "Strategic Leadership",
+      "Organizational Theory",
+      "Business Ethics & Governance",
+      "Innovation & Change",
+      "Research Seminars",
+      "Dissertation Proposal",
+      "Dissertation Research",
+      "Dissertation Defense"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in project management",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Master's degree in business or related field",
+      "Minimum 5 years senior management experience",
+      "Research proposal",
+      "English proficiency (IELTS 7.0 or equivalent)",
+      "Interview"
     ],
     careerOpportunities: [
-      "Project Manager",
-      "Project Coordinator",
-      "Program Manager",
-      "Consultant"
-    ],
-    fees: {
-      tuition: "$11,000 - $14,000 per year",
-      installments: true
-    },
-    accreditation: "Management School Accredited",
-    rating: 4.5,
-    enrolledStudents: 150
-  },
-  {
-    id: "bsc-digital-marketing",
-    title: "BSc in Digital Marketing",
-    code: "BSDM-020",
-    category: "Bachelor's Programs",
-    subcategory: "Marketing",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Marketing Institute",
-    description: "Focuses on digital marketing strategies and tools.",
-    overview: "Prepares students for careers in digital marketing and online business.",
-    learningOutcomes: [
-      "Develop digital marketing strategies",
-      "Utilize social media for marketing",
-      "Analyze online consumer behavior",
-      "Implement SEO and SEM techniques",
-      "Create digital marketing campaigns"
-    ],
-    modules: [
-      "Digital Marketing Fundamentals",
-      "Social Media Marketing",
-      "SEO & SEM",
-      "Content Marketing",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in digital marketing",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Digital Marketing Specialist",
-      "Social Media Manager",
-      "SEO Specialist",
-      "Content Strategist"
-    ],
-    fees: {
-      tuition: "$10,500 - $13,500 per year",
-      installments: true
-    },
-    accreditation: "Marketing Institute Accredited",
-    rating: 4.6,
-    enrolledStudents: 140
-  },
-  {
-    id: "bsc-international-relations",
-    title: "BSc in International Relations",
-    code: "BIR-021",
-    category: "Bachelor's Programs",
-    subcategory: "International Relations",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "International Studies Institute",
-    description: "Focuses on global politics, diplomacy, and international relations.",
-    overview: "Prepares students for careers in international relations and diplomacy.",
-    learningOutcomes: [
-      "Understand global political systems",
-      "Analyze international issues",
-      "Develop diplomatic skills",
-      "Communicate effectively in international contexts"
-    ],
-    modules: [
-      "Introduction to International Relations",
-      "Global Politics",
-      "Diplomacy",
-      "International Law",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in international relations",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Diplomat",
-      "International Relations Analyst",
-      "Policy Advisor",
-      "NGO Manager"
-    ],
-    fees: {
-      tuition: "$11,500 - $14,500 per year",
-      installments: true
-    },
-    accreditation: "International Studies Institute Accredited",
-    rating: 4.5,
-    enrolledStudents: 130
-  },
-  {
-    id: "bsc-entrepreneurship",
-    title: "BSc in Entrepreneurship",
-    code: "BSE-022",
-    category: "Bachelor's Programs",
-    subcategory: "Entrepreneurship",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Entrepreneurship Institute",
-    description: "Focuses on developing entrepreneurial skills and business acumen.",
-    overview: "Prepares students for careers as entrepreneurs and business leaders.",
-    learningOutcomes: [
-      "Develop business plans",
-      "Understand startup processes",
-      "Analyze market opportunities",
-      "Communicate effectively with stakeholders"
-    ],
-    modules: [
-      "Entrepreneurship Fundamentals",
-      "Business Planning",
-      "Market Research",
-      "Startup Management",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in entrepreneurship",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Entrepreneur",
+      "Chief Executive Officer",
+      "Chief Strategy Officer",
       "Business Consultant",
-      "Startup Founder",
-      "Business Development Manager"
+      "Academic Professor",
+      "Research Director",
+      "Board Member"
     ],
     fees: {
-      tuition: "$10,000 - $13,000 per year",
+      tuition: "$25,000 - $40,000 total program",
       installments: true
     },
-    accreditation: "Entrepreneurship Institute Accredited",
-    rating: 4.6,
+    accreditation: "UeCampus / Walsh Accredited",
+    rating: 4.9,
     enrolledStudents: 120
   },
   {
-    id: "bsc-psychology",
-    title: "BSc in Psychology",
-    code: "BPSY-023",
-    category: "Bachelor's Programs",
-    subcategory: "Psychology",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Psychology Institute",
-    description: "Focuses on understanding human behavior and mental processes.",
-    overview: "Prepares students for careers in psychology and counseling.",
-    learningOutcomes: [
-      "Understand psychological theories",
-      "Conduct psychological research",
-      "Communicate effectively with clients",
-      "Apply psychological principles in various settings"
-    ],
-    modules: [
-      "Introduction to Psychology",
-      "Research Methods",
-      "Developmental Psychology",
-      "Clinical Psychology",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in psychology",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Psychologist",
-      "Counselor",
-      "Human Resources Specialist",
-      "Market Research Analyst"
-    ],
-    fees: {
-      tuition: "$11,000 - $14,000 per year",
-      installments: true
-    },
-    accreditation: "Psychology Institute Accredited",
-    rating: 4.5,
-    enrolledStudents: 110
-  },
-  {
-    id: "bsc-education",
-    title: "BSc in Education",
-    code: "BED-024",
-    category: "Bachelor's Programs",
-    subcategory: "Education",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Education Institute",
-    description: "Focuses on teaching methods and educational theory.",
-    overview: "Prepares students for careers in education and teaching.",
-    learningOutcomes: [
-      "Understand educational theories",
-      "Develop teaching strategies",
-      "Communicate effectively with students",
-      "Implement assessment methods"
-    ],
-    modules: [
-      "Introduction to Education",
-      "Teaching Methods",
-      "Curriculum Development",
-      "Assessment in Education",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in education",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Teacher",
-      "Educational Consultant",
-      "Curriculum Developer",
-      "School Administrator"
-    ],
-    fees: {
-      tuition: "$10,500 - $13,500 per year",
-      installments: true
-    },
-    accreditation: "Education Institute Accredited",
-    rating: 4.6,
-    enrolledStudents: 100
-  },
-  {
-    id: "bsc-communication",
-    title: "BSc in Communication",
-    code: "BCOM-025",
-    category: "Bachelor's Programs",
-    subcategory: "Communication",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Communication Institute",
-    description: "Focuses on communication theories and practices.",
-    overview: "Prepares students for careers in communication and media.",
-    learningOutcomes: [
-      "Understand communication theories",
-      "Develop communication strategies",
-      "Communicate effectively in various contexts"
-    ],
-    modules: [
-      "Introduction to Communication",
-      "Media Studies",
-      "Public Relations",
-      "Interpersonal Communication",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in communication",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Public Relations Specialist",
-      "Communication Consultant",
-      "Media Planner",
-      "Corporate Communication Manager"
-    ],
-    fees: {
-      tuition: "$10,000 - $13,000 per year",
-      installments: true
-    },
-    accreditation: "Communication Institute Accredited",
-    rating: 4.5,
-    enrolledStudents: 90
-  },
-  {
-    id: "bsc-graphic-design",
-    title: "BSc in Graphic Design",
-    code: "BGD-026",
-    category: "Bachelor's Programs",
-    subcategory: "Design",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Design Institute",
-    description: "Focuses on visual communication and design principles.",
-    overview: "Prepares students for careers in graphic design and multimedia.",
-    learningOutcomes: [
-      "Create visual designs for various media",
-      "Understand design theory and principles",
-      "Utilize design software effectively"
-    ],
-    modules: [
-      "Design Fundamentals",
-      "Digital Media",
-      "Typography",
-      "Color Theory",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Portfolio of design work",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Graphic Designer",
-      "Art Director",
-      "Web Designer"
-    ],
-    fees: {
-      tuition: "$10,500 - $13,500 per year",
-      installments: true
-    },
-    accreditation: "Design Institute Accredited",
-    rating: 4.6,
-    enrolledStudents: 80
-  },
-  {
-    id: "bsc-business-administration",
-    title: "BSc in Business Administration",
-    code: "BBA-027",
-    category: "Bachelor's Programs",
+    id: "dba-business",
+    title: "Doctorate in Business (DBA) - Top-level Program",
+    code: "DBA-002",
+    category: "Doctoral Programs",
     subcategory: "Business Administration",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Business School",
-    description: "Focuses on business principles and practices.",
-    overview: "Prepares students for careers in business management.",
+    level: "Doctorate",
+    duration: "3-5 years",
+    mode: "Online/Hybrid",
+    partner: "UeCampus",
+    description: "Premier doctoral program for accomplished business professionals and executives.",
+    overview: "Elite DBA program combining rigorous research with practical business application.",
     learningOutcomes: [
-      "Understand business operations",
-      "Develop management skills",
-      "Communicate effectively in business contexts"
+      "Generate new business knowledge",
+      "Lead industry transformation",
+      "Publish high-impact research",
+      "Mentor future business leaders",
+      "Shape business policy and practice"
     ],
     modules: [
-      "Business Fundamentals",
-      "Management Principles",
-      "Marketing Principles",
-      "Capstone Project"
+      "Doctoral Research Methods",
+      "Advanced Business Theory",
+      "Statistical Analysis for Research",
+      "Business Model Innovation",
+      "Global Business Strategy",
+      "Executive Leadership",
+      "Research Ethics",
+      "Literature Review & Synthesis",
+      "Dissertation Seminars",
+      "Doctoral Thesis",
+      "Viva Voce"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in business",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Master's in Business or MBA",
+      "Significant executive experience",
+      "Strong research proposal",
+      "English proficiency (IELTS 7.0 or equivalent)",
+      "Academic references"
     ],
     careerOpportunities: [
-      "Business Manager",
-      "Operations Coordinator",
-      "Business Analyst"
+      "C-Suite Executive",
+      "Strategic Advisor",
+      "Management Consultant",
+      "University Professor",
+      "Research Fellow",
+      "Industry Thought Leader"
     ],
     fees: {
-      tuition: "$10,000 - $13,000 per year",
+      tuition: "$28,000 - $45,000 total program",
       installments: true
     },
-    accreditation: "Business School Accredited",
-    rating: 4.5,
+    accreditation: "UeCampus Top-level Accreditation",
+    rating: 4.9,
+    enrolledStudents: 95
+  },
+  {
+    id: "dba-accounting",
+    title: "DBA in Accounting",
+    code: "DBA-ACC-003",
+    category: "Doctoral Programs",
+    subcategory: "Accounting",
+    level: "Doctorate",
+    duration: "3-5 years",
+    mode: "Online/Hybrid",
+    partner: "Partner Institutions",
+    description: "Specialized doctoral program in accounting research and practice.",
+    overview: "Advanced research degree for accounting professionals and academics.",
+    learningOutcomes: [
+      "Conduct accounting research",
+      "Advance accounting theory and practice",
+      "Publish in accounting journals",
+      "Lead accounting innovation",
+      "Teach at university level"
+    ],
+    modules: [
+      "Accounting Research Methods",
+      "Advanced Financial Accounting Theory",
+      "Managerial Accounting Research",
+      "Auditing Theory & Practice",
+      "Taxation Research",
+      "Accounting Information Systems",
+      "Corporate Governance",
+      "Research Seminars",
+      "Dissertation Development",
+      "Doctoral Thesis in Accounting"
+    ],
+    entryRequirements: [
+      "Master's in Accounting or related field",
+      "CPA or equivalent preferred",
+      "Accounting research experience",
+      "English proficiency (IELTS 7.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accounting Professor",
+      "Chief Accounting Officer",
+      "Accounting Research Director",
+      "Professional Standards Developer",
+      "Accounting Consultant",
+      "CFO"
+    ],
+    fees: {
+      tuition: "$26,000 - $42,000 total program",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.8,
+    enrolledStudents: 65
+  },
+  {
+    id: "phd-organizational-leadership",
+    title: "PhD in Organizational Leadership",
+    code: "PHD-OL-004",
+    category: "Doctoral Programs",
+    subcategory: "Leadership",
+    level: "Doctorate",
+    duration: "4-6 years",
+    mode: "Online/Hybrid",
+    partner: "Partner Institutions",
+    description: "Research-focused PhD in leadership theory, development, and organizational change.",
+    overview: "Academic doctorate preparing scholars and practitioners in leadership studies.",
+    learningOutcomes: [
+      "Develop leadership theories",
+      "Conduct rigorous leadership research",
+      "Publish in top-tier journals",
+      "Teach leadership at doctoral level",
+      "Consult on leadership development"
+    ],
+    modules: [
+      "Leadership Theory & Research",
+      "Organizational Behavior Research",
+      "Advanced Research Methods",
+      "Qualitative Research Design",
+      "Leadership Development",
+      "Change Management Research",
+      "Ethics & Leadership",
+      "Teaching Practicum",
+      "Comprehensive Exams",
+      "Dissertation Research",
+      "PhD Defense"
+    ],
+    entryRequirements: [
+      "Master's degree in relevant field",
+      "Strong academic background",
+      "Research experience",
+      "English proficiency (IELTS 7.0 or equivalent)",
+      "Research proposal and interview"
+    ],
+    careerOpportunities: [
+      "University Professor",
+      "Research Scientist",
+      "Leadership Development Director",
+      "Executive Coach",
+      "Organizational Consultant",
+      "Think Tank Researcher"
+    ],
+    fees: {
+      tuition: "$30,000 - $50,000 total program",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.8,
+    enrolledStudents: 75
+  },
+  {
+    id: "phd-data-analytics",
+    title: "PhD / Doctor of Philosophy in Data Analytics",
+    code: "PHD-DA-005",
+    category: "Doctoral Programs",
+    subcategory: "Data Analytics",
+    level: "Doctorate",
+    duration: "4-6 years",
+    mode: "Online/Hybrid",
+    partner: "UeCampus",
+    description: "Research-intensive PhD program in data science and analytics.",
+    overview: "Academic doctorate for aspiring researchers and data science leaders.",
+    learningOutcomes: [
+      "Advance data science methodologies",
+      "Develop novel analytics algorithms",
+      "Publish groundbreaking research",
+      "Lead data science initiatives",
+      "Teach at doctoral level"
+    ],
+    modules: [
+      "Advanced Statistical Theory",
+      "Machine Learning Research",
+      "Big Data Analytics",
+      "Research Methodology",
+      "Computational Statistics",
+      "Optimization & Algorithms",
+      "Data Science Ethics",
+      "Teaching & Supervision",
+      "Comprehensive Exams",
+      "Doctoral Research",
+      "PhD Thesis Defense"
+    ],
+    entryRequirements: [
+      "Master's in Data Science or related field",
+      "Strong mathematical background",
+      "Research publications preferred",
+      "Programming expertise",
+      "English proficiency (IELTS 7.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Data Science Professor",
+      "Chief Data Scientist",
+      "Research Scientist",
+      "AI Research Director",
+      "Data Science Consultant",
+      "Analytics Thought Leader"
+    ],
+    fees: {
+      tuition: "$32,000 - $52,000 total program",
+      installments: true
+    },
+    accreditation: "UeCampus Doctoral Accreditation",
+    rating: 4.9,
+    enrolledStudents: 85
+  },
+  {
+    id: "phd-cyber-security",
+    title: "PhD in Cyber Security",
+    code: "PHD-CS-006",
+    category: "Doctoral Programs",
+    subcategory: "Cyber Security",
+    level: "Doctorate",
+    duration: "4-6 years",
+    mode: "Online/Hybrid",
+    partner: "Partner Institutions",
+    description: "Research-focused PhD in cybersecurity, cryptography, and information assurance.",
+    overview: "Academic doctorate preparing cybersecurity researchers and experts.",
+    learningOutcomes: [
+      "Conduct cybersecurity research",
+      "Develop security solutions and protocols",
+      "Publish in security conferences and journals",
+      "Lead security research teams",
+      "Advise on national security issues"
+    ],
+    modules: [
+      "Cybersecurity Research Methods",
+      "Advanced Cryptography",
+      "Network Security Research",
+      "Security Protocol Design",
+      "Cyber Threat Intelligence",
+      "Security Analytics",
+      "Research Ethics in Security",
+      "Teaching Practicum",
+      "Comprehensive Exams",
+      "Doctoral Research",
+      "PhD Viva"
+    ],
+    entryRequirements: [
+      "Master's in Cybersecurity or Computer Science",
+      "Strong technical background",
+      "Research experience",
+      "Security certifications preferred",
+      "English proficiency (IELTS 7.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Security Research Scientist",
+      "University Professor",
+      "Chief Security Officer",
+      "Security Consultant",
+      "Government Security Advisor",
+      "Security Research Director"
+    ],
+    fees: {
+      tuition: "$33,000 - $53,000 total program",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.9,
     enrolledStudents: 70
   },
   {
-    id: "bsc-information-technology",
-    title: "BSc in Information Technology",
-    code: "BIT-028",
-    category: "Bachelor's Programs",
-    subcategory: "Information Technology",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "IT Institute",
-    description: "Focuses on IT principles and practices.",
-    overview: "Prepares students for careers in IT and computer science.",
+    id: "phd-ai-ml",
+    title: "PhD in Artificial Intelligence & Machine Learning",
+    code: "PHD-AI-007",
+    category: "Doctoral Programs",
+    subcategory: "Artificial Intelligence",
+    level: "Doctorate",
+    duration: "4-6 years",
+    mode: "Online/Hybrid",
+    partner: "Partner Institutions",
+    description: "Cutting-edge PhD program in AI research and development.",
+    overview: "Academic doctorate for AI researchers and innovators.",
     learningOutcomes: [
-      "Understand IT systems and networks",
-      "Develop software solutions",
-      "Communicate effectively in IT contexts"
+      "Advance AI research",
+      "Develop novel AI algorithms",
+      "Publish in top AI conferences",
+      "Lead AI research projects",
+      "Contribute to AI ethics and policy"
     ],
     modules: [
-      "IT Fundamentals",
-      "Programming",
-      "Database Management",
-      "Capstone Project"
+      "AI Research Methods",
+      "Advanced Machine Learning Theory",
+      "Deep Learning Research",
+      "Neural Architecture Search",
+      "Reinforcement Learning",
+      "Computer Vision Research",
+      "Natural Language Processing Research",
+      "AI Ethics & Policy",
+      "Teaching & Mentoring",
+      "Comprehensive Exams",
+      "PhD Research",
+      "Thesis Defense"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in IT",
-      "English proficiency (IELTS 6.0 or equivalent)"
+      "Master's in AI, Computer Science, or related field",
+      "Strong mathematics and programming skills",
+      "Research publications preferred",
+      "English proficiency (IELTS 7.0 or equivalent)"
     ],
     careerOpportunities: [
-      "IT Specialist",
-      "Software Developer",
-      "Network Administrator"
+      "AI Research Scientist",
+      "University Professor",
+      "Chief AI Officer",
+      "AI Research Lab Director",
+      "AI Policy Advisor",
+      "AI Startup Founder"
     ],
     fees: {
-      tuition: "$10,500 - $13,500 per year",
+      tuition: "$35,000 - $55,000 total program",
       installments: true
     },
-    accreditation: "IT Institute Accredited",
-    rating: 4.6,
-    enrolledStudents: 60
+    accreditation: "Partner Institution Accredited",
+    rating: 4.9,
+    enrolledStudents: 90
   },
   {
-    id: "bsc-data-science",
-    title: "BSc in Data Science",
-    code: "BDS-029",
-    category: "Bachelor's Programs",
-    subcategory: "Data Science",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Data Science Institute",
-    description: "Focuses on data analysis and machine learning.",
-    overview: "Prepares students for careers in data science and analytics.",
+    id: "phd-research-track",
+    title: "Research-track Doctoral Offerings / Custom Doctoral Supervision",
+    code: "PHD-RES-008",
+    category: "Doctoral Programs",
+    subcategory: "Research",
+    level: "Doctorate",
+    duration: "3-6 years",
+    mode: "Online/Hybrid",
+    partner: "Partner Institutions",
+    description: "Flexible doctoral program with customized research supervision across disciplines.",
+    overview: "Tailored doctoral experience for researchers with specific interests and career goals.",
     learningOutcomes: [
-      "Analyze data using statistical methods",
-      "Develop machine learning models",
-      "Communicate data insights effectively"
+      "Conduct independent research",
+      "Develop expertise in chosen field",
+      "Contribute original knowledge",
+      "Publish research findings",
+      "Complete doctoral thesis"
     ],
     modules: [
-      "Data Science Fundamentals",
-      "Statistics",
-      "Machine Learning",
-      "Capstone Project"
+      "Research Design & Methods",
+      "Literature Review & Theory",
+      "Advanced Research Techniques",
+      "Specialized Seminars",
+      "Research Ethics",
+      "Academic Writing & Publishing",
+      "Teaching Experience",
+      "Supervisory Meetings",
+      "Thesis Development",
+      "Doctoral Defense"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math background",
+      "Master's degree in relevant field",
+      "Clear research proposal",
+      "Academic references",
+      "English proficiency (IELTS 7.0 or equivalent)",
+      "Interview with potential supervisor"
+    ],
+    careerOpportunities: [
+      "Academic Researcher",
+      "University Faculty",
+      "Industry Researcher",
+      "Consultant",
+      "Policy Analyst",
+      "Research Director"
+    ],
+    fees: {
+      tuition: "$25,000 - $50,000 total program (varies)",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.7,
+    enrolledStudents: 110
+  },
+
+  // D. Level 7 Diplomas (7 courses)
+  {
+    id: "l7-data-science",
+    title: "Level 7 Diploma in Data Science",
+    code: "L7DS-001",
+    category: "Professional Diplomas",
+    subcategory: "Data Science",
+    level: "Level 7",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Qualifi / Ofqual / UeCampus",
+    description: "Advanced postgraduate diploma in data science and analytics.",
+    overview: "Professional qualification equivalent to postgraduate certificate in data science.",
+    learningOutcomes: [
+      "Apply advanced data science techniques",
+      "Build predictive models",
+      "Analyze big data",
+      "Communicate data insights",
+      "Implement machine learning solutions"
+    ],
+    modules: [
+      "Data Science Foundations",
+      "Statistical Analysis",
+      "Machine Learning",
+      "Data Visualization",
+      "Big Data Technologies",
+      "Programming for Data Science",
+      "Data Mining",
+      "Research Methods"
+    ],
+    entryRequirements: [
+      "Bachelor's degree or Level 6 qualification",
+      "Basic programming knowledge",
       "English proficiency (IELTS 6.0 or equivalent)"
     ],
     careerOpportunities: [
       "Data Scientist",
-      "Data Analyst",
-      "Machine Learning Engineer"
+      "Analytics Specialist",
+      "Data Engineer",
+      "BI Developer",
+      "Analytics Consultant",
+      "Progress to Master's"
     ],
     fees: {
-      tuition: "$11,000 - $14,000 per year",
+      tuition: "$3,500 - $5,500 total",
       installments: true
     },
-    accreditation: "Data Science Institute Accredited",
-    rating: 4.7,
-    enrolledStudents: 50
-  },
-  {
-    id: "bsc-artificial-intelligence",
-    title: "BSc in Artificial Intelligence",
-    code: "BAI-030",
-    category: "Bachelor's Programs",
-    subcategory: "Artificial Intelligence",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "AI Institute",
-    description: "Focuses on AI principles and applications.",
-    overview: "Prepares students for careers in AI and machine learning.",
-    learningOutcomes: [
-      "Understand AI concepts and technologies",
-      "Develop AI applications",
-      "Communicate AI insights effectively"
-    ],
-    modules: [
-      "AI Fundamentals",
-      "Machine Learning",
-      "Deep Learning",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math and programming background",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "AI Engineer",
-      "Machine Learning Engineer",
-      "Data Scientist"
-    ],
-    fees: {
-      tuition: "$12,000 - $15,000 per year",
-      installments: true
-    },
-    accreditation: "AI Institute Accredited",
-    rating: 4.8,
-    enrolledStudents: 40
-  },
-  {
-    id: "bsc-robotics",
-    title: "BSc in Robotics",
-    code: "BRO-031",
-    category: "Bachelor's Programs",
-    subcategory: "Robotics",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Robotics Institute",
-    description: "Focuses on robotics principles and applications.",
-    overview: "Prepares students for careers in robotics and automation.",
-    learningOutcomes: [
-      "Understand robotics concepts and technologies",
-      "Develop robotic systems",
-      "Communicate robotics insights effectively"
-    ],
-    modules: [
-      "Robotics Fundamentals",
-      "Control Systems",
-      "Embedded Systems",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math and programming background",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Robotics Engineer",
-      "Automation Engineer",
-      "Mechatronics Engineer"
-    ],
-    fees: {
-      tuition: "$12,500 - $15,500 per year",
-      installments: true
-    },
-    accreditation: "Robotics Institute Accredited",
-    rating: 4.9,
-    enrolledStudents: 30
-  },
-  {
-    id: "bsc-virtual-reality",
-    title: "BSc in Virtual Reality",
-    code: "BVR-032",
-    category: "Bachelor's Programs",
-    subcategory: "Virtual Reality",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "VR Institute",
-    description: "Focuses on virtual reality principles and applications.",
-    overview: "Prepares students for careers in virtual reality and immersive technologies.",
-    learningOutcomes: [
-      "Understand virtual reality concepts and technologies",
-      "Develop VR applications",
-      "Communicate VR insights effectively"
-    ],
-    modules: [
-      "VR Fundamentals",
-      "3D Modeling",
-      "Game Development",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math and programming background",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "VR Developer",
-      "Game Designer",
-      "3D Artist"
-    ],
-    fees: {
-      tuition: "$12,000 - $15,000 per year",
-      installments: true
-    },
-    accreditation: "VR Institute Accredited",
-    rating: 4.8,
-    enrolledStudents: 20
-  },
-  {
-    id: "bsc-augmented-reality",
-    title: "BSc in Augmented Reality",
-    code: "BAR-033",
-    category: "Bachelor's Programs",
-    subcategory: "Augmented Reality",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "AR Institute",
-    description: "Focuses on augmented reality principles and applications.",
-    overview: "Prepares students for careers in augmented reality and immersive technologies.",
-    learningOutcomes: [
-      "Understand augmented reality concepts and technologies",
-      "Develop AR applications",
-      "Communicate AR insights effectively"
-    ],
-    modules: [
-      "AR Fundamentals",
-      "3D Modeling",
-      "Game Development",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math and programming background",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "AR Developer",
-      "Game Designer",
-      "3D Artist"
-    ],
-    fees: {
-      tuition: "$12,000 - $15,000 per year",
-      installments: true
-    },
-    accreditation: "AR Institute Accredited",
-    rating: 4.7,
-    enrolledStudents: 10
-  },
-  {
-    id: "bsc-data-visualization",
-    title: "BSc in Data Visualization",
-    code: "BDV-034",
-    category: "Bachelor's Programs",
-    subcategory: "Data Visualization",
-    level: "Undergraduate",
-    duration: "3-4 years",
-    mode: "Online",
-    partner: "Data Visualization Institute",
-    description: "Focuses on data visualization principles and practices.",
-    overview: "Prepares students for careers in data visualization and analytics.",
-    learningOutcomes: [
-      "Create effective data visualizations",
-      "Understand data storytelling",
-      "Communicate data insights effectively"
-    ],
-    modules: [
-      "Data Visualization Fundamentals",
-      "Data Storytelling",
-      "Visualization Tools",
-      "Capstone Project"
-    ],
-    entryRequirements: [
-      "High school diploma or equivalent",
-      "Interest in data visualization",
-      "English proficiency (IELTS 6.0 or equivalent)"
-    ],
-    careerOpportunities: [
-      "Data Visualization Specialist",
-      "Business Intelligence Analyst",
-      "Data Analyst"
-    ],
-    fees: {
-      tuition: "$11,000 - $14,000 per year",
-      installments: true
-    },
-    accreditation: "Data Visualization Institute Accredited",
+    accreditation: "Qualifi / Ofqual Accredited",
     rating: 4.6,
-    enrolledStudents: 5
+    enrolledStudents: 280
   },
   {
-    id: "bsc-quantum-computing",
-    title: "BSc in Quantum Computing",
-    code: "BQC-035",
-    category: "Bachelor's Programs",
-    subcategory: "Quantum Computing",
-    level: "Undergraduate",
-    duration: "3-4 years",
+    id: "l7-accounting-finance",
+    title: "Level 7 Diploma in Accounting and Finance",
+    code: "L7AF-002",
+    category: "Professional Diplomas",
+    subcategory: "Accounting & Finance",
+    level: "Level 7",
+    duration: "9-12 months",
     mode: "Online",
-    partner: "Quantum Institute",
-    description: "Focuses on quantum computing principles and applications.",
-    overview: "Prepares students for careers in quantum computing and advanced technologies.",
+    partner: "Qualifi / Ofqual / UeCampus",
+    description: "Advanced accounting and finance qualification for professionals.",
+    overview: "Postgraduate-level diploma covering strategic financial management and accounting.",
     learningOutcomes: [
-      "Understand quantum computing concepts",
-      "Develop quantum algorithms",
-      "Communicate quantum insights effectively"
+      "Prepare advanced financial reports",
+      "Apply strategic financial management",
+      "Conduct financial analysis",
+      "Understand corporate governance",
+      "Manage financial risks"
     ],
     modules: [
-      "Quantum Computing Fundamentals",
-      "Quantum Algorithms",
-      "Quantum Programming",
-      "Capstone Project"
+      "Strategic Financial Management",
+      "Corporate Reporting",
+      "Advanced Management Accounting",
+      "Audit & Assurance",
+      "Taxation Strategy",
+      "Corporate Governance",
+      "Financial Analysis",
+      "Research Project"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math and programming background",
+      "Bachelor's degree or relevant professional qualification",
+      "Accounting background preferred",
       "English proficiency (IELTS 6.0 or equivalent)"
     ],
     careerOpportunities: [
-      "Quantum Computing Researcher",
-      "Quantum Software Developer",
-      "Data Scientist"
+      "Senior Accountant",
+      "Finance Manager",
+      "Financial Controller",
+      "Management Accountant",
+      "Tax Manager",
+      "Progress to MBA"
     ],
     fees: {
-      tuition: "$12,500 - $15,500 per year",
+      tuition: "$3,200 - $5,000 total",
       installments: true
     },
-    accreditation: "Quantum Institute Accredited",
-    rating: 4.9,
-    enrolledStudents: 2
+    accreditation: "Qualifi / Ofqual Accredited",
+    rating: 4.5,
+    enrolledStudents: 320
   },
   {
-    id: "bsc-advanced-computing",
-    title: "BSc in Advanced Computing",
-    code: "BAC-036",
-    category: "Bachelor's Programs",
-    subcategory: "Advanced Computing",
-    level: "Undergraduate",
-    duration: "3-4 years",
+    id: "l7-strategic-marketing",
+    title: "Level 7 Diploma in Strategic Marketing",
+    code: "L7SM-003",
+    category: "Professional Diplomas",
+    subcategory: "Marketing",
+    level: "Level 7",
+    duration: "9-12 months",
     mode: "Online",
-    partner: "Advanced Computing Institute",
-    description: "Focuses on advanced computing principles and applications.",
-    overview: "Prepares students for careers in advanced computing and technology.",
+    partner: "Qualifi / Ofqual / UeCampus",
+    description: "Advanced marketing qualification focusing on strategic marketing management.",
+    overview: "Postgraduate diploma for marketing professionals seeking senior roles.",
     learningOutcomes: [
-      "Understand advanced computing concepts",
-      "Develop advanced software solutions",
-      "Communicate advanced computing insights effectively"
+      "Develop strategic marketing plans",
+      "Apply digital marketing strategies",
+      "Lead marketing teams",
+      "Analyze market trends",
+      "Manage marketing budgets"
     ],
     modules: [
-      "Advanced Computing Fundamentals",
-      "Software Development",
-      "Capstone Project"
+      "Strategic Marketing Management",
+      "Digital & Social Media Marketing",
+      "Brand Strategy",
+      "Marketing Analytics",
+      "Consumer Insights",
+      "International Marketing",
+      "Marketing Communications",
+      "Research Project"
     ],
     entryRequirements: [
-      "High school diploma or equivalent",
-      "Strong math and programming background",
+      "Bachelor's degree or Level 6 qualification",
+      "Marketing experience preferred",
       "English proficiency (IELTS 6.0 or equivalent)"
     ],
     careerOpportunities: [
-      "Software Engineer",
-      "Systems Architect",
-      "Data Scientist"
+      "Marketing Manager",
+      "Digital Marketing Manager",
+      "Brand Manager",
+      "Marketing Director",
+      "Marketing Consultant",
+      "Progress to MBA"
     ],
     fees: {
-      tuition: "$12,000 - $15,000 per year",
+      tuition: "$3,300 - $5,200 total",
       installments: true
     },
-    accreditation: "Advanced Computing Institute Accredited",
-    rating: 4.8,
-    enrolledStudents: 1
+    accreditation: "Qualifi / Ofqual Accredited",
+    rating: 4.6,
+    enrolledStudents: 290
+  },
+  {
+    id: "l7-hrm",
+    title: "Level 7 Diploma in Human Resource Management",
+    code: "L7HRM-004",
+    category: "Professional Diplomas",
+    subcategory: "Human Resources",
+    level: "Level 7",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Qualifi / Ofqual",
+    description: "Advanced HR diploma focusing on strategic human resource management.",
+    overview: "Professional qualification for HR practitioners aiming for management roles.",
+    learningOutcomes: [
+      "Implement strategic HRM",
+      "Lead talent management",
+      "Apply employment law",
+      "Develop organizational strategies",
+      "Manage employee relations"
+    ],
+    modules: [
+      "Strategic Human Resource Management",
+      "Talent Management",
+      "Employee Relations",
+      "Employment Law",
+      "Organizational Development",
+      "HR Analytics",
+      "Leadership Development",
+      "Research Methods"
+    ],
+    entryRequirements: [
+      "Bachelor's degree or Level 6 qualification",
+      "HR experience preferred",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "HR Manager",
+      "Talent Manager",
+      "HR Director",
+      "HR Consultant",
+      "People & Culture Manager",
+      "Progress to MBA"
+    ],
+    fees: {
+      tuition: "$3,000 - $4,800 total",
+      installments: true
+    },
+    accreditation: "Qualifi / Ofqual Accredited",
+    rating: 4.4,
+    enrolledStudents: 270
+  },
+  {
+    id: "l7-hospitality-tourism",
+    title: "Level 7 Diploma in Hospitality and Tourism Management",
+    code: "L7HTM-005",
+    category: "Professional Diplomas",
+    subcategory: "Hospitality & Tourism",
+    level: "Level 7",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Qualifi / Ofqual / UeCampus",
+    description: "Advanced hospitality and tourism management qualification.",
+    overview: "Strategic management diploma for hospitality and tourism professionals.",
+    learningOutcomes: [
+      "Manage hospitality operations strategically",
+      "Develop tourism strategies",
+      "Lead hospitality teams",
+      "Apply sustainable tourism practices",
+      "Manage customer experiences"
+    ],
+    modules: [
+      "Strategic Hospitality Management",
+      "Tourism Development",
+      "Revenue Management",
+      "Sustainable Tourism",
+      "Customer Experience Management",
+      "Event Management",
+      "International Tourism",
+      "Research Project"
+    ],
+    entryRequirements: [
+      "Bachelor's degree or Level 6 qualification",
+      "Hospitality/tourism experience preferred",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Hotel General Manager",
+      "Tourism Manager",
+      "Resort Manager",
+      "Hospitality Consultant",
+      "Event Manager",
+      "Progress to MBA"
+    ],
+    fees: {
+      tuition: "$3,100 - $4,900 total",
+      installments: true
+    },
+    accreditation: "Qualifi / Ofqual / UeCampus Accredited",
+    rating: 4.5,
+    enrolledStudents: 240
+  },
+  {
+    id: "l7-education-mgmt",
+    title: "Level 7 Diploma in Education Management & Leadership",
+    code: "L7EML-006",
+    category: "Professional Diplomas",
+    subcategory: "Education",
+    level: "Level 7",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Qualifi / Ofqual / UeCampus",
+    description: "Advanced qualification for educational leaders and managers.",
+    overview: "Professional diploma preparing educators for leadership and management roles.",
+    learningOutcomes: [
+      "Lead educational institutions",
+      "Develop curriculum strategies",
+      "Manage educational resources",
+      "Implement quality assurance",
+      "Foster educational innovation"
+    ],
+    modules: [
+      "Educational Leadership",
+      "Strategic Management in Education",
+      "Curriculum Development",
+      "Quality Assurance",
+      "Educational Policy",
+      "Financial Management in Education",
+      "Change Management",
+      "Research Methods"
+    ],
+    entryRequirements: [
+      "Bachelor's degree or teaching qualification",
+      "Teaching/education experience",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "School Principal",
+      "Education Manager",
+      "Academic Director",
+      "Curriculum Developer",
+      "Education Consultant",
+      "Progress to EdD"
+    ],
+    fees: {
+      tuition: "$3,000 - $4,700 total",
+      installments: true
+    },
+    accreditation: "Qualifi / Ofqual / UeCampus Accredited",
+    rating: 4.6,
+    enrolledStudents: 230
+  },
+  {
+    id: "l7-information-technology",
+    title: "Level 7 Diploma in Information Technology",
+    code: "L7IT-007",
+    category: "Professional Diplomas",
+    subcategory: "Information Technology",
+    level: "Level 7",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Qualifi / Ofqual / UeCampus",
+    description: "Advanced IT management and systems diploma.",
+    overview: "Professional qualification for IT professionals moving into management.",
+    learningOutcomes: [
+      "Manage IT systems and infrastructure",
+      "Implement IT strategies",
+      "Lead IT projects",
+      "Apply IT governance",
+      "Ensure cybersecurity"
+    ],
+    modules: [
+      "IT Strategic Management",
+      "Systems Analysis & Design",
+      "IT Project Management",
+      "IT Security Management",
+      "Database Management",
+      "Cloud Computing",
+      "IT Governance",
+      "Research Project"
+    ],
+    entryRequirements: [
+      "Bachelor's degree or Level 6 IT qualification",
+      "IT experience preferred",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "IT Manager",
+      "Systems Manager",
+      "IT Project Manager",
+      "IT Consultant",
+      "Solutions Architect",
+      "Progress to MSc"
+    ],
+    fees: {
+      tuition: "$3,400 - $5,300 total",
+      installments: true
+    },
+    accreditation: "Qualifi / Ofqual / UeCampus Accredited",
+    rating: 4.5,
+    enrolledStudents: 300
+  },
+
+  // E. Level 5 Diplomas (6 courses)
+  {
+    id: "l5-accounting-finance",
+    title: "Level 5 Diploma in Accounting and Finance",
+    code: "L5AF-001",
+    category: "Professional Diplomas",
+    subcategory: "Accounting & Finance",
+    level: "Level 5",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Higher National Diploma in accounting and financial management.",
+    overview: "Professional qualification covering intermediate accounting and finance principles.",
+    learningOutcomes: [
+      "Prepare financial statements",
+      "Apply management accounting techniques",
+      "Understand taxation basics",
+      "Conduct financial analysis",
+      "Use accounting software"
+    ],
+    modules: [
+      "Financial Accounting",
+      "Management Accounting",
+      "Taxation",
+      "Business Law",
+      "Economics",
+      "Audit Fundamentals",
+      "Corporate Finance",
+      "Accounting Software"
+    ],
+    entryRequirements: [
+      "Level 4 qualification or equivalent",
+      "Basic accounting knowledge",
+      "English proficiency (IELTS 5.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accounts Assistant",
+      "Junior Accountant",
+      "Finance Officer",
+      "Bookkeeper",
+      "Accounts Supervisor",
+      "Progress to Level 7"
+    ],
+    fees: {
+      tuition: "$2,500 - $4,000 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.3,
+    enrolledStudents: 340
+  },
+  {
+    id: "l5-cyber-security",
+    title: "Level 5 Diploma in Cyber Security",
+    code: "L5CS-002",
+    category: "Professional Diplomas",
+    subcategory: "Cyber Security",
+    level: "Level 5",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Higher National Diploma in cybersecurity and information assurance.",
+    overview: "Intermediate qualification preparing students for cybersecurity roles.",
+    learningOutcomes: [
+      "Implement security measures",
+      "Identify security vulnerabilities",
+      "Conduct basic penetration testing",
+      "Apply security policies",
+      "Respond to security incidents"
+    ],
+    modules: [
+      "Cybersecurity Fundamentals",
+      "Network Security",
+      "Ethical Hacking",
+      "Security Operations",
+      "Digital Forensics Basics",
+      "Security Policies",
+      "Risk Assessment",
+      "Incident Response"
+    ],
+    entryRequirements: [
+      "Level 4 qualification or equivalent",
+      "Basic IT knowledge",
+      "English proficiency (IELTS 5.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Junior Security Analyst",
+      "Security Technician",
+      "SOC Analyst",
+      "Security Administrator",
+      "IT Security Officer",
+      "Progress to Level 7"
+    ],
+    fees: {
+      tuition: "$2,700 - $4,200 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.4,
+    enrolledStudents: 310
+  },
+  {
+    id: "l5-information-technology",
+    title: "Level 5 Diploma in Information Technology",
+    code: "L5IT-003",
+    category: "Professional Diplomas",
+    subcategory: "Information Technology",
+    level: "Level 5",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Higher National Diploma covering core IT skills and knowledge.",
+    overview: "Comprehensive IT qualification for career progression in technology.",
+    learningOutcomes: [
+      "Develop software applications",
+      "Manage databases",
+      "Configure networks",
+      "Provide technical support",
+      "Implement IT solutions"
+    ],
+    modules: [
+      "Programming Concepts",
+      "Database Design",
+      "Networking Fundamentals",
+      "Web Development",
+      "Systems Analysis",
+      "IT Security",
+      "Project Management",
+      "Technical Support"
+    ],
+    entryRequirements: [
+      "Level 4 qualification or equivalent",
+      "Basic computer skills",
+      "English proficiency (IELTS 5.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "IT Support Specialist",
+      "Junior Developer",
+      "Network Technician",
+      "Systems Administrator",
+      "Web Developer",
+      "Progress to BSc"
+    ],
+    fees: {
+      tuition: "$2,600 - $4,100 total",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.4,
+    enrolledStudents: 380
+  },
+  {
+    id: "l5-psychology",
+    title: "Level 5 Diploma in Psychology",
+    code: "L5PSY-004",
+    category: "Professional Diplomas",
+    subcategory: "Psychology",
+    level: "Level 5",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Higher National Diploma in psychology covering foundational theories and applications.",
+    overview: "Professional qualification in psychology for counseling and support roles.",
+    learningOutcomes: [
+      "Apply psychological theories",
+      "Understand human behavior",
+      "Conduct psychological assessments",
+      "Provide basic counseling",
+      "Apply research methods"
+    ],
+    modules: [
+      "Introduction to Psychology",
+      "Developmental Psychology",
+      "Social Psychology",
+      "Cognitive Psychology",
+      "Abnormal Psychology",
+      "Research Methods",
+      "Counseling Skills",
+      "Psychology in Practice"
+    ],
+    entryRequirements: [
+      "Level 4 qualification or equivalent",
+      "Interest in psychology",
+      "English proficiency (IELTS 5.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Counseling Assistant",
+      "Support Worker",
+      "Mental Health Worker",
+      "Youth Worker",
+      "Psychology Assistant",
+      "Progress to BA Psychology"
+    ],
+    fees: {
+      tuition: "$2,400 - $3,900 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.3,
+    enrolledStudents: 260
+  },
+  {
+    id: "l5-hospitality-tourism",
+    title: "Level 5 Diploma in Hospitality and Tourism Management",
+    code: "L5HTM-005",
+    category: "Professional Diplomas",
+    subcategory: "Hospitality & Tourism",
+    level: "Level 5",
+    duration: "9-12 months",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Higher National Diploma in hospitality and tourism operations.",
+    overview: "Professional qualification for supervisory roles in hospitality and tourism.",
+    learningOutcomes: [
+      "Manage hospitality operations",
+      "Supervise teams",
+      "Deliver customer service",
+      "Plan events",
+      "Understand tourism industry"
+    ],
+    modules: [
+      "Hospitality Operations",
+      "Tourism Management",
+      "Customer Service",
+      "Event Planning",
+      "Food & Beverage Service",
+      "Marketing for Tourism",
+      "Supervision Skills",
+      "Industry Placement"
+    ],
+    entryRequirements: [
+      "Level 4 qualification or equivalent",
+      "Customer service experience preferred",
+      "English proficiency (IELTS 5.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Hotel Supervisor",
+      "Tourism Coordinator",
+      "Event Planner",
+      "Restaurant Manager",
+      "Travel Consultant",
+      "Progress to BA"
+    ],
+    fees: {
+      tuition: "$2,300 - $3,800 total",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.2,
+    enrolledStudents: 290
+  },
+  {
+    id: "l5-business-management-extended",
+    title: "Extended Level 5 Diploma in Business Management",
+    code: "L5BM-EXT-006",
+    category: "Professional Diplomas",
+    subcategory: "Business Management",
+    level: "Level 5",
+    duration: "12-18 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Extended Higher National Diploma covering comprehensive business management.",
+    overview: "Comprehensive business qualification with extended modules for deeper learning.",
+    learningOutcomes: [
+      "Apply business management principles",
+      "Manage business operations",
+      "Lead teams effectively",
+      "Develop business plans",
+      "Analyze business performance"
+    ],
+    modules: [
+      "Business Management",
+      "Marketing Principles",
+      "Human Resource Management",
+      "Financial Management",
+      "Operations Management",
+      "Strategic Planning",
+      "Business Law",
+      "Project Management",
+      "Entrepreneurship",
+      "Business Research"
+    ],
+    entryRequirements: [
+      "Level 3 qualification or equivalent",
+      "English proficiency (IELTS 5.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Business Supervisor",
+      "Team Leader",
+      "Operations Coordinator",
+      "Junior Manager",
+      "Management Trainee",
+      "Progress to BBA"
+    ],
+    fees: {
+      tuition: "$2,800 - $4,500 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.4,
+    enrolledStudents: 350
+  },
+
+  // F. Level 4 Diplomas (5 courses)
+  {
+    id: "l4-information-technology",
+    title: "Level 4 Diploma in Information Technology",
+    code: "L4IT-001",
+    category: "Professional Diplomas",
+    subcategory: "Information Technology",
+    level: "Level 4",
+    duration: "6-9 months",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Foundation diploma covering essential IT skills and knowledge.",
+    overview: "Entry-level IT qualification for starting a technology career.",
+    learningOutcomes: [
+      "Understand IT fundamentals",
+      "Develop basic programming skills",
+      "Configure computer systems",
+      "Provide user support",
+      "Apply problem-solving techniques"
+    ],
+    modules: [
+      "Introduction to IT",
+      "Programming Basics",
+      "Computer Systems",
+      "Networking Basics",
+      "Web Technologies",
+      "Database Fundamentals",
+      "IT Support",
+      "Professional Skills"
+    ],
+    entryRequirements: [
+      "High school diploma or equivalent",
+      "Basic computer literacy",
+      "English proficiency (IELTS 5.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "IT Support Trainee",
+      "Junior Technician",
+      "Help Desk Assistant",
+      "Technical Support",
+      "IT Administrator Trainee",
+      "Progress to Level 5"
+    ],
+    fees: {
+      tuition: "$1,800 - $3,000 total",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.2,
+    enrolledStudents: 420
+  },
+  {
+    id: "l4-cyber-security",
+    title: "Level 4 Diploma in Cyber Security",
+    code: "L4CS-002",
+    category: "Professional Diplomas",
+    subcategory: "Cyber Security",
+    level: "Level 4",
+    duration: "6-9 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Foundation diploma in cybersecurity principles and practices.",
+    overview: "Entry-level qualification introducing cybersecurity concepts.",
+    learningOutcomes: [
+      "Understand security threats",
+      "Apply basic security measures",
+      "Recognize vulnerabilities",
+      "Follow security policies",
+      "Support security operations"
+    ],
+    modules: [
+      "Cybersecurity Basics",
+      "Network Security Fundamentals",
+      "Security Threats & Risks",
+      "Security Tools",
+      "Information Security",
+      "Security Awareness",
+      "Ethical Standards",
+      "Security Practices"
+    ],
+    entryRequirements: [
+      "High school diploma or equivalent",
+      "Basic IT knowledge",
+      "English proficiency (IELTS 5.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Security Trainee",
+      "Junior Security Analyst",
+      "Security Support",
+      "IT Security Assistant",
+      "Security Administrator Trainee",
+      "Progress to Level 5"
+    ],
+    fees: {
+      tuition: "$1,900 - $3,100 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.1,
+    enrolledStudents: 380
+  },
+  {
+    id: "l4-psychology",
+    title: "Level 4 Diploma in Psychology",
+    code: "L4PSY-003",
+    category: "Professional Diplomas",
+    subcategory: "Psychology",
+    level: "Level 4",
+    duration: "6-9 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Foundation diploma introducing psychological theories and concepts.",
+    overview: "Entry-level psychology qualification for support roles.",
+    learningOutcomes: [
+      "Understand basic psychology",
+      "Recognize human behavior patterns",
+      "Apply communication skills",
+      "Support mental health awareness",
+      "Work ethically in psychology contexts"
+    ],
+    modules: [
+      "Psychology Foundations",
+      "Human Development",
+      "Behavioral Psychology",
+      "Mental Health Awareness",
+      "Communication Skills",
+      "Research Basics",
+      "Ethics in Psychology",
+      "Applied Psychology"
+    ],
+    entryRequirements: [
+      "High school diploma or equivalent",
+      "Interest in psychology",
+      "English proficiency (IELTS 5.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Support Worker Trainee",
+      "Care Assistant",
+      "Community Support",
+      "Youth Support Worker",
+      "Psychology Assistant Trainee",
+      "Progress to Level 5"
+    ],
+    fees: {
+      tuition: "$1,700 - $2,900 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.0,
+    enrolledStudents: 320
+  },
+  {
+    id: "l4-hospitality-tourism",
+    title: "Level 4 Diploma in Hospitality and Tourism Management",
+    code: "L4HTM-004",
+    category: "Professional Diplomas",
+    subcategory: "Hospitality & Tourism",
+    level: "Level 4",
+    duration: "6-9 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Foundation diploma in hospitality and tourism operations.",
+    overview: "Entry-level qualification for hospitality and tourism careers.",
+    learningOutcomes: [
+      "Understand hospitality industry",
+      "Deliver customer service",
+      "Support tourism operations",
+      "Work in hospitality teams",
+      "Apply professional standards"
+    ],
+    modules: [
+      "Hospitality Fundamentals",
+      "Tourism Industry",
+      "Customer Service",
+      "Food & Beverage Operations",
+      "Accommodation Services",
+      "Tourism Geography",
+      "Professional Skills",
+      "Work Placement"
+    ],
+    entryRequirements: [
+      "High school diploma or equivalent",
+      "Customer service interest",
+      "English proficiency (IELTS 5.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Hotel Receptionist",
+      "Tourism Assistant",
+      "Restaurant Staff",
+      "Travel Agent Trainee",
+      "Event Assistant",
+      "Progress to Level 5"
+    ],
+    fees: {
+      tuition: "$1,600 - $2,800 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.1,
+    enrolledStudents: 360
+  },
+  {
+    id: "l4-accounting-finance",
+    title: "Level 4 Diploma in Accounting and Finance",
+    code: "L4AF-005",
+    category: "Professional Diplomas",
+    subcategory: "Accounting & Finance",
+    level: "Level 4",
+    duration: "6-9 months",
+    mode: "Online",
+    partner: "Partner Institutions",
+    description: "Foundation diploma in accounting and financial principles.",
+    overview: "Entry-level qualification for accounting careers.",
+    learningOutcomes: [
+      "Understand accounting basics",
+      "Record financial transactions",
+      "Prepare basic financial statements",
+      "Apply bookkeeping techniques",
+      "Use accounting software"
+    ],
+    modules: [
+      "Accounting Fundamentals",
+      "Bookkeeping",
+      "Business Mathematics",
+      "Financial Statements Basics",
+      "Taxation Basics",
+      "Business Law Intro",
+      "Excel for Accountants",
+      "Professional Ethics"
+    ],
+    entryRequirements: [
+      "High school diploma with math",
+      "Numerical aptitude",
+      "English proficiency (IELTS 5.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accounts Trainee",
+      "Bookkeeper",
+      "Finance Assistant",
+      "Payroll Assistant",
+      "Accounts Clerk",
+      "Progress to Level 5"
+    ],
+    fees: {
+      tuition: "$1,700 - $2,900 total",
+      installments: true
+    },
+    accreditation: "Partner Institution Accredited",
+    rating: 4.2,
+    enrolledStudents: 390
+  },
+
+  // G. Level 3 / Level 2 / Entry Diplomas (2 courses)
+  {
+    id: "l3-business-management",
+    title: "Level 3 Integrated Diploma in Business and Management",
+    code: "L3BM-001",
+    category: "Foundation Diplomas",
+    subcategory: "Business & Management",
+    level: "Level 3",
+    duration: "6-9 months",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Integrated foundation diploma introducing business and management concepts.",
+    overview: "Entry-level qualification for business careers or further study.",
+    learningOutcomes: [
+      "Understand business basics",
+      "Apply communication skills",
+      "Work in business teams",
+      "Use business software",
+      "Develop professional skills"
+    ],
+    modules: [
+      "Business Fundamentals",
+      "Business Communication",
+      "Business Environment",
+      "Marketing Basics",
+      "Business Accounts",
+      "Teamwork Skills",
+      "Business Software",
+      "Professional Development"
+    ],
+    entryRequirements: [
+      "Basic education (Level 2 or equivalent)",
+      "English proficiency",
+      "Interest in business"
+    ],
+    careerOpportunities: [
+      "Office Assistant",
+      "Administrative Support",
+      "Customer Service",
+      "Sales Assistant",
+      "Business Trainee",
+      "Progress to Level 4"
+    ],
+    fees: {
+      tuition: "$1,200 - $2,200 total",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 4.0,
+    enrolledStudents: 450
+  },
+  {
+    id: "l2-cyber-security-beginners",
+    title: "Level 2 Diploma in Business Beginners in Cyber Security",
+    code: "L2CS-002",
+    category: "Foundation Diplomas",
+    subcategory: "Cyber Security",
+    level: "Level 2",
+    duration: "3-6 months",
+    mode: "Online",
+    partner: "UeCampus",
+    description: "Beginner-level introduction to cybersecurity and business IT.",
+    overview: "Entry qualification for complete beginners interested in cybersecurity.",
+    learningOutcomes: [
+      "Understand security basics",
+      "Recognize common threats",
+      "Apply safe computing practices",
+      "Use security tools",
+      "Follow security procedures"
+    ],
+    modules: [
+      "IT Basics",
+      "Cybersecurity Introduction",
+      "Internet Safety",
+      "Security Awareness",
+      "Computer Fundamentals",
+      "Data Protection Basics",
+      "Digital Skills",
+      "Professional Skills"
+    ],
+    entryRequirements: [
+      "Basic education",
+      "Basic computer skills",
+      "English proficiency"
+    ],
+    careerOpportunities: [
+      "IT Support Trainee",
+      "Help Desk Trainee",
+      "Office IT Support",
+      "Technical Assistant",
+      "Entry-level IT Roles",
+      "Progress to Level 3"
+    ],
+    fees: {
+      tuition: "$800 - $1,500 total",
+      installments: true
+    },
+    accreditation: "UeCampus Accredited",
+    rating: 3.9,
+    enrolledStudents: 380
+  },
+
+  // H. Walsh College — Accelerated Programs (8 courses)
+  {
+    id: "bba-general-walsh-accel",
+    title: "BBA in General Business (Walsh Accelerated)",
+    code: "BBA-WA-001",
+    category: "Bachelor's Programs",
+    subcategory: "Business Administration",
+    level: "Undergraduate",
+    duration: "18-24 months (Accelerated)",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Fast-track general business degree through Walsh College accelerated program.",
+    overview: "Intensive accelerated BBA for working professionals seeking rapid completion.",
+    learningOutcomes: [
+      "Apply business fundamentals quickly",
+      "Manage business operations",
+      "Lead teams effectively",
+      "Make strategic decisions",
+      "Adapt to business changes"
+    ],
+    modules: [
+      "Business Fundamentals (Accelerated)",
+      "Accounting Essentials",
+      "Marketing Strategy",
+      "Operations & Supply Chain",
+      "Financial Management",
+      "Business Law",
+      "Leadership & Management",
+      "Strategic Business",
+      "Business Analytics",
+      "Capstone (Intensive)"
+    ],
+    entryRequirements: [
+      "High school diploma or relevant credentials",
+      "Work experience preferred",
+      "English proficiency (IELTS 6.0 or equivalent)",
+      "Self-motivation for accelerated pace"
+    ],
+    careerOpportunities: [
+      "Business Manager",
+      "Operations Manager",
+      "Project Manager",
+      "Business Analyst",
+      "Management Consultant",
+      "Entrepreneur"
+    ],
+    fees: {
+      tuition: "$15,000 - $20,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Accelerated",
+    rating: 4.5,
+    enrolledStudents: 180
+  },
+  {
+    id: "bba-accounting-walsh-accel",
+    title: "Bachelor of Business Administration in Accounting (Walsh)",
+    code: "BBA-ACC-WA-002",
+    category: "Bachelor's Programs",
+    subcategory: "Accounting",
+    level: "Undergraduate",
+    duration: "2-3 years (Accelerated)",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Accelerated accounting degree through Walsh College.",
+    overview: "Fast-track BBA in Accounting for aspiring accounting professionals.",
+    learningOutcomes: [
+      "Master accounting principles rapidly",
+      "Prepare financial reports",
+      "Apply taxation concepts",
+      "Conduct audits",
+      "Use accounting technology"
+    ],
+    modules: [
+      "Financial Accounting (Intensive)",
+      "Managerial Accounting",
+      "Cost Accounting",
+      "Taxation",
+      "Auditing",
+      "Accounting Information Systems",
+      "Corporate Finance",
+      "Advanced Accounting",
+      "Forensic Accounting",
+      "Capstone"
+    ],
+    entryRequirements: [
+      "High school diploma with math",
+      "Numerical skills",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accountant",
+      "Financial Analyst",
+      "Tax Specialist",
+      "Auditor",
+      "Management Accountant",
+      "Progress to CPA"
+    ],
+    fees: {
+      tuition: "$16,000 - $22,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Accelerated",
+    rating: 4.6,
+    enrolledStudents: 160
+  },
+  {
+    id: "bsit-walsh-variant",
+    title: "Bachelor of Science in Information Technology (Walsh Variant)",
+    code: "BSIT-WV-003",
+    category: "Bachelor's Programs",
+    subcategory: "Information Technology",
+    level: "Undergraduate",
+    duration: "2-3 years",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Walsh variant of BSc IT with flexible learning options.",
+    overview: "Flexible IT degree designed for working professionals.",
+    learningOutcomes: [
+      "Develop IT solutions",
+      "Manage IT systems",
+      "Apply cybersecurity principles",
+      "Lead IT projects",
+      "Implement cloud technologies"
+    ],
+    modules: [
+      "Programming",
+      "Database Systems",
+      "Networking",
+      "Web Development",
+      "IT Security",
+      "Cloud Computing",
+      "Systems Analysis",
+      "IT Management",
+      "Software Engineering",
+      "Capstone"
+    ],
+    entryRequirements: [
+      "High school diploma or IT credentials",
+      "Basic IT knowledge",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "IT Specialist",
+      "Systems Analyst",
+      "IT Manager",
+      "Software Developer",
+      "Network Administrator",
+      "IT Consultant"
+    ],
+    fees: {
+      tuition: "$17,000 - $23,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College",
+    rating: 4.5,
+    enrolledStudents: 140
+  },
+  {
+    id: "bsit-da-walsh-variant",
+    title: "Bachelor of Science in Information Technology - Data Analytics (Walsh Variant)",
+    code: "BSIT-DA-WV-004",
+    category: "Bachelor's Programs",
+    subcategory: "Information Technology",
+    level: "Undergraduate",
+    duration: "2-3 years",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Walsh variant focusing on IT with data analytics specialization.",
+    overview: "IT degree with deep focus on data analytics and business intelligence.",
+    learningOutcomes: [
+      "Develop IT systems with analytics",
+      "Implement data solutions",
+      "Apply machine learning",
+      "Create business intelligence",
+      "Lead analytics projects"
+    ],
+    modules: [
+      "IT Fundamentals",
+      "Programming for Analytics",
+      "Database Design",
+      "Statistics",
+      "Data Warehousing",
+      "Machine Learning",
+      "Data Visualization",
+      "Big Data",
+      "Analytics Systems",
+      "Capstone Project"
+    ],
+    entryRequirements: [
+      "High school diploma with math",
+      "Basic IT and analytical skills",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Data Analyst",
+      "BI Developer",
+      "Analytics Engineer",
+      "IT Data Specialist",
+      "Data Systems Developer",
+      "Analytics Consultant"
+    ],
+    fees: {
+      tuition: "$17,500 - $24,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Variant",
+    rating: 4.6,
+    enrolledStudents: 130
+  },
+  {
+    id: "mba-walsh-partner",
+    title: "Master of Business Administration (Walsh Partner Delivery)",
+    code: "MBA-WP-005",
+    category: "Master's Programs",
+    subcategory: "Business Administration",
+    level: "Postgraduate",
+    duration: "12-18 months",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "MBA delivered through Walsh College partnership.",
+    overview: "Flexible MBA for working professionals delivered by Walsh College.",
+    learningOutcomes: [
+      "Lead business strategy",
+      "Manage complex operations",
+      "Drive organizational change",
+      "Apply financial acumen",
+      "Develop executive skills"
+    ],
+    modules: [
+      "Strategic Management",
+      "Financial Analysis",
+      "Marketing Management",
+      "Operations Excellence",
+      "Leadership",
+      "Business Analytics",
+      "Organizational Behavior",
+      "Innovation",
+      "Global Business",
+      "MBA Capstone"
+    ],
+    entryRequirements: [
+      "Bachelor's degree",
+      "Work experience preferred",
+      "English proficiency (IELTS 6.5 or equivalent)",
+      "Professional references"
+    ],
+    careerOpportunities: [
+      "Senior Manager",
+      "Director",
+      "VP Operations",
+      "Business Consultant",
+      "Entrepreneur",
+      "C-Suite Executive"
+    ],
+    fees: {
+      tuition: "$22,000 - $30,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Partner",
+    rating: 4.7,
+    enrolledStudents: 200
+  },
+  {
+    id: "msda-walsh-partner",
+    title: "Master of Science in Data Analytics (Walsh Partner)",
+    code: "MSDA-WP-006",
+    category: "Master's Programs",
+    subcategory: "Data Analytics",
+    level: "Postgraduate",
+    duration: "12-18 months",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Master's in Data Analytics through Walsh College partnership.",
+    overview: "Advanced analytics degree for data professionals.",
+    learningOutcomes: [
+      "Apply advanced analytics",
+      "Lead data projects",
+      "Implement AI/ML solutions",
+      "Drive data strategy",
+      "Communicate insights"
+    ],
+    modules: [
+      "Advanced Statistics",
+      "Machine Learning",
+      "Big Data",
+      "Predictive Analytics",
+      "Data Mining",
+      "Business Intelligence",
+      "Data Strategy",
+      "Analytics Management",
+      "Research Methods",
+      "Master's Thesis"
+    ],
+    entryRequirements: [
+      "Bachelor's in quantitative field",
+      "Programming experience",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Senior Data Scientist",
+      "Analytics Director",
+      "Data Strategy Manager",
+      "Chief Analytics Officer",
+      "Analytics Consultant",
+      "Research Scientist"
+    ],
+    fees: {
+      tuition: "$20,000 - $28,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Partner",
+    rating: 4.7,
+    enrolledStudents: 150
+  },
+  {
+    id: "msit-walsh-partner",
+    title: "Master of Science in Information Technology (Walsh Partner)",
+    code: "MSIT-WP-007",
+    category: "Master's Programs",
+    subcategory: "Information Technology",
+    level: "Postgraduate",
+    duration: "12-18 months",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Master's in IT through Walsh College partnership.",
+    overview: "Advanced IT management degree for technology leaders.",
+    learningOutcomes: [
+      "Lead IT strategy",
+      "Manage enterprise systems",
+      "Implement security solutions",
+      "Drive digital transformation",
+      "Lead technology teams"
+    ],
+    modules: [
+      "IT Strategy",
+      "Enterprise Architecture",
+      "Cloud Solutions",
+      "Cybersecurity Management",
+      "IT Governance",
+      "Project Management",
+      "Emerging Tech",
+      "IT Leadership",
+      "Research Methods",
+      "Master's Project"
+    ],
+    entryRequirements: [
+      "Bachelor's in IT or related",
+      "IT work experience",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "IT Director",
+      "CTO",
+      "Enterprise Architect",
+      "IT Consultant",
+      "Technology Manager",
+      "Solutions Director"
+    ],
+    fees: {
+      tuition: "$19,000 - $27,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College Partner",
+    rating: 4.6,
+    enrolledStudents: 135
+  },
+  {
+    id: "macc-is-walsh",
+    title: "Master of Accounting - Info Systems (Walsh)",
+    code: "MACC-IS-WL-008",
+    category: "Master's Programs",
+    subcategory: "Accounting",
+    level: "Postgraduate",
+    duration: "12-18 months",
+    mode: "Online",
+    partner: "Walsh College",
+    description: "Master's combining accounting with information systems through Walsh.",
+    overview: "Specialized master's for accounting technology professionals.",
+    learningOutcomes: [
+      "Lead accounting systems",
+      "Implement ERP solutions",
+      "Conduct IT audits",
+      "Apply data analytics",
+      "Manage financial technology"
+    ],
+    modules: [
+      "Advanced Accounting",
+      "Accounting Information Systems",
+      "ERP Systems",
+      "IT Audit",
+      "Data Analytics for Finance",
+      "Financial Systems",
+      "Internal Controls",
+      "Technology Management",
+      "Research",
+      "Master's Project"
+    ],
+    entryRequirements: [
+      "Bachelor's in Accounting or related",
+      "Accounting experience",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accounting Systems Manager",
+      "IT Auditor",
+      "ERP Consultant",
+      "Financial Systems Director",
+      "Controller",
+      "Finance Technology Manager"
+    ],
+    fees: {
+      tuition: "$21,000 - $29,000 total program",
+      installments: true
+    },
+    accreditation: "Walsh College",
+    rating: 4.6,
+    enrolledStudents: 95
+  },
+
+  // I. PPA / EIE Partner Variants (4 courses)
+  {
+    id: "mba-eie-variant",
+    title: "MBA - eie European Business School Delivered Variant",
+    code: "MBA-EIE-001",
+    category: "Master's Programs",
+    subcategory: "Business Administration",
+    level: "Postgraduate",
+    duration: "12-18 months",
+    mode: "Online/Hybrid",
+    partner: "eie European Business School",
+    description: "MBA delivered by eie European Business School with European focus.",
+    overview: "European-focused MBA with international business perspective.",
+    learningOutcomes: [
+      "Lead in European markets",
+      "Apply international strategy",
+      "Manage multicultural teams",
+      "Navigate EU regulations",
+      "Drive global growth"
+    ],
+    modules: [
+      "Strategic Management",
+      "European Business Environment",
+      "International Finance",
+      "Global Marketing",
+      "Leadership in Europe",
+      "EU Business Law",
+      "Cross-Cultural Management",
+      "Innovation & Entrepreneurship",
+      "Business Analytics",
+      "MBA Dissertation"
+    ],
+    entryRequirements: [
+      "Bachelor's degree",
+      "Work experience",
+      "English proficiency (IELTS 6.5 or equivalent)",
+      "International business interest"
+    ],
+    careerOpportunities: [
+      "International Manager",
+      "Business Development Director",
+      "European Operations Manager",
+      "Global Strategy Consultant",
+      "Entrepreneur",
+      "General Manager"
+    ],
+    fees: {
+      tuition: "$20,000 - $28,000 total program",
+      installments: true
+    },
+    accreditation: "eie European Business School",
+    rating: 4.7,
+    enrolledStudents: 175
+  },
+  {
+    id: "mba-acc-finance-eie",
+    title: "MBA in Accounting & Finance - EIE Variant",
+    code: "MBA-AF-EIE-002",
+    category: "Master's Programs",
+    subcategory: "Accounting & Finance",
+    level: "Postgraduate",
+    duration: "12-18 months",
+    mode: "Online/Hybrid",
+    partner: "eie European Business School",
+    description: "MBA with specialization in Accounting & Finance through eie.",
+    overview: "Specialized MBA combining business leadership with finance expertise.",
+    learningOutcomes: [
+      "Lead financial strategy",
+      "Apply advanced accounting",
+      "Manage corporate finance",
+      "Drive financial performance",
+      "Execute M&A strategies"
+    ],
+    modules: [
+      "Strategic Management",
+      "Advanced Financial Management",
+      "Corporate Accounting",
+      "Investment Analysis",
+      "Financial Risk Management",
+      "International Accounting",
+      "Treasury Management",
+      "Financial Strategy",
+      "Leadership",
+      "MBA Thesis"
+    ],
+    entryRequirements: [
+      "Bachelor's in finance/accounting or related",
+      "Finance work experience",
+      "English proficiency (IELTS 6.5 or equivalent)"
+    ],
+    careerOpportunities: [
+      "CFO",
+      "Finance Director",
+      "Financial Controller",
+      "Investment Manager",
+      "Corporate Finance Manager",
+      "Financial Consultant"
+    ],
+    fees: {
+      tuition: "$21,000 - $29,000 total program",
+      installments: true
+    },
+    accreditation: "eie European Business School",
+    rating: 4.6,
+    enrolledStudents: 140
+  },
+  {
+    id: "ba-accountancy-finance-eie",
+    title: "BA in Accountancy & Finance - EIE Variant",
+    code: "BA-AF-EIE-003",
+    category: "Bachelor's Programs",
+    subcategory: "Accounting & Finance",
+    level: "Undergraduate",
+    duration: "3-4 years",
+    mode: "Online/Hybrid",
+    partner: "eie European Business School",
+    description: "Bachelor of Arts in Accountancy & Finance through eie.",
+    overview: "Comprehensive undergraduate degree in accounting and finance.",
+    learningOutcomes: [
+      "Apply accounting principles",
+      "Analyze financial data",
+      "Understand financial markets",
+      "Prepare financial reports",
+      "Apply taxation and audit"
+    ],
+    modules: [
+      "Financial Accounting",
+      "Management Accounting",
+      "Corporate Finance",
+      "Taxation",
+      "Auditing",
+      "Financial Markets",
+      "Investment Analysis",
+      "Business Law",
+      "Economics",
+      "Financial Reporting",
+      "Ethics",
+      "Final Year Project"
+    ],
+    entryRequirements: [
+      "High school diploma with math",
+      "Numerical aptitude",
+      "English proficiency (IELTS 6.0 or equivalent)"
+    ],
+    careerOpportunities: [
+      "Accountant",
+      "Financial Analyst",
+      "Tax Consultant",
+      "Auditor",
+      "Finance Officer",
+      "Progress to Professional Qualifications"
+    ],
+    fees: {
+      tuition: "$11,000 - $14,500 per year",
+      installments: true
+    },
+    accreditation: "eie European Business School",
+    rating: 4.5,
+    enrolledStudents: 220
+  },
+  {
+    id: "ba-business-management-eie",
+    title: "BA in Business Management - EIE Variant",
+    code: "BA-BM-EIE-004",
+    category: "Bachelor's Programs",
+    subcategory: "Business Management",
+    level: "Undergraduate",
+    duration: "3-4 years",
+    mode: "Online/Hybrid",
+    partner: "eie European Business School",
+    description: "Bachelor of Arts in Business Management through eie.",
+    overview: "Comprehensive business management degree with European perspective.",
+    learningOutcomes: [
+      "Manage business operations",
+      "Lead teams effectively",
+      "Apply strategic thinking",
+      "Understand marketing principles",
+      "Develop business solutions"
+    ],
+    modules: [
+      "Business Management",
+      "Marketing",
+      "Human Resource Management",
+      "Financial Management",
+      "Operations Management",
+      "Business Strategy",
+      "Organizational Behavior",
+      "Business Law",
+      "Economics",
+      "Entrepreneurship",
+      "Business Ethics",
+      "Capstone Project"
+    ],
+    entryRequirements: [
+      "High school diploma",
+      "English proficiency (IELTS 6.0 or equivalent)",
+      "Business interest"
+    ],
+    careerOpportunities: [
+      "Business Manager",
+      "Operations Manager",
+      "Project Manager",
+      "Business Analyst",
+      "Management Trainee",
+      "Entrepreneur"
+    ],
+    fees: {
+      tuition: "$10,500 - $13,500 per year",
+      installments: true
+    },
+    accreditation: "eie European Business School",
+    rating: 4.5,
+    enrolledStudents: 250
   }
 ];
 
 export const courseCategories = [
   {
     name: "Bachelor's Programs",
-    count: 64,
+    count: allCoursesData.filter(c => c.category === "Bachelor's Programs").length,
     description: "Undergraduate degrees across various disciplines",
     icon: "🎓"
   },
   {
     name: "Master's Programs",
-    count: 18,
+    count: allCoursesData.filter(c => c.category === "Master's Programs").length,
     description: "Postgraduate master's degrees for career advancement",
     icon: "📚"
   },
   {
     name: "Doctoral Programs",
-    count: 8,
+    count: allCoursesData.filter(c => c.category === "Doctoral Programs").length,
     description: "PhD and DBA programs for research and executive leadership",
     icon: "🎖️"
   },
   {
     name: "Professional Diplomas",
-    count: 18,
+    count: allCoursesData.filter(c => c.category === "Professional Diplomas").length,
     description: "Level 4-7 professional qualifications",
     icon: "📜"
   },
   {
     name: "Foundation Diplomas",
-    count: 3,
+    count: allCoursesData.filter(c => c.category === "Foundation Diplomas").length,
     description: "Entry-level qualifications for career starters",
     icon: "🌟"
   }
