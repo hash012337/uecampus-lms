@@ -5,151 +5,132 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, CheckCircle, Upload, Download, Calendar, Plus, Trash2, Copy, Edit2 } from "lucide-react";
-import { useState } from "react";
+import { Clock, CheckCircle, Upload, Calendar, Plus, Trash2, Copy, Edit2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEditMode } from "@/contexts/EditModeContext";
+import { supabase } from "@/integrations/supabase/client";
 
-interface PendingAssignment {
-  id: number;
+interface Assignment {
+  id: string;
   title: string;
   course: string;
-  courseCode: string;
-  dueDate: string;
-  priority: string;
-  hoursLeft: number;
-  points: number;
-  description: string;
-  attachments: string[];
-}
-
-interface CompletedAssignment {
-  id: number;
-  title: string;
-  course: string;
-  courseCode: string;
-  submittedDate: string;
-  grade: string;
-  feedback: string;
-  points: number;
+  course_code: string;
+  due_date: string | null;
+  priority: string | null;
+  hours_left: number | null;
+  points: number | null;
+  description: string | null;
+  status: string | null;
+  submitted_date: string | null;
+  grade: string | null;
+  feedback: string | null;
 }
 
 export default function Assignments() {
   const { isEditMode } = useEditMode();
-  
-  const [pendingAssignments, setPendingAssignments] = useState<PendingAssignment[]>([
-    { 
-      id: 1, 
-      title: "Binary Search Trees Implementation", 
-      course: "Data Structures", 
-      courseCode: "CS201", 
-      dueDate: "2024-01-20", 
-      priority: "high", 
-      hoursLeft: 8, 
-      points: 100, 
-      description: "Implement BST operations", 
-      attachments: [] 
-    },
-    { 
-      id: 2, 
-      title: "React Component Development", 
-      course: "Web Development", 
-      courseCode: "CS301", 
-      dueDate: "2024-01-22", 
-      priority: "medium", 
-      hoursLeft: 48, 
-      points: 80, 
-      description: "Build component library", 
-      attachments: [] 
-    },
-  ]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [completedAssignments, setCompletedAssignments] = useState<CompletedAssignment[]>([
-    { 
-      id: 3, 
-      title: "SQL Query Optimization", 
-      course: "Database Management", 
-      courseCode: "CS202", 
-      submittedDate: "2024-01-15", 
-      grade: "95/100", 
-      feedback: "Excellent work!", 
-      points: 100 
-    },
-  ]);
+  useEffect(() => {
+    fetchAssignments();
+  }, []);
 
-  const updatePendingAssignment = (id: number, field: keyof PendingAssignment, value: any) => {
-    const updated = pendingAssignments.map(a => a.id === id ? { ...a, [field]: value } : a);
-    setPendingAssignments(updated);
-    console.log(`Pending assignment ${id} updated - Save to DB:`, { field, value });
+  const fetchAssignments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("assignments")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      if (data) setAssignments(data);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateCompletedAssignment = (id: number, field: keyof CompletedAssignment, value: any) => {
-    const updated = completedAssignments.map(a => a.id === id ? { ...a, [field]: value } : a);
-    setCompletedAssignments(updated);
-    console.log(`Completed assignment ${id} updated - Save to DB:`, { field, value });
+  const updateAssignment = async (id: string, field: string, value: any) => {
+    try {
+      const { error } = await supabase
+        .from("assignments")
+        .update({ [field]: value })
+        .eq("id", id);
+
+      if (error) throw error;
+      setAssignments(assignments.map(a => a.id === id ? { ...a, [field]: value } : a));
+    } catch (error: any) {
+      toast.error("Failed to update assignment");
+    }
   };
 
-  const deletePendingAssignment = (id: number) => {
-    setPendingAssignments(pendingAssignments.filter(a => a.id !== id));
-    toast.success("Assignment deleted");
+  const deleteAssignment = async (id: string) => {
+    try {
+      const { error } = await supabase.from("assignments").delete().eq("id", id);
+      if (error) throw error;
+
+      setAssignments(assignments.filter(a => a.id !== id));
+      toast.success("Assignment deleted");
+    } catch (error: any) {
+      toast.error("Failed to delete assignment");
+    }
   };
 
-  const deleteCompletedAssignment = (id: number) => {
-    setCompletedAssignments(completedAssignments.filter(a => a.id !== id));
-    toast.success("Assignment deleted");
+  const addAssignment = async (status: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("assignments")
+        .insert({
+          title: "New Assignment",
+          course: "Course Name",
+          course_code: "CODE",
+          status: status,
+          points: 100,
+          priority: "medium"
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) setAssignments([data, ...assignments]);
+      toast.success("Assignment added");
+    } catch (error: any) {
+      toast.error("Failed to add assignment");
+    }
   };
 
-  const addPendingAssignment = () => {
-    const newAssignment: PendingAssignment = {
-      id: Date.now(),
-      title: "New Assignment",
-      course: "Course Name",
-      courseCode: "CODE",
-      dueDate: "2024-01-01",
-      priority: "medium",
-      hoursLeft: 24,
-      points: 100,
-      description: "Description",
-      attachments: []
-    };
-    setPendingAssignments([...pendingAssignments, newAssignment]);
-    toast.success("Assignment added");
+  const duplicateAssignment = async (assignment: Assignment) => {
+    try {
+      const { data, error } = await supabase
+        .from("assignments")
+        .insert({
+          title: `${assignment.title} (Copy)`,
+          course: assignment.course,
+          course_code: assignment.course_code,
+          due_date: assignment.due_date,
+          priority: assignment.priority,
+          hours_left: assignment.hours_left,
+          points: assignment.points,
+          description: assignment.description,
+          status: assignment.status
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) setAssignments([data, ...assignments]);
+      toast.success("Assignment duplicated");
+    } catch (error: any) {
+      toast.error("Failed to duplicate assignment");
+    }
   };
 
-  const duplicatePendingAssignment = (assignment: PendingAssignment) => {
-    const duplicated: PendingAssignment = {
-      ...assignment,
-      id: Date.now(),
-      title: `${assignment.title} (Copy)`
-    };
-    setPendingAssignments([...pendingAssignments, duplicated]);
-    toast.success("Assignment duplicated");
-  };
+  const pendingAssignments = assignments.filter(a => a.status === "pending");
+  const completedAssignments = assignments.filter(a => a.status === "completed");
 
-  const addCompletedAssignment = () => {
-    const newAssignment: CompletedAssignment = {
-      id: Date.now(),
-      title: "New Completed Assignment",
-      course: "Course Name",
-      courseCode: "CODE",
-      submittedDate: "2024-01-01",
-      grade: "0/100",
-      feedback: "Feedback here",
-      points: 100
-    };
-    setCompletedAssignments([...completedAssignments, newAssignment]);
-    toast.success("Assignment added");
-  };
-
-  const duplicateCompletedAssignment = (assignment: CompletedAssignment) => {
-    const duplicated: CompletedAssignment = {
-      ...assignment,
-      id: Date.now(),
-      title: `${assignment.title} (Copy)`
-    };
-    setCompletedAssignments([...completedAssignments, duplicated]);
-    toast.success("Assignment duplicated");
-  };
+  if (loading) return <div className="animate-fade-in">Loading...</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -171,9 +152,9 @@ export default function Assignments() {
 
         <TabsContent value="pending" className="space-y-4 mt-6">
           {isEditMode && (
-            <Button onClick={addPendingAssignment} className="gap-2">
+            <Button onClick={() => addAssignment("pending")} className="gap-2">
               <Plus className="h-4 w-4" />
-              Add Pending Assignment
+              Add Assignment
             </Button>
           )}
           {pendingAssignments.map((a) => (
@@ -181,15 +162,15 @@ export default function Assignments() {
               {isEditMode && (
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
-                    onClick={() => duplicatePendingAssignment(a)}
+                    onClick={() => duplicateAssignment(a)}
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-primary"
+                    className="h-8 w-8"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button
-                    onClick={() => deletePendingAssignment(a.id)}
+                    onClick={() => deleteAssignment(a.id)}
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-destructive"
@@ -198,94 +179,72 @@ export default function Assignments() {
                   </Button>
                 </div>
               )}
-              <div className="flex justify-between items-start gap-4">
-                <div className="space-y-3 flex-1">
-                  {isEditMode ? (
-                    <>
+              <div className="space-y-3 flex-1">
+                {isEditMode ? (
+                  <>
+                    <Input
+                      value={a.title}
+                      onChange={(e) => updateAssignment(a.id, "title", e.target.value)}
+                      placeholder="Assignment Title"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
                       <Input
-                        value={a.title}
-                        onChange={(e) => updatePendingAssignment(a.id, "title", e.target.value)}
-                        placeholder="Assignment Title"
-                        className="text-xl font-semibold"
+                        value={a.course}
+                        onChange={(e) => updateAssignment(a.id, "course", e.target.value)}
+                        placeholder="Course"
                       />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={a.course}
-                          onChange={(e) => updatePendingAssignment(a.id, "course", e.target.value)}
-                          placeholder="Course Name"
-                        />
-                        <Input
-                          value={a.courseCode}
-                          onChange={(e) => updatePendingAssignment(a.id, "courseCode", e.target.value)}
-                          placeholder="Course Code"
-                        />
-                      </div>
-                      <Textarea
-                        value={a.description}
-                        onChange={(e) => updatePendingAssignment(a.id, "description", e.target.value)}
-                        placeholder="Description"
-                        rows={2}
+                      <Input
+                        value={a.course_code}
+                        onChange={(e) => updateAssignment(a.id, "course_code", e.target.value)}
+                        placeholder="Code"
                       />
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Due Date</Label>
-                          <Input
-                            type="date"
-                            value={a.dueDate}
-                            onChange={(e) => updatePendingAssignment(a.id, "dueDate", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Hours Left</Label>
-                          <Input
-                            type="number"
-                            value={a.hoursLeft}
-                            onChange={(e) => updatePendingAssignment(a.id, "hoursLeft", parseInt(e.target.value))}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Points</Label>
-                          <Input
-                            type="number"
-                            value={a.points}
-                            onChange={(e) => updatePendingAssignment(a.id, "points", parseInt(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Priority</Label>
-                        <Input
-                          value={a.priority}
-                          onChange={(e) => updatePendingAssignment(a.id, "priority", e.target.value)}
-                          placeholder="high/medium/low"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-xl font-semibold">{a.title}</h3>
-                      <p className="text-sm text-muted-foreground">{a.course} ({a.courseCode})</p>
-                      <p className="text-sm">{a.description}</p>
-                      <div className="flex gap-2 flex-wrap">
-                        <Badge variant={a.priority === "high" ? "destructive" : "secondary"}>{a.priority}</Badge>
-                        <Badge variant="outline">{a.points} pts</Badge>
-                        <Badge variant="outline">
-                          <Clock className="h-3 w-3 mr-1" /> 
-                          {a.hoursLeft}h left
-                        </Badge>
-                        <Badge variant="outline">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Due: {a.dueDate}
-                        </Badge>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {!isEditMode && (
-                  <Button className="bg-gradient-primary">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Submit
-                  </Button>
+                    </div>
+                    <Textarea
+                      value={a.description || ""}
+                      onChange={(e) => updateAssignment(a.id, "description", e.target.value)}
+                      placeholder="Description"
+                      rows={2}
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input
+                        type="date"
+                        value={a.due_date || ""}
+                        onChange={(e) => updateAssignment(a.id, "due_date", e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        value={a.hours_left || 0}
+                        onChange={(e) => updateAssignment(a.id, "hours_left", parseInt(e.target.value))}
+                        placeholder="Hours"
+                      />
+                      <Input
+                        type="number"
+                        value={a.points || 0}
+                        onChange={(e) => updateAssignment(a.id, "points", parseInt(e.target.value))}
+                        placeholder="Points"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold">{a.title}</h3>
+                    <p className="text-sm text-muted-foreground">{a.course} ({a.course_code})</p>
+                    <p className="text-sm">{a.description}</p>
+                    <div className="flex gap-2">
+                      <Badge variant={a.priority === "high" ? "destructive" : "secondary"}>
+                        {a.priority}
+                      </Badge>
+                      <Badge variant="outline">{a.points} pts</Badge>
+                      <Badge variant="outline">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {a.hours_left}h left
+                      </Badge>
+                    </div>
+                    <Button className="w-full bg-gradient-primary mt-2">
+                      <Upload className="mr-2 h-4 w-4" />
+                      Submit
+                    </Button>
+                  </>
                 )}
               </div>
             </Card>
@@ -294,9 +253,9 @@ export default function Assignments() {
 
         <TabsContent value="completed" className="space-y-4 mt-6">
           {isEditMode && (
-            <Button onClick={addCompletedAssignment} className="gap-2">
+            <Button onClick={() => addAssignment("completed")} className="gap-2">
               <Plus className="h-4 w-4" />
-              Add Completed Assignment
+              Add Completed
             </Button>
           )}
           {completedAssignments.map((a) => (
@@ -304,15 +263,15 @@ export default function Assignments() {
               {isEditMode && (
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
-                    onClick={() => duplicateCompletedAssignment(a)}
+                    onClick={() => duplicateAssignment(a)}
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-primary"
+                    className="h-8 w-8"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                   <Button
-                    onClick={() => deleteCompletedAssignment(a.id)}
+                    onClick={() => deleteAssignment(a.id)}
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-destructive"
@@ -326,80 +285,32 @@ export default function Assignments() {
                   <>
                     <Input
                       value={a.title}
-                      onChange={(e) => updateCompletedAssignment(a.id, "title", e.target.value)}
-                      placeholder="Assignment Title"
-                      className="text-xl font-semibold"
+                      onChange={(e) => updateAssignment(a.id, "title", e.target.value)}
+                      placeholder="Title"
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        value={a.course}
-                        onChange={(e) => updateCompletedAssignment(a.id, "course", e.target.value)}
-                        placeholder="Course Name"
-                      />
-                      <Input
-                        value={a.courseCode}
-                        onChange={(e) => updateCompletedAssignment(a.id, "courseCode", e.target.value)}
-                        placeholder="Course Code"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Submitted Date</Label>
-                        <Input
-                          type="date"
-                          value={a.submittedDate}
-                          onChange={(e) => updateCompletedAssignment(a.id, "submittedDate", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Grade</Label>
-                        <Input
-                          value={a.grade}
-                          onChange={(e) => updateCompletedAssignment(a.id, "grade", e.target.value)}
-                          placeholder="95/100"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Points</Label>
-                        <Input
-                          type="number"
-                          value={a.points}
-                          onChange={(e) => updateCompletedAssignment(a.id, "points", parseInt(e.target.value))}
-                        />
-                      </div>
-                    </div>
+                    <Input
+                      value={a.grade || ""}
+                      onChange={(e) => updateAssignment(a.id, "grade", e.target.value)}
+                      placeholder="Grade"
+                    />
                     <Textarea
-                      value={a.feedback}
-                      onChange={(e) => updateCompletedAssignment(a.id, "feedback", e.target.value)}
+                      value={a.feedback || ""}
+                      onChange={(e) => updateAssignment(a.id, "feedback", e.target.value)}
                       placeholder="Feedback"
                       rows={2}
                     />
                   </>
                 ) : (
                   <>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-semibold">{a.title}</h3>
-                        <p className="text-sm text-muted-foreground">{a.course} ({a.courseCode})</p>
-                      </div>
-                      <Badge className="bg-success/20 text-success border-success">
+                    <div className="flex justify-between">
+                      <h3 className="text-xl font-semibold">{a.title}</h3>
+                      <Badge className="bg-success/20 text-success">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         {a.grade}
                       </Badge>
                     </div>
                     <div className="bg-muted/30 p-3 rounded">
-                      <p className="text-sm font-medium mb-1">Instructor Feedback:</p>
-                      <p className="text-sm text-muted-foreground">{a.feedback}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        Submitted: {a.submittedDate}
-                      </Badge>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-3 w-3 mr-1" />
-                        View Submission
-                      </Button>
+                      <p className="text-sm">{a.feedback}</p>
                     </div>
                   </>
                 )}
