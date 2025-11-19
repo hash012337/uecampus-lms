@@ -66,9 +66,10 @@ export default function Courses() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="p-4 bg-gradient-card border-primary/20 hover:shadow-glow transition-shadow duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
+        <Card className="p-4 bg-gradient-card border-primary/30 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:border-primary group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-3 rounded-lg bg-primary/20 shadow-glow">
               <BookOpen className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -77,9 +78,10 @@ export default function Courses() {
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-gradient-card border-success/20">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-success/10">
+        <Card className="p-4 bg-gradient-card border-success/30 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:border-success group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-3 rounded-lg bg-success/20">
               <TrendingUp className="h-5 w-5 text-success" />
             </div>
             <div>
@@ -88,9 +90,10 @@ export default function Courses() {
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-gradient-card border-warning/20">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-warning/10">
+        <Card className="p-4 bg-gradient-card border-warning/30 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:border-warning group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-3 rounded-lg bg-warning/20">
               <Clock className="h-5 w-5 text-warning" />
             </div>
             <div>
@@ -99,9 +102,10 @@ export default function Courses() {
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-gradient-card border-accent/20">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-accent/10">
+        <Card className="p-4 bg-gradient-card border-accent/30 hover:shadow-glow-accent transition-all duration-300 hover:scale-105 hover:border-accent group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-3 rounded-lg bg-accent/20 shadow-glow-accent">
               <Award className="h-5 w-5 text-accent" />
             </div>
             <div>
@@ -117,10 +121,12 @@ export default function Courses() {
         {courses.map((course, index) => (
           <Card
             key={course.id}
-            className="p-6 hover:shadow-lg transition-all duration-300 animate-scale-in bg-gradient-card"
+            className="p-6 hover:shadow-glow transition-all duration-300 animate-scale-in bg-gradient-card border-border/50 hover:border-primary/50 hover:scale-105 group relative overflow-hidden"
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <div className="space-y-4">
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
+            <div className="space-y-4 relative z-10">
               {/* Course Header */}
               <div className="flex items-start justify-between">
                 <div>

@@ -72,9 +72,11 @@ export default {
         'gradient-accent': 'var(--gradient-accent)',
         'gradient-success': 'var(--gradient-success)',
         'gradient-card': 'var(--gradient-card)',
+        'gradient-hero': 'var(--gradient-hero)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
+        'glow-accent': 'var(--shadow-glow-accent)',
       },
       transitionTimingFunction: {
         'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',

@@ -7,7 +7,8 @@ import {
   Trophy, 
   Award,
   Clock,
-  User
+  User,
+  Sparkles
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
@@ -26,20 +27,42 @@ const navigationItems = [
 
 export function LeftSidebar() {
   return (
-    <nav className="flex flex-col h-full p-4 space-y-2" aria-label="Main navigation">
+    <nav className="flex flex-col h-full p-4 space-y-2 relative" aria-label="Main navigation">
+      {/* Header with avatar */}
+      <div className="mb-4 pb-4 border-b border-sidebar-border">
+        <div className="flex items-center gap-3 px-2">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow">
+              <User className="h-5 w-5 text-white" />
+            </div>
+            <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-accent animate-pulse" />
+          </div>
+          <div>
+            <p className="font-semibold text-sidebar-foreground">Student</p>
+            <p className="text-xs text-muted-foreground">Level 12</p>
+          </div>
+        </div>
+      </div>
+
       {navigationItems.map((item) => (
         <NavLink
           key={item.href}
           to={item.href}
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group relative overflow-hidden",
+            "text-sidebar-foreground hover:text-sidebar-primary-foreground",
             "focus:outline-none focus:ring-2 focus:ring-sidebar-ring"
           )}
-          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          activeClassName="bg-gradient-primary text-white font-medium shadow-glow"
         >
-          <item.icon className="h-5 w-5 flex-shrink-0" />
-          <span className="text-sm">{item.label}</span>
+          {/* Hover background effect */}
+          <div className="absolute inset-0 bg-sidebar-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          <item.icon className="h-5 w-5 flex-shrink-0 relative z-10 group-hover:scale-110 transition-transform duration-300" />
+          <span className="text-sm relative z-10">{item.label}</span>
+          
+          {/* Active indicator */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-primary rounded-r-full group-hover:h-8 transition-all duration-300" />
         </NavLink>
       ))}
     </nav>
