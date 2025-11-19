@@ -144,7 +144,7 @@ export default function Users() {
 
       toast.success("User created successfully");
       setDialogOpen(false);
-      setFormData({ email: "", password: "", full_name: "", role: "student" });
+      setFormData({ user_id: "", email: "", password: "", full_name: "", role: "student" });
       loadUsers();
     } catch (error: any) {
       if (error instanceof z.ZodError) {
