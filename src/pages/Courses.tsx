@@ -16,10 +16,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allCoursesData, courseCategories } from "@/data/coursesData";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { ImportCoursesButton } from "@/components/ImportCoursesButton";
+import { useEditMode } from "@/contexts/EditModeContext";
 
 export default function Courses() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { isAdmin } = useEditMode();
   
   const filteredCourses = allCoursesData.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -39,6 +42,7 @@ export default function Courses() {
               Explore our comprehensive collection of {allCoursesData.length} programs
             </p>
           </div>
+          {isAdmin && <ImportCoursesButton />}
         </div>
 
         {/* Search Bar */}
