@@ -14,11 +14,16 @@ import {
   Trash2,
   GripVertical,
   Edit2,
-  X
+  X,
+  UserPlus
 } from "lucide-react";
 import { allCoursesData } from "@/data/coursesData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CurriculumSection {
   id: string;
@@ -38,6 +43,52 @@ interface Lesson {
 export default function CourseDetail() {
   const { courseId } = useParams();
   const course = allCoursesData.find(c => c.id === courseId);
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    checkAdminStatus();
+    fetchUsers();
+  }, [user]);
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+    setIsAdmin(!!data);
+  };
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*");
+    if (data) setUsers(data);
+  };
+
+  const handleEnrollUser = async () => {
+    if (!selectedUserId || !courseId) return;
+    
+    try {
+      const { error } = await supabase.from("enrollments").insert({
+        user_id: selectedUserId,
+        course_id: courseId,
+        role: "student",
+        enrolled_by: user?.id
+      });
+
+      if (error) throw error;
+      toast.success("User enrolled successfully");
+      setEnrollDialogOpen(false);
+      setSelectedUserId("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to enroll user");
+    }
+  };
 
   const [courseData, setCourseData] = useState({
     id: course?.id || "",

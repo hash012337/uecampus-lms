@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Clock } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Upload, FileText } from "lucide-react";
 
 interface TimetableEntry {
   id: string;
@@ -36,6 +36,11 @@ export default function Timetable() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({
     course_code: "",
     course_name: "",
@@ -51,8 +56,39 @@ export default function Timetable() {
   useEffect(() => {
     if (user) {
       loadTimetable();
+      checkAdminStatus();
+      fetchUsers();
     }
   }, [user]);
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+    setIsAdmin(!!data);
+  };
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*");
+    if (data) setUsers(data);
+  };
+
+  const handlePdfUpload = async () => {
+    if (!pdfFile || !selectedUser) {
+      toast.error("Please select a user and upload a PDF");
+      return;
+    }
+
+    toast.info("PDF parsing will be implemented with document parsing API");
+    // TODO: Implement PDF parsing to extract timetable data
+    setUploadDialogOpen(false);
+    setPdfFile(null);
+    setSelectedUser("");
+  };
 
   const loadTimetable = async () => {
     try {
@@ -171,19 +207,64 @@ export default function Timetable() {
             Manage your weekly class schedule
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) {
-            setEditingEntry(null);
-            resetForm();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Class
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-primary/20">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload PDF
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Timetable PDF</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label>Select User</Label>
+                    <Select value={selectedUser} onValueChange={setSelectedUser}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Upload PDF</Label>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  <Button onClick={handlePdfUpload} className="w-full bg-gradient-primary">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Parse & Add Timetable
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setEditingEntry(null);
+              resetForm();
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Class
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
