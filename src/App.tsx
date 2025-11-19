@@ -7,6 +7,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
 import Assignments from "./pages/Assignments";
 import Quizzes from "./pages/Quizzes";
 import NotFound from "./pages/NotFound";
