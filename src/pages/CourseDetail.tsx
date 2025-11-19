@@ -1,54 +1,91 @@
 import { useParams, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { 
   ArrowLeft, 
-  Clock, 
-  Users, 
-  Star, 
-  GraduationCap, 
-  CheckCircle2,
-  BookOpen,
-  Award,
-  Target,
-  Briefcase,
-  DollarSign,
-  Calendar,
-  PlayCircle,
-  Download,
-  FileText,
-  Globe,
-  BarChart3,
-  TrendingUp,
-  Shield,
-  Laptop,
-  MessageSquare,
-  Share2,
-  Bookmark,
-  ChevronDown
+  Save,
+  Plus,
+  Trash2,
+  GripVertical,
+  Edit2,
+  X
 } from "lucide-react";
 import { allCoursesData } from "@/data/coursesData";
+import { useState } from "react";
+import { toast } from "sonner";
+
+interface CurriculumSection {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  lessons: Lesson[];
+}
+
+interface Lesson {
+  id: string;
+  title: string;
+  duration: string;
+  type: string;
+}
 
 export default function CourseDetail() {
   const { courseId } = useParams();
   const course = allCoursesData.find(c => c.id === courseId);
 
+  const [courseData, setCourseData] = useState({
+    id: course?.id || "",
+    code: course?.code || "",
+    title: course?.title || "",
+    category: course?.category || "",
+    subcategory: course?.subcategory || "",
+    level: course?.level || "",
+    duration: course?.duration || "",
+    mode: course?.mode || "",
+    partner: course?.partner || "",
+    description: course?.description || "",
+    overview: course?.overview || "",
+    tuition: course?.fees.tuition || "",
+    installments: course?.fees.installments || false,
+    accreditation: course?.accreditation || "",
+    rating: course?.rating || 0,
+    enrolledStudents: course?.enrolledStudents || 0,
+    learningOutcomes: course?.learningOutcomes || [],
+    modules: course?.modules || [],
+    entryRequirements: course?.entryRequirements || [],
+    careerOpportunities: course?.careerOpportunities || []
+  });
+
+  const [curriculumSections, setCurriculumSections] = useState<CurriculumSection[]>([
+    {
+      id: "1",
+      title: "Introduction to the Course",
+      description: "Get started with the fundamentals",
+      duration: "2 weeks",
+      lessons: [
+        { id: "1-1", title: "Welcome and Course Overview", duration: "15 min", type: "video" },
+        { id: "1-2", title: "Setting Up Your Environment", duration: "30 min", type: "video" },
+        { id: "1-3", title: "First Assignment", duration: "45 min", type: "assignment" }
+      ]
+    }
+  ]);
+
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editingLesson, setEditingLesson] = useState<string | null>(null);
+
   if (!course) {
     return (
       <div className="space-y-6 animate-fade-in">
         <Card className="p-12 text-center bg-gradient-card">
-          <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-2xl font-bold mb-2">Course Not Found</h2>
-          <p className="text-muted-foreground mb-6">
-            The course you're looking for doesn't exist.
-          </p>
           <Link to="/courses">
-            <Button className="bg-gradient-primary">
+            <Button className="bg-gradient-primary mt-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Courses
             </Button>
@@ -58,460 +95,611 @@ export default function CourseDetail() {
     );
   }
 
+  const handleSaveCourse = () => {
+    console.log("Saving course data:", courseData);
+    toast.success("Course updated successfully!");
+  };
+
+  const handleAddSection = () => {
+    const newSection: CurriculumSection = {
+      id: Date.now().toString(),
+      title: "New Section",
+      description: "Section description",
+      duration: "1 week",
+      lessons: []
+    };
+    setCurriculumSections([...curriculumSections, newSection]);
+    toast.success("New section added");
+  };
+
+  const handleDeleteSection = (sectionId: string) => {
+    setCurriculumSections(curriculumSections.filter(s => s.id !== sectionId));
+    toast.success("Section deleted");
+  };
+
+  const handleUpdateSection = (sectionId: string, field: keyof CurriculumSection, value: any) => {
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId ? { ...section, [field]: value } : section
+    ));
+  };
+
+  const handleAddLesson = (sectionId: string) => {
+    const newLesson: Lesson = {
+      id: Date.now().toString(),
+      title: "New Lesson",
+      duration: "15 min",
+      type: "video"
+    };
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId 
+        ? { ...section, lessons: [...section.lessons, newLesson] }
+        : section
+    ));
+    toast.success("Lesson added");
+  };
+
+  const handleDeleteLesson = (sectionId: string, lessonId: string) => {
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId 
+        ? { ...section, lessons: section.lessons.filter(l => l.id !== lessonId) }
+        : section
+    ));
+    toast.success("Lesson deleted");
+  };
+
+  const handleUpdateLesson = (sectionId: string, lessonId: string, field: keyof Lesson, value: string) => {
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            lessons: section.lessons.map(lesson => 
+              lesson.id === lessonId ? { ...lesson, [field]: value } : lesson
+            )
+          }
+        : section
+    ));
+  };
+
+  const handleArrayFieldAdd = (field: keyof typeof courseData) => {
+    const currentArray = courseData[field] as string[];
+    setCourseData({
+      ...courseData,
+      [field]: [...currentArray, ""]
+    });
+  };
+
+  const handleArrayFieldUpdate = (field: keyof typeof courseData, index: number, value: string) => {
+    const currentArray = courseData[field] as string[];
+    const newArray = [...currentArray];
+    newArray[index] = value;
+    setCourseData({
+      ...courseData,
+      [field]: newArray
+    });
+  };
+
+  const handleArrayFieldDelete = (field: keyof typeof courseData, index: number) => {
+    const currentArray = courseData[field] as string[];
+    setCourseData({
+      ...courseData,
+      [field]: currentArray.filter((_, i) => i !== index)
+    });
+  };
+
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      {/* Back Button */}
-      <Link to="/courses">
-        <Button variant="ghost" className="gap-2 hover:bg-accent/50 transition-all">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Courses
+    <div className="space-y-6 animate-fade-in pb-12">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <Link to="/courses">
+          <Button variant="ghost" className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Courses
+          </Button>
+        </Link>
+        <Button onClick={handleSaveCourse} className="gap-2 bg-gradient-primary">
+          <Save className="h-4 w-4" />
+          Save Changes
         </Button>
-      </Link>
+      </div>
 
-      {/* Hero Section with Video Preview */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Course Header */}
-          <Card className="p-8 bg-gradient-card border-primary/30 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-primary opacity-5" />
-            
-            <div className="relative z-10 space-y-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" className="font-mono text-xs">
-                  {course.code}
-                </Badge>
-                <Badge className="bg-primary/20 text-primary border-primary/50">
-                  {course.level}
-                </Badge>
-                <Badge variant="outline">{course.category}</Badge>
-                {course.partner && (
-                  <Badge className="bg-accent/20 text-accent border-accent/50">
-                    <GraduationCap className="h-3 w-3 mr-1" />
-                    {course.partner}
-                  </Badge>
-                )}
-              </div>
-
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                  {course.title}
-                </h1>
-                
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  {course.description}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-warning text-warning" />
-                    <span className="font-semibold">{course.rating}</span>
-                  </div>
-                  <span className="text-muted-foreground">({course.enrolledStudents} reviews)</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span>{course.enrolledStudents.toLocaleString()} students</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span>{course.duration}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Globe className="h-4 w-4 text-primary" />
-                  <span>{course.mode}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button className="gap-2" variant="outline" size="sm">
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </Button>
-                <Button className="gap-2" variant="outline" size="sm">
-                  <Bookmark className="h-4 w-4" />
-                  Save
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-          {/* Course Preview Video Card */}
-          <Card className="overflow-hidden bg-gradient-card border-border/50">
-            <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group cursor-pointer hover:from-primary/30 hover:to-accent/30 transition-all duration-500">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.3)_100%)]" />
-              <div className="relative z-10 text-center space-y-4">
-                <div className="w-20 h-20 mx-auto rounded-full bg-background/90 backdrop-blur flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-2xl">
-                  <PlayCircle className="h-10 w-10 text-primary fill-primary/20" />
-                </div>
-                <div>
-                  <p className="text-lg font-semibold">Course Preview</p>
-                  <p className="text-sm text-muted-foreground">Watch introduction video</p>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* What You'll Learn Section */}
-          <Card className="p-8 bg-gradient-card">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Target className="h-6 w-6 text-primary" />
-              What You'll Learn
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {course.learningOutcomes.map((outcome, index) => (
-                <div 
-                  key={index}
-                  className="flex items-start gap-3 p-4 rounded-lg bg-background/50 hover:bg-background transition-all duration-300 hover:shadow-md group"
-                >
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm leading-relaxed">{outcome}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Course Content / Syllabus */}
-          <Card className="p-8 bg-gradient-card">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="h-6 w-6 text-primary" />
-                Course Curriculum
-              </h2>
-              <Badge variant="outline" className="text-xs">
-                {course.modules.length} Modules
-              </Badge>
-            </div>
-
-            <Accordion type="single" collapsible className="space-y-3">
-              {course.modules.map((module, index) => (
-                <AccordionItem 
-                  key={index} 
-                  value={`module-${index}`}
-                  className="border rounded-lg bg-background/50 hover:bg-background transition-colors px-4"
-                >
-                  <AccordionTrigger className="hover:no-underline py-4">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <span className="text-primary font-bold text-sm">{index + 1}</span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold">{module}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Module {index + 1} • Estimated time: {Math.floor(Math.random() * 4) + 2} hours
-                        </p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-3 pt-2">
-                      {[1, 2, 3].map((lesson) => (
-                        <div 
-                          key={lesson}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-background/80 hover:bg-accent/10 transition-colors cursor-pointer group"
-                        >
-                          <PlayCircle className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">Lesson {lesson}: Introduction to {module}</p>
-                            <p className="text-xs text-muted-foreground">{Math.floor(Math.random() * 30) + 10} min</p>
-                          </div>
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </Card>
-
-          {/* Requirements Section */}
-          <Card className="p-8 bg-gradient-card">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              Entry Requirements
-            </h2>
-            <div className="space-y-3">
-              {course.entryRequirements.map((req, index) => (
-                <div 
-                  key={index}
-                  className="flex items-start gap-3 p-4 rounded-lg bg-background/50"
-                >
-                  <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">{req}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Career Opportunities */}
-          <Card className="p-8 bg-gradient-card">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Briefcase className="h-6 w-6 text-primary" />
-              Career Opportunities
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {course.careerOpportunities.map((career, index) => (
-                <div 
-                  key={index}
-                  className="p-4 rounded-lg bg-background/50 hover:bg-background border border-border/50 hover:border-primary/50 transition-all duration-300 group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="font-medium text-sm">{career}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Instructor Section */}
-          <Card className="p-8 bg-gradient-card">
-            <h2 className="text-2xl font-bold mb-6">Your Instructors</h2>
-            <div className="space-y-6">
-              {[1, 2].map((i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-lg bg-background/50">
-                  <Avatar className="h-16 w-16 border-2 border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                      {i === 1 ? 'JD' : 'SK'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">
-                      {i === 1 ? 'Dr. John Doe' : 'Dr. Sarah Khan'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {i === 1 ? 'Professor of ' + course.subcategory : 'Senior Lecturer'}
-                    </p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Over {i === 1 ? '15' : '12'} years of experience in {course.subcategory.toLowerCase()} 
-                      with multiple publications and industry certifications.
-                    </p>
-                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-warning text-warning" />
-                        {(4.5 + Math.random() * 0.5).toFixed(1)} rating
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {Math.floor(Math.random() * 50000) + 10000} students
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Student Reviews */}
-          <Card className="p-8 bg-gradient-card">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <MessageSquare className="h-6 w-6 text-primary" />
-              Student Reviews
-            </h2>
-            
-            {/* Rating Overview */}
-            <div className="grid md:grid-cols-2 gap-6 mb-8 p-6 rounded-lg bg-background/50">
-              <div className="text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                  <span className="text-5xl font-bold">{course.rating}</span>
-                  <Star className="h-8 w-8 fill-warning text-warning" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Based on {course.enrolledStudents} reviews
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((stars) => (
-                  <div key={stars} className="flex items-center gap-3">
-                    <span className="text-sm w-8">{stars}★</span>
-                    <Progress 
-                      value={stars === 5 ? 80 : stars === 4 ? 15 : stars === 3 ? 3 : stars === 2 ? 1 : 1} 
-                      className="flex-1 h-2"
-                    />
-                    <span className="text-xs text-muted-foreground w-12 text-right">
-                      {stars === 5 ? '80%' : stars === 4 ? '15%' : stars === 3 ? '3%' : stars === 2 ? '1%' : '1%'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Individual Reviews */}
-            <div className="space-y-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="space-y-3">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                        {i === 1 ? 'AM' : i === 2 ? 'RP' : 'LC'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="font-semibold text-sm">
-                            {i === 1 ? 'Alex Morgan' : i === 2 ? 'Rachel Peters' : 'Lucas Chen'}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex">
-                              {[...Array(5)].map((_, idx) => (
-                                <Star key={idx} className="h-3 w-3 fill-warning text-warning" />
-                              ))}
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {i === 1 ? '2 weeks ago' : i === 2 ? '1 month ago' : '2 months ago'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {i === 1 
-                          ? 'Excellent course! The instructors are knowledgeable and the content is very well structured. Highly recommend to anyone looking to advance in this field.'
-                          : i === 2
-                          ? 'This program exceeded my expectations. The practical approach and real-world examples made complex topics easy to understand.'
-                          : 'Great learning experience. The course materials are comprehensive and the support from instructors is outstanding.'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  {i < 3 && <Separator />}
-                </div>
-              ))}
-            </div>
-
-            <Button variant="outline" className="w-full mt-6">
-              View All Reviews
-              <ChevronDown className="h-4 w-4 ml-2" />
-            </Button>
-          </Card>
+      {/* Course Basic Information */}
+      <Card className="p-8 bg-gradient-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Course Information</h2>
+          <Badge variant="outline">Admin Edit Mode</Badge>
         </div>
 
-        {/* Sticky Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6 space-y-6">
-            {/* Enrollment Card */}
-            <Card className="p-6 bg-gradient-card border-primary/30 shadow-glow">
-              <div className="space-y-6">
-                {/* Price */}
-                <div className="space-y-2">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">{course.fees.tuition.split(' ')[0]}</span>
-                    <span className="text-muted-foreground">{course.fees.tuition.split(' ').slice(1).join(' ')}</span>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="course-id">Course ID</Label>
+            <Input
+              id="course-id"
+              value={courseData.id}
+              onChange={(e) => setCourseData({ ...courseData, id: e.target.value })}
+              placeholder="course-id"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="course-code">Course Code</Label>
+            <Input
+              id="course-code"
+              value={courseData.code}
+              onChange={(e) => setCourseData({ ...courseData, code: e.target.value })}
+              placeholder="CS-101"
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="course-title">Course Title</Label>
+            <Input
+              id="course-title"
+              value={courseData.title}
+              onChange={(e) => setCourseData({ ...courseData, title: e.target.value })}
+              placeholder="Enter course title"
+              className="text-lg font-semibold"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Input
+              id="category"
+              value={courseData.category}
+              onChange={(e) => setCourseData({ ...courseData, category: e.target.value })}
+              placeholder="Bachelor's Programs"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="subcategory">Subcategory</Label>
+            <Input
+              id="subcategory"
+              value={courseData.subcategory}
+              onChange={(e) => setCourseData({ ...courseData, subcategory: e.target.value })}
+              placeholder="Information Technology"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="level">Level</Label>
+            <Input
+              id="level"
+              value={courseData.level}
+              onChange={(e) => setCourseData({ ...courseData, level: e.target.value })}
+              placeholder="Undergraduate"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration">Duration</Label>
+            <Input
+              id="duration"
+              value={courseData.duration}
+              onChange={(e) => setCourseData({ ...courseData, duration: e.target.value })}
+              placeholder="3-4 years"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mode">Mode</Label>
+            <Input
+              id="mode"
+              value={courseData.mode}
+              onChange={(e) => setCourseData({ ...courseData, mode: e.target.value })}
+              placeholder="Online"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="partner">Partner Institution</Label>
+            <Input
+              id="partner"
+              value={courseData.partner}
+              onChange={(e) => setCourseData({ ...courseData, partner: e.target.value })}
+              placeholder="Walsh College"
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={courseData.description}
+              onChange={(e) => setCourseData({ ...courseData, description: e.target.value })}
+              placeholder="Brief course description"
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="overview">Overview</Label>
+            <Textarea
+              id="overview"
+              value={courseData.overview}
+              onChange={(e) => setCourseData({ ...courseData, overview: e.target.value })}
+              placeholder="Detailed course overview"
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tuition">Tuition Fees</Label>
+            <Input
+              id="tuition"
+              value={courseData.tuition}
+              onChange={(e) => setCourseData({ ...courseData, tuition: e.target.value })}
+              placeholder="$12,000 - $15,000 per year"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="accreditation">Accreditation</Label>
+            <Input
+              id="accreditation"
+              value={courseData.accreditation}
+              onChange={(e) => setCourseData({ ...courseData, accreditation: e.target.value })}
+              placeholder="Accreditation body"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rating">Rating</Label>
+            <Input
+              id="rating"
+              type="number"
+              step="0.1"
+              min="0"
+              max="5"
+              value={courseData.rating}
+              onChange={(e) => setCourseData({ ...courseData, rating: parseFloat(e.target.value) })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="enrolled">Enrolled Students</Label>
+            <Input
+              id="enrolled"
+              type="number"
+              value={courseData.enrolledStudents}
+              onChange={(e) => setCourseData({ ...courseData, enrolledStudents: parseInt(e.target.value) })}
+            />
+          </div>
+
+          <div className="space-y-2 flex items-center gap-3">
+            <Switch
+              id="installments"
+              checked={courseData.installments}
+              onCheckedChange={(checked) => setCourseData({ ...courseData, installments: checked })}
+            />
+            <Label htmlFor="installments" className="cursor-pointer">
+              Installment plans available
+            </Label>
+          </div>
+        </div>
+      </Card>
+
+      {/* Learning Outcomes */}
+      <Card className="p-8 bg-gradient-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Learning Outcomes</h2>
+          <Button onClick={() => handleArrayFieldAdd("learningOutcomes")} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Outcome
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {courseData.learningOutcomes.map((outcome, index) => (
+            <div key={index} className="flex gap-2">
+              <Input
+                value={outcome}
+                onChange={(e) => handleArrayFieldUpdate("learningOutcomes", index, e.target.value)}
+                placeholder="Enter learning outcome"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleArrayFieldDelete("learningOutcomes", index)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Modules/Topics */}
+      <Card className="p-8 bg-gradient-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Course Modules</h2>
+          <Button onClick={() => handleArrayFieldAdd("modules")} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Module
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {courseData.modules.map((module, index) => (
+            <div key={index} className="flex gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                <Input
+                  value={module}
+                  onChange={(e) => handleArrayFieldUpdate("modules", index, e.target.value)}
+                  placeholder="Enter module name"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleArrayFieldDelete("modules", index)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Entry Requirements */}
+      <Card className="p-8 bg-gradient-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Entry Requirements</h2>
+          <Button onClick={() => handleArrayFieldAdd("entryRequirements")} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Requirement
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {courseData.entryRequirements.map((req, index) => (
+            <div key={index} className="flex gap-2">
+              <Input
+                value={req}
+                onChange={(e) => handleArrayFieldUpdate("entryRequirements", index, e.target.value)}
+                placeholder="Enter requirement"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleArrayFieldDelete("entryRequirements", index)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Career Opportunities */}
+      <Card className="p-8 bg-gradient-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Career Opportunities</h2>
+          <Button onClick={() => handleArrayFieldAdd("careerOpportunities")} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Career
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {courseData.careerOpportunities.map((career, index) => (
+            <div key={index} className="flex gap-2">
+              <Input
+                value={career}
+                onChange={(e) => handleArrayFieldUpdate("careerOpportunities", index, e.target.value)}
+                placeholder="Enter career opportunity"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleArrayFieldDelete("careerOpportunities", index)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Separator className="my-8" />
+
+      {/* Curriculum Sections */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold">Course Curriculum</h2>
+          <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
+            <Plus className="h-4 w-4" />
+            Add Section
+          </Button>
+        </div>
+
+        <div className="space-y-6">
+          {curriculumSections.map((section, sectionIndex) => (
+            <Card key={section.id} className="p-6 bg-gradient-card border-primary/20">
+              <div className="space-y-4">
+                {/* Section Header */}
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center gap-2 mt-2">
+                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                    <Badge variant="outline" className="font-mono">
+                      Section {sectionIndex + 1}
+                    </Badge>
                   </div>
-                  {course.fees.installments && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      Flexible payment plans available
+                  
+                  <div className="flex-1 space-y-4">
+                    {editingSection === section.id ? (
+                      <>
+                        <Input
+                          value={section.title}
+                          onChange={(e) => handleUpdateSection(section.id, "title", e.target.value)}
+                          placeholder="Section title"
+                          className="text-lg font-semibold"
+                        />
+                        <Textarea
+                          value={section.description}
+                          onChange={(e) => handleUpdateSection(section.id, "description", e.target.value)}
+                          placeholder="Section description"
+                          rows={2}
+                        />
+                        <div className="flex gap-2">
+                          <Input
+                            value={section.duration}
+                            onChange={(e) => handleUpdateSection(section.id, "duration", e.target.value)}
+                            placeholder="Duration"
+                            className="w-40"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingSection(null)}
+                          >
+                            Done
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xl font-semibold">{section.title}</h3>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingSection(section.id)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteSection(section.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground">{section.description}</p>
+                        <Badge variant="secondary">{section.duration}</Badge>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Lessons */}
+                <div className="space-y-3 pl-12">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-sm text-muted-foreground">Lessons</h4>
+                    <Button
+                      onClick={() => handleAddLesson(section.id)}
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add Lesson
+                    </Button>
+                  </div>
+
+                  {section.lessons.map((lesson, lessonIndex) => (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center gap-3 p-4 rounded-lg bg-background/50 border border-border/50"
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {lessonIndex + 1}
+                      </Badge>
+                      
+                      {editingLesson === lesson.id ? (
+                        <div className="flex-1 flex gap-2">
+                          <Input
+                            value={lesson.title}
+                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "title", e.target.value)}
+                            placeholder="Lesson title"
+                            className="flex-1"
+                          />
+                          <Input
+                            value={lesson.duration}
+                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "duration", e.target.value)}
+                            placeholder="Duration"
+                            className="w-24"
+                          />
+                          <Input
+                            value={lesson.type}
+                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "type", e.target.value)}
+                            placeholder="Type"
+                            className="w-32"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setEditingLesson(null)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{lesson.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {lesson.duration} • {lesson.type}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingLesson(lesson.id)}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteLesson(section.id, lesson.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+
+                  {section.lessons.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No lessons yet. Click &quot;Add Lesson&quot; to get started.
                     </p>
                   )}
                 </div>
-
-                <Separator />
-
-                {/* CTA Buttons */}
-                <div className="space-y-3">
-                  <Button className="w-full bg-gradient-primary hover:opacity-90 shadow-lg h-12 text-base font-semibold" size="lg">
-                    Enroll Now
-                  </Button>
-                  <Button variant="outline" className="w-full h-11">
-                    Request Information
-                  </Button>
-                </div>
-
-                <Separator />
-
-                {/* Course Includes */}
-                <div className="space-y-3">
-                  <p className="font-semibold text-sm">This course includes:</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <PlayCircle className="h-4 w-4 text-primary" />
-                      <span>Video lectures & tutorials</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <FileText className="h-4 w-4 text-primary" />
-                      <span>Downloadable resources</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Award className="h-4 w-4 text-primary" />
-                      <span>Certificate of completion</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Laptop className="h-4 w-4 text-primary" />
-                      <span>Access on mobile & desktop</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MessageSquare className="h-4 w-4 text-primary" />
-                      <span>Instructor support</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Accreditation */}
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                  <Award className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-semibold mb-1">Accredited Program</p>
-                    <p className="text-xs text-muted-foreground">{course.accreditation}</p>
-                  </div>
-                </div>
               </div>
             </Card>
+          ))}
 
-            {/* Course Stats */}
-            <Card className="p-6 bg-gradient-card">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                Course Statistics
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Skill Level</span>
-                  <Badge variant="secondary">{course.level}</Badge>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Students Enrolled</span>
-                  <span className="font-semibold">{course.enrolledStudents.toLocaleString()}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Languages</span>
-                  <span className="font-semibold">English</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Last Updated</span>
-                  <span className="font-semibold">{new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                </div>
-              </div>
+          {curriculumSections.length === 0 && (
+            <Card className="p-12 text-center bg-gradient-card">
+              <p className="text-muted-foreground mb-4">No curriculum sections yet.</p>
+              <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
+                <Plus className="h-4 w-4" />
+                Add First Section
+              </Button>
             </Card>
-
-            {/* Share Course */}
-            <Card className="p-6 bg-gradient-card">
-              <h3 className="font-semibold mb-4">Share this course</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-              </div>
-            </Card>
-          </div>
+          )}
         </div>
+      </div>
+
+      {/* Save Button at Bottom */}
+      <div className="flex justify-end pt-6">
+        <Button onClick={handleSaveCourse} size="lg" className="gap-2 bg-gradient-primary">
+          <Save className="h-4 w-4" />
+          Save All Changes
+        </Button>
       </div>
     </div>
   );
