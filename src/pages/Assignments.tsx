@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, CheckCircle, Upload, Calendar, Plus, Trash2, Copy, Edit2 } from "lucide-react";
+import { Clock, CheckCircle, Upload, Calendar, Plus, Trash2, Copy, Edit2, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEditMode } from "@/contexts/EditModeContext";
@@ -31,10 +33,33 @@ export default function Assignments() {
   const { isEditMode } = useEditMode();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAssignments();
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*");
+    if (data) setUsers(data);
+  };
+
+  const handlePdfUpload = async () => {
+    if (!pdfFile || !selectedUser) {
+      toast.error("Please select a user and upload a PDF");
+      return;
+    }
+
+    toast.info("PDF parsing will be implemented with document parsing API");
+    // TODO: Implement PDF parsing to extract assignment data
+    setUploadDialogOpen(false);
+    setPdfFile(null);
+    setSelectedUser("");
+  };
 
   const fetchAssignments = async () => {
     try {

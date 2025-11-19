@@ -39,6 +39,7 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
+    user_id: "",
     email: "",
     password: "",
     full_name: "",
@@ -109,6 +110,11 @@ export default function Users() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.user_id) {
+      toast.error("User ID is required");
+      return;
+    }
+    
     try {
       const validated = userSchema.parse(formData);
 
@@ -118,6 +124,7 @@ export default function Users() {
         options: {
           data: {
             full_name: validated.full_name,
+            user_id: formData.user_id,
           },
         },
       });
