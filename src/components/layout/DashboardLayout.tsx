@@ -1,9 +1,20 @@
 import { useState } from "react";
-import { Menu, X, Bell, Search, Settings, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, Bell, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { LeftSidebar } from "./LeftSidebar";
 import { RightSidebar } from "./RightSidebar";
+import { useEditMode } from "@/contexts/EditModeContext";
+import { toast } from "sonner";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,6 +23,16 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const { isEditMode, toggleEditMode } = useEditMode();
+
+  const handleEditModeToggle = () => {
+    toggleEditMode();
+    if (!isEditMode) {
+      toast.info("Edit Mode Enabled - All content is now editable");
+    } else {
+      toast.success("Edit Mode Disabled - Changes saved");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -55,14 +76,53 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Bell className="h-5 w-5" />
               <span className="absolute top-2 right-2 h-2 w-2 bg-accent rounded-full animate-pulse" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="hover:bg-primary/20 hover:text-primary transition-all duration-300"
-              aria-label="Settings"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
+            
+            {/* Settings Dropdown with Edit Mode */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="hover:bg-primary/20 hover:text-primary transition-all duration-300 relative"
+                  aria-label="Settings"
+                >
+                  <Settings className="h-5 w-5" />
+                  {isEditMode && (
+                    <span className="absolute top-1 right-1 h-2 w-2 bg-success rounded-full" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  Settings
+                  {isEditMode && <Badge variant="outline" className="text-xs">EDITING</Badge>}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleEditModeToggle} className="cursor-pointer">
+                  {isEditMode ? (
+                    <>
+                      <Save className="mr-2 h-4 w-4 text-success" />
+                      <span>Save & Exit Edit Mode</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit2 className="mr-2 h-4 w-4 text-primary" />
+                      <span>Enable Edit Mode</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Preferences</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button 
               variant="ghost" 
               size="icon"
