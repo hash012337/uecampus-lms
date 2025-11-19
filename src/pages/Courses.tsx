@@ -2,8 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Users, Phone, MessageSquare, Mail } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 
 const weeklyActivity = [
   { day: "Mon", hours: 2.5 },
@@ -73,10 +74,28 @@ const courses = [
   },
 ];
 
-const platformStats = [
-  { platform: "EduPro Platform", lessons: 8, hours: 12.5, icon: BookOpen },
-  { platform: "Zoom Classes", lessons: 5, hours: 6.8, icon: Video },
-  { platform: "Recorded Sessions", lessons: 3, hours: 4.2, icon: PlayCircle },
+const supportOptions = [
+  { 
+    type: "Phone Call", 
+    description: "15-30 min session", 
+    icon: Phone,
+    available: "Available now",
+    color: "primary"
+  },
+  { 
+    type: "Live Chat", 
+    description: "Instant messaging", 
+    icon: MessageSquare,
+    available: "Response in 5 min",
+    color: "success"
+  },
+  { 
+    type: "Email Support", 
+    description: "Detailed help", 
+    icon: Mail,
+    available: "24h response time",
+    color: "accent"
+  },
 ];
 
 export default function Courses() {
@@ -84,6 +103,9 @@ export default function Courses() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Welcome Dialog */}
+      <WelcomeDialog />
+      
       {/* Top Stats Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Activity Card */}
@@ -190,28 +212,40 @@ export default function Courses() {
 
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Platform Stats */}
+        {/* Left Column - Support Meeting Booking */}
         <Card className="p-6 bg-gradient-card border-border/50 space-y-4">
-          <h3 className="text-lg font-semibold">By platform</h3>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Book a Support Meeting</h3>
+            <p className="text-sm text-muted-foreground">Get help from our team whenever you need it</p>
+          </div>
           <div className="space-y-3">
-            {platformStats.map((stat, index) => (
-              <div
+            {supportOptions.map((option, index) => (
+              <Button
                 key={index}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 group"
+                variant="outline"
+                className="w-full justify-start p-4 h-auto hover:bg-muted/50 hover:border-primary/50 transition-all duration-200 group relative overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded bg-primary/20 group-hover:bg-primary/30 transition-colors">
-                    <stat.icon className="h-4 w-4 text-primary" />
+                <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                <div className="flex items-center gap-3 w-full relative z-10">
+                  <div className={`p-2 rounded bg-${option.color}/20 group-hover:bg-${option.color}/30 transition-colors`}>
+                    <option.icon className={`h-5 w-5 text-${option.color}`} />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{stat.platform}</p>
-                    <p className="text-xs text-muted-foreground">{stat.lessons} lessons</p>
+                  <div className="text-left flex-1">
+                    <p className="font-semibold text-sm">{option.type}</p>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="secondary" className="text-xs">
+                      {option.available}
+                    </Badge>
                   </div>
                 </div>
-                <span className="font-bold">{stat.hours} h</span>
-              </div>
+              </Button>
             ))}
           </div>
+          <Button className="w-full bg-gradient-primary hover:opacity-90 transition-opacity mt-4">
+            View All Support Options
+          </Button>
         </Card>
 
         {/* Middle & Right Columns - Course Cards */}
