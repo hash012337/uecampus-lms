@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Users, Phone, MessageSquare, Mail } from "lucide-react";
+import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Users, Mail } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { WelcomeDialog } from "@/components/WelcomeDialog";
 
@@ -76,17 +76,17 @@ const courses = [
 
 const supportOptions = [
   { 
-    type: "Phone Call", 
-    description: "15-30 min session", 
-    icon: Phone,
-    available: "Available now",
+    type: "Zoom Meeting", 
+    description: "Video conference", 
+    icon: Video,
+    available: "Schedule anytime",
     color: "primary"
   },
   { 
-    type: "Live Chat", 
-    description: "Instant messaging", 
-    icon: MessageSquare,
-    available: "Response in 5 min",
+    type: "Google Meet", 
+    description: "Quick video call", 
+    icon: Video,
+    available: "Available now",
     color: "success"
   },
   { 
@@ -249,8 +249,18 @@ export default function Courses() {
         </Card>
 
         {/* Middle & Right Columns - Course Cards */}
-        <div className="lg:col-span-2 space-y-4">
-          {courses.map((course, index) => (
+        <div className="lg:col-span-2 space-y-6">
+          {/* Enrolled Courses Heading */}
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold">Enrolled Courses</h2>
+            <p className="text-sm text-muted-foreground">
+              Continue your learning journey with your active courses
+            </p>
+          </div>
+
+          {/* Course Cards */}
+          <div className="space-y-4">
+            {courses.map((course, index) => (
             <Card
               key={course.id}
               className="p-6 hover:shadow-glow transition-all duration-300 bg-gradient-card border-border/50 hover:border-primary/50 group relative overflow-hidden"
@@ -345,6 +355,7 @@ export default function Courses() {
               </div>
             </Card>
           ))}
+          </div>
         </div>
       </div>
     </div>
