@@ -38,8 +38,8 @@ export function LeftSidebar() {
             <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-accent animate-pulse" />
           </div>
           <div>
-            <p className="font-semibold text-sidebar-foreground">Student</p>
-            <p className="text-xs text-muted-foreground">Level 12</p>
+            <p className="font-semibold text-sidebar-foreground">Jacob Anderson</p>
+            <p className="text-xs text-muted-foreground">Student</p>
           </div>
         </div>
       </div>
