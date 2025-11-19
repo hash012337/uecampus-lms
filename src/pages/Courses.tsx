@@ -15,21 +15,62 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allCoursesData, courseCategories } from "@/data/coursesData";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ImportCoursesButton } from "@/components/ImportCoursesButton";
 import { useEditMode } from "@/contexts/EditModeContext";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Courses() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { isAdmin } = useEditMode();
+  const { user } = useAuth();
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      loadEnrolledCourses();
+    }
+  }, [user]);
+
+  const loadEnrolledCourses = async () => {
+    if (!user) return;
+
+    // Check if admin
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleData) {
+      // Admin sees all courses
+      setEnrolledCourseIds(allCoursesData.map(c => c.id));
+      return;
+    }
+
+    // Regular users only see enrolled courses
+    const { data: enrollments } = await supabase
+      .from("enrollments")
+      .select("course_id")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+
+    if (enrollments) {
+      setEnrolledCourseIds(enrollments.map(e => e.course_id));
+    }
+  };
   
-  const filteredCourses = allCoursesData.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredCourses = allCoursesData
+    .filter(course => enrolledCourseIds.includes(course.id))
+    .filter(course => {
+      const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           course.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
 
   return (
     <div className="space-y-6 animate-fade-in">

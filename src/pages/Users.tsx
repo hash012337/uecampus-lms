@@ -201,6 +201,19 @@ export default function Users() {
             </DialogHeader>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="user_id">User ID *</Label>
+                <Input
+                  id="user_id"
+                  value={formData.user_id}
+                  onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                  placeholder="e.g., 001, 002"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Unique identifier (alphanumeric). Once assigned, cannot be changed or reused.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="full_name">Full Name</Label>
                 <Input
                   id="full_name"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, X, Bell, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save, LogOut } from "lucide-react";
+import { Menu, X, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save, LogOut } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -99,15 +100,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="hover:bg-primary/20 hover:text-primary transition-all duration-300 relative"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-accent rounded-full animate-pulse" />
-            </Button>
+            <NotificationBell />
             
             {/* Settings Dropdown with Edit Mode */}
             <DropdownMenu>
@@ -178,7 +171,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               className="hover:bg-accent/20 hover:text-accent transition-all duration-300"
               aria-label="Toggle alerts sidebar"
             >
-              {rightSidebarOpen ? <ChevronRight className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+              {rightSidebarOpen ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
             </Button>
           </div>
         </div>
