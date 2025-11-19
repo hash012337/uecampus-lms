@@ -50,9 +50,33 @@ export default function CourseDetail() {
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
+    checkAdminAndEnroll();
     checkAdminStatus();
     fetchUsers();
   }, [user]);
+
+  const checkAdminAndEnroll = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    if (data && courseId) {
+      // Auto-enroll admin in this course
+      await supabase
+        .from("enrollments")
+        .upsert({
+          user_id: user.id,
+          course_id: courseId,
+          role: "admin",
+          enrolled_by: user.id
+        }, { onConflict: "user_id,course_id" });
+    }
+  };
 
   const checkAdminStatus = async () => {
     if (!user) return;

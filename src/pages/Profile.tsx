@@ -15,6 +15,7 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -26,7 +27,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url")
+        .select("full_name, avatar_url, user_id")
         .eq("id", user?.id)
         .maybeSingle();
 
@@ -35,6 +36,7 @@ export default function Profile() {
       if (data) {
         setFullName(data.full_name || "");
         setAvatarUrl(data.avatar_url || "");
+        setUserId(data.user_id || "Not assigned");
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -163,6 +165,20 @@ export default function Profile() {
           {/* Profile Information */}
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="userId">User ID</Label>
+              <Input
+                id="userId"
+                type="text"
+                value={userId}
+                disabled
+                className="bg-muted/50"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your unique user identifier assigned by the administrator.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
@@ -172,7 +188,7 @@ export default function Profile() {
                 className="bg-muted/50"
               />
               <p className="text-xs text-muted-foreground">
-                Email cannot be changed directly. Contact support if needed.
+                Email cannot be changed. Contact administrator if needed.
               </p>
             </div>
 
@@ -185,6 +201,23 @@ export default function Profile() {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
               />
+              <p className="text-xs text-muted-foreground">
+                You can edit your name.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value="••••••••"
+                disabled
+                className="bg-muted/50"
+              />
+              <p className="text-xs text-muted-foreground">
+                Contact administrator to reset your password.
+              </p>
             </div>
           </div>
 
