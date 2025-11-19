@@ -79,6 +79,14 @@ export default function CourseDetail() {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<string | null>(null);
 
+  // Handler for updating basic course fields
+  const handleCourseFieldUpdate = (field: keyof typeof courseData, value: any) => {
+    const updatedData = { ...courseData, [field]: value };
+    setCourseData(updatedData);
+    console.log(`Course ${field} updated - Save to DB:`, { field, value });
+    // TODO: await updateCourseFieldInDatabase(courseData.id, { [field]: value });
+  };
+
   if (!course) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -96,7 +104,21 @@ export default function CourseDetail() {
   }
 
   const handleSaveCourse = () => {
-    console.log("Saving course data:", courseData);
+    // Complete course data package ready for database
+    const completeCourseData = {
+      ...courseData,
+      curriculumSections: curriculumSections
+    };
+    
+    console.log("=== COURSE DATA FOR DATABASE ===");
+    console.log("Basic Info:", courseData);
+    console.log("Curriculum Sections:", curriculumSections);
+    console.log("Complete Package:", completeCourseData);
+    console.log("================================");
+    
+    // TODO: Add your database save logic here
+    // Example: await saveCourseToDatabase(completeCourseData);
+    
     toast.success("Course updated successfully!");
   };
 
@@ -108,19 +130,27 @@ export default function CourseDetail() {
       duration: "1 week",
       lessons: []
     };
-    setCurriculumSections([...curriculumSections, newSection]);
+    const updatedSections = [...curriculumSections, newSection];
+    setCurriculumSections(updatedSections);
+    console.log("Section added - Save to DB:", newSection);
+    // TODO: await addSectionToDatabase(courseData.id, newSection);
     toast.success("New section added");
   };
 
   const handleDeleteSection = (sectionId: string) => {
     setCurriculumSections(curriculumSections.filter(s => s.id !== sectionId));
+    console.log("Section deleted - Remove from DB:", sectionId);
+    // TODO: await deleteSectionFromDatabase(courseData.id, sectionId);
     toast.success("Section deleted");
   };
 
   const handleUpdateSection = (sectionId: string, field: keyof CurriculumSection, value: any) => {
-    setCurriculumSections(curriculumSections.map(section => 
+    const updatedSections = curriculumSections.map(section => 
       section.id === sectionId ? { ...section, [field]: value } : section
-    ));
+    );
+    setCurriculumSections(updatedSections);
+    console.log(`Section ${sectionId} updated - Save to DB:`, { field, value });
+    // TODO: await updateSectionInDatabase(courseData.id, sectionId, { [field]: value });
   };
 
   const handleAddLesson = (sectionId: string) => {
@@ -135,6 +165,8 @@ export default function CourseDetail() {
         ? { ...section, lessons: [...section.lessons, newLesson] }
         : section
     ));
+    console.log("Lesson added - Save to DB:", { sectionId, lesson: newLesson });
+    // TODO: await addLessonToDatabase(courseData.id, sectionId, newLesson);
     toast.success("Lesson added");
   };
 
@@ -144,6 +176,8 @@ export default function CourseDetail() {
         ? { ...section, lessons: section.lessons.filter(l => l.id !== lessonId) }
         : section
     ));
+    console.log("Lesson deleted - Remove from DB:", { sectionId, lessonId });
+    // TODO: await deleteLessonFromDatabase(courseData.id, sectionId, lessonId);
     toast.success("Lesson deleted");
   };
 
@@ -158,32 +192,43 @@ export default function CourseDetail() {
           }
         : section
     ));
+    console.log(`Lesson ${lessonId} updated - Save to DB:`, { sectionId, field, value });
+    // TODO: await updateLessonInDatabase(courseData.id, sectionId, lessonId, { [field]: value });
   };
 
   const handleArrayFieldAdd = (field: keyof typeof courseData) => {
     const currentArray = courseData[field] as string[];
-    setCourseData({
+    const updatedData = {
       ...courseData,
       [field]: [...currentArray, ""]
-    });
+    };
+    setCourseData(updatedData);
+    console.log(`${field} item added - Save to DB:`, updatedData[field]);
+    // TODO: await updateCourseFieldInDatabase(courseData.id, field, updatedData[field]);
   };
 
   const handleArrayFieldUpdate = (field: keyof typeof courseData, index: number, value: string) => {
     const currentArray = courseData[field] as string[];
     const newArray = [...currentArray];
     newArray[index] = value;
-    setCourseData({
+    const updatedData = {
       ...courseData,
       [field]: newArray
-    });
+    };
+    setCourseData(updatedData);
+    console.log(`${field}[${index}] updated - Save to DB:`, updatedData[field]);
+    // TODO: await updateCourseFieldInDatabase(courseData.id, field, updatedData[field]);
   };
 
   const handleArrayFieldDelete = (field: keyof typeof courseData, index: number) => {
     const currentArray = courseData[field] as string[];
-    setCourseData({
+    const updatedData = {
       ...courseData,
       [field]: currentArray.filter((_, i) => i !== index)
-    });
+    };
+    setCourseData(updatedData);
+    console.log(`${field}[${index}] deleted - Save to DB:`, updatedData[field]);
+    // TODO: await updateCourseFieldInDatabase(courseData.id, field, updatedData[field]);
   };
 
   return (
@@ -215,7 +260,7 @@ export default function CourseDetail() {
             <Input
               id="course-id"
               value={courseData.id}
-              onChange={(e) => setCourseData({ ...courseData, id: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("id", e.target.value)}
               placeholder="course-id"
             />
           </div>
@@ -225,7 +270,7 @@ export default function CourseDetail() {
             <Input
               id="course-code"
               value={courseData.code}
-              onChange={(e) => setCourseData({ ...courseData, code: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("code", e.target.value)}
               placeholder="CS-101"
             />
           </div>
@@ -235,7 +280,7 @@ export default function CourseDetail() {
             <Input
               id="course-title"
               value={courseData.title}
-              onChange={(e) => setCourseData({ ...courseData, title: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("title", e.target.value)}
               placeholder="Enter course title"
               className="text-lg font-semibold"
             />
@@ -246,7 +291,7 @@ export default function CourseDetail() {
             <Input
               id="category"
               value={courseData.category}
-              onChange={(e) => setCourseData({ ...courseData, category: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("category", e.target.value)}
               placeholder="Bachelor's Programs"
             />
           </div>
@@ -256,7 +301,7 @@ export default function CourseDetail() {
             <Input
               id="subcategory"
               value={courseData.subcategory}
-              onChange={(e) => setCourseData({ ...courseData, subcategory: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("subcategory", e.target.value)}
               placeholder="Information Technology"
             />
           </div>
@@ -266,7 +311,7 @@ export default function CourseDetail() {
             <Input
               id="level"
               value={courseData.level}
-              onChange={(e) => setCourseData({ ...courseData, level: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("level", e.target.value)}
               placeholder="Undergraduate"
             />
           </div>
@@ -276,7 +321,7 @@ export default function CourseDetail() {
             <Input
               id="duration"
               value={courseData.duration}
-              onChange={(e) => setCourseData({ ...courseData, duration: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("duration", e.target.value)}
               placeholder="3-4 years"
             />
           </div>
@@ -286,7 +331,7 @@ export default function CourseDetail() {
             <Input
               id="mode"
               value={courseData.mode}
-              onChange={(e) => setCourseData({ ...courseData, mode: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("mode", e.target.value)}
               placeholder="Online"
             />
           </div>
@@ -296,7 +341,7 @@ export default function CourseDetail() {
             <Input
               id="partner"
               value={courseData.partner}
-              onChange={(e) => setCourseData({ ...courseData, partner: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("partner", e.target.value)}
               placeholder="Walsh College"
             />
           </div>
@@ -306,7 +351,7 @@ export default function CourseDetail() {
             <Textarea
               id="description"
               value={courseData.description}
-              onChange={(e) => setCourseData({ ...courseData, description: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("description", e.target.value)}
               placeholder="Brief course description"
               rows={3}
             />
@@ -317,7 +362,7 @@ export default function CourseDetail() {
             <Textarea
               id="overview"
               value={courseData.overview}
-              onChange={(e) => setCourseData({ ...courseData, overview: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("overview", e.target.value)}
               placeholder="Detailed course overview"
               rows={4}
             />
@@ -328,7 +373,7 @@ export default function CourseDetail() {
             <Input
               id="tuition"
               value={courseData.tuition}
-              onChange={(e) => setCourseData({ ...courseData, tuition: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("tuition", e.target.value)}
               placeholder="$12,000 - $15,000 per year"
             />
           </div>
@@ -338,7 +383,7 @@ export default function CourseDetail() {
             <Input
               id="accreditation"
               value={courseData.accreditation}
-              onChange={(e) => setCourseData({ ...courseData, accreditation: e.target.value })}
+              onChange={(e) => handleCourseFieldUpdate("accreditation", e.target.value)}
               placeholder="Accreditation body"
             />
           </div>
@@ -352,7 +397,7 @@ export default function CourseDetail() {
               min="0"
               max="5"
               value={courseData.rating}
-              onChange={(e) => setCourseData({ ...courseData, rating: parseFloat(e.target.value) })}
+              onChange={(e) => handleCourseFieldUpdate("rating", parseFloat(e.target.value))}
             />
           </div>
 
@@ -362,7 +407,7 @@ export default function CourseDetail() {
               id="enrolled"
               type="number"
               value={courseData.enrolledStudents}
-              onChange={(e) => setCourseData({ ...courseData, enrolledStudents: parseInt(e.target.value) })}
+              onChange={(e) => handleCourseFieldUpdate("enrolledStudents", parseInt(e.target.value))}
             />
           </div>
 
@@ -370,7 +415,7 @@ export default function CourseDetail() {
             <Switch
               id="installments"
               checked={courseData.installments}
-              onCheckedChange={(checked) => setCourseData({ ...courseData, installments: checked })}
+              onCheckedChange={(checked) => handleCourseFieldUpdate("installments", checked)}
             />
             <Label htmlFor="installments" className="cursor-pointer">
               Installment plans available
