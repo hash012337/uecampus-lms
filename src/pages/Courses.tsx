@@ -1,23 +1,21 @@
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
   BookOpen, 
   Search, 
-  Filter, 
-  Grid, 
-  List, 
   Star, 
   Clock, 
   Users,
-  TrendingUp,
-  Award
+  GraduationCap,
+  Award,
+  ChevronRight
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const allCourses = [
+import { allCoursesData, courseCategories } from "@/data/coursesData";
+import { Link } from "react-router-dom";
+import { useState } from "react";
   {
     id: 1,
     title: "Data Structures & Algorithms",
@@ -117,30 +115,26 @@ const allCourses = [
 ];
 
 export default function Courses() {
-  const enrolledCourses = allCourses.filter(c => c.enrolled);
-  const availableCourses = allCourses.filter(c => !c.enrolled);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  
+  const filteredCourses = allCoursesData.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with Search */}
+      {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">My Courses</h1>
+            <h1 className="text-3xl font-bold">Course Catalog</h1>
             <p className="text-muted-foreground mt-1">
-              Browse and manage your learning journey
+              Explore our comprehensive collection of {allCoursesData.length} programs
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <List className="h-4 w-4" />
-            </Button>
           </div>
         </div>
 
@@ -148,58 +142,52 @@ export default function Courses() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search courses..."
+            placeholder="Search courses by name or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-muted/50 border-border/50 focus:border-primary transition-all duration-300"
           />
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="p-4 bg-gradient-card border-primary/30 hover:shadow-glow transition-all duration-300">
+      {/* Category Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card 
+          onClick={() => setSelectedCategory("all")}
+          className={`p-4 cursor-pointer transition-all duration-300 ${
+            selectedCategory === "all" 
+              ? "bg-gradient-primary border-primary shadow-glow" 
+              : "bg-gradient-card border-border/50 hover:border-primary/50"
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg bg-primary/20">
-              <BookOpen className="h-5 w-5 text-primary" />
-            </div>
+            <div className="text-3xl">📖</div>
             <div>
-              <p className="text-2xl font-bold">{enrolledCourses.length}</p>
-              <p className="text-xs text-muted-foreground">Enrolled</p>
+              <p className="text-2xl font-bold">{allCoursesData.length}</p>
+              <p className="text-xs text-muted-foreground">All Courses</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4 bg-gradient-card border-success/30 hover:shadow-glow transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg bg-success/20">
-              <TrendingUp className="h-5 w-5 text-success" />
+        
+        {courseCategories.map((category) => (
+          <Card 
+            key={category.name}
+            onClick={() => setSelectedCategory(category.name)}
+            className={`p-4 cursor-pointer transition-all duration-300 ${
+              selectedCategory === category.name 
+                ? "bg-gradient-primary border-primary shadow-glow" 
+                : "bg-gradient-card border-border/50 hover:border-primary/50"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">{category.icon}</div>
+              <div>
+                <p className="text-2xl font-bold">{category.count}</p>
+                <p className="text-xs text-muted-foreground">{category.name}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold">60%</p>
-              <p className="text-xs text-muted-foreground">Avg Progress</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-card border-warning/30 hover:shadow-glow transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg bg-warning/20">
-              <Clock className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">39</p>
-              <p className="text-xs text-muted-foreground">Lessons Left</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-card border-accent/30 hover:shadow-glow-accent transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg bg-accent/20">
-              <Award className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">4.8</p>
-              <p className="text-xs text-muted-foreground">Avg Rating</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
       </div>
 
       {/* Tabs for Enrolled and Available */}
