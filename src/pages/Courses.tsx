@@ -2,7 +2,25 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Clock, Award, TrendingUp } from "lucide-react";
+import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+const weeklyActivity = [
+  { day: "Mon", hours: 2.5 },
+  { day: "Tue", hours: 3.2 },
+  { day: "Wed", hours: 4.5 },
+  { day: "Thu", hours: 5.8 },
+  { day: "Fri", hours: 3.1 },
+  { day: "Sat", hours: 2.0 },
+  { day: "Sun", hours: 3.4 },
+];
+
+const progressStats = {
+  totalActivity: 64,
+  inProgress: 8,
+  completed: 12,
+  upcoming: 14,
+};
 
 const courses = [
   {
@@ -12,8 +30,15 @@ const courses = [
     progress: 75,
     instructor: "Dr. Sarah Johnson",
     nextClass: "Tomorrow, 10:00 AM",
+    timeSlot: "10:00 - 12:00",
     status: "active",
     grade: "A",
+    participants: [
+      { name: "John", avatar: "JD" },
+      { name: "Sarah", avatar: "SM" },
+      { name: "Mike", avatar: "MK" },
+      { name: "Emma", avatar: "EW" },
+    ],
   },
   {
     id: 2,
@@ -22,8 +47,14 @@ const courses = [
     progress: 60,
     instructor: "Prof. Michael Chen",
     nextClass: "Today, 2:00 PM",
+    timeSlot: "14:00 - 16:00",
     status: "active",
     grade: "A-",
+    participants: [
+      { name: "Alex", avatar: "AL" },
+      { name: "Lisa", avatar: "LS" },
+      { name: "Tom", avatar: "TM" },
+    ],
   },
   {
     id: 3,
@@ -32,144 +63,255 @@ const courses = [
     progress: 45,
     instructor: "Dr. Emily Rodriguez",
     nextClass: "Wed, 9:00 AM",
+    timeSlot: "09:00 - 11:00",
     status: "active",
     grade: "B+",
-  },
-  {
-    id: 4,
-    title: "Mobile App Development",
-    code: "CS302",
-    progress: 30,
-    instructor: "Prof. David Kim",
-    nextClass: "Thu, 11:00 AM",
-    status: "active",
-    grade: "A",
+    participants: [
+      { name: "Chris", avatar: "CH" },
+      { name: "Nina", avatar: "NA" },
+    ],
   },
 ];
 
+const platformStats = [
+  { platform: "EduPro Platform", lessons: 8, hours: 12.5, icon: BookOpen },
+  { platform: "Zoom Classes", lessons: 5, hours: 6.8, icon: Video },
+  { platform: "Recorded Sessions", lessons: 3, hours: 4.2, icon: PlayCircle },
+];
+
 export default function Courses() {
+  const maxHours = Math.max(...weeklyActivity.map(d => d.hours));
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">My Courses</h1>
-          <p className="text-muted-foreground mt-1">
-            Track your learning progress across all enrolled courses
-          </p>
-        </div>
-        <Button className="bg-gradient-primary hover:opacity-90 transition-opacity">
-          <BookOpen className="mr-2 h-4 w-4" />
-          Browse Courses
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="p-4 bg-gradient-card border-primary/30 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:border-primary group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="p-3 rounded-lg bg-primary/20 shadow-glow">
-              <BookOpen className="h-5 w-5 text-primary" />
+      {/* Top Stats Row */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Activity Card */}
+        <Card className="p-6 bg-gradient-card border-border/50 hover:shadow-glow transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm text-muted-foreground">Activity</h3>
+              <Clock className="h-4 w-4 text-primary" />
             </div>
-            <div>
-              <p className="text-2xl font-bold">4</p>
-              <p className="text-xs text-muted-foreground">Active Courses</p>
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold">{weeklyActivity.reduce((sum, d) => sum + d.hours, 0).toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">hours</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Last 7 days</p>
             </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-card border-success/30 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:border-success group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-success opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="p-3 rounded-lg bg-success/20">
-              <TrendingUp className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">52%</p>
-              <p className="text-xs text-muted-foreground">Avg Progress</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-card border-warning/30 hover:shadow-glow transition-all duration-300 hover:scale-105 hover:border-warning group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="p-3 rounded-lg bg-warning/20">
-              <Clock className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">24h</p>
-              <p className="text-xs text-muted-foreground">This Week</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-gradient-card border-accent/30 hover:shadow-glow-accent transition-all duration-300 hover:scale-105 hover:border-accent group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="p-3 rounded-lg bg-accent/20 shadow-glow-accent">
-              <Award className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">A-</p>
-              <p className="text-xs text-muted-foreground">Avg Grade</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Courses Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {courses.map((course, index) => (
-          <Card
-            key={course.id}
-            className="p-6 hover:shadow-glow transition-all duration-300 animate-scale-in bg-gradient-card border-border/50 hover:border-primary/50 hover:scale-105 group relative overflow-hidden"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
-            <div className="space-y-4 relative z-10">
-              {/* Course Header */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="font-mono">
-                      {course.code}
-                    </Badge>
-                    <Badge className="bg-success text-success-foreground">
-                      {course.grade}
-                    </Badge>
+            {/* Mini bar chart */}
+            <div className="flex items-end gap-1 mt-4 h-12">
+              {weeklyActivity.map((day, i) => (
+                <div
+                  key={i}
+                  className="flex-1 bg-primary/20 rounded-t relative group/bar hover:bg-primary/40 transition-all duration-200"
+                  style={{ height: `${(day.hours / maxHours) * 100}%` }}
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity text-xs bg-card px-2 py-1 rounded whitespace-nowrap">
+                    {day.hours}h
                   </div>
-                  <h3 className="text-xl font-semibold">{course.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {course.instructor}
-                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              {weeklyActivity.map((day, i) => (
+                <span key={i}>{day.day.charAt(0)}</span>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* Progress Statistics Card */}
+        <Card className="p-6 bg-gradient-card border-border/50 hover:shadow-glow transition-all duration-300 lg:col-span-2 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+          <div className="relative z-10">
+            <h3 className="text-sm text-muted-foreground mb-4">Progress statistics</h3>
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
+              <div className="flex-1">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold">{progressStats.totalActivity}%</span>
+                  <span className="text-sm text-muted-foreground">Total activity</span>
+                </div>
+                <Progress value={progressStats.totalActivity} className="h-2 w-full max-w-md" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1 max-w-md">
+                  <span>24%</span>
+                  <span>35%</span>
+                  <span>41%</span>
                 </div>
               </div>
-
-              {/* Progress */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-semibold">{course.progress}%</span>
+              <div className="flex gap-4">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mb-2 border-2 border-primary">
+                    <AlertCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="text-2xl font-bold">{progressStats.inProgress}</p>
+                  <p className="text-xs text-muted-foreground">In progress</p>
                 </div>
-                <Progress value={course.progress} className="h-2" />
-              </div>
-
-              {/* Next Class */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>Next class: {course.nextClass}</span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-2">
-                <Button className="flex-1" variant="default">
-                  Continue Learning
-                </Button>
-                <Button variant="outline">View Details</Button>
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center mb-2 border-2 border-success">
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  </div>
+                  <p className="text-2xl font-bold">{progressStats.completed}</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-warning/20 flex items-center justify-center mb-2 border-2 border-warning">
+                    <Calendar className="h-5 w-5 text-warning" />
+                  </div>
+                  <p className="text-2xl font-bold">{progressStats.upcoming}</p>
+                  <p className="text-xs text-muted-foreground">Upcoming</p>
+                </div>
               </div>
             </div>
-          </Card>
-        ))}
+          </div>
+        </Card>
+
+        {/* Total Courses */}
+        <Card className="p-6 bg-gradient-card border-accent/30 hover:shadow-glow-accent transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-accent opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm text-muted-foreground">Total Courses</h3>
+              <BookOpen className="h-4 w-4 text-accent" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-4xl font-bold">{courses.length}</span>
+              <p className="text-xs text-muted-foreground">Active enrollments</p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">Avg Grade</p>
+              <p className="text-xl font-bold text-accent">A-</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Platform Stats */}
+        <Card className="p-6 bg-gradient-card border-border/50 space-y-4">
+          <h3 className="text-lg font-semibold">By platform</h3>
+          <div className="space-y-3">
+            {platformStats.map((stat, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                    <stat.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{stat.platform}</p>
+                    <p className="text-xs text-muted-foreground">{stat.lessons} lessons</p>
+                  </div>
+                </div>
+                <span className="font-bold">{stat.hours} h</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Middle & Right Columns - Course Cards */}
+        <div className="lg:col-span-2 space-y-4">
+          {courses.map((course, index) => (
+            <Card
+              key={course.id}
+              className="p-6 hover:shadow-glow transition-all duration-300 bg-gradient-card border-border/50 hover:border-primary/50 group relative overflow-hidden"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
+              
+              <div className="relative z-10 space-y-4">
+                {/* Course Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {course.code}
+                      </Badge>
+                      <Badge className="bg-success/20 text-success border-success/30 text-xs">
+                        Grade: {course.grade}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {course.nextClass}
+                      </Badge>
+                    </div>
+                    <h3 className="text-xl font-semibold group-hover:text-primary transition-colors truncate">
+                      {course.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{course.instructor}</p>
+                  </div>
+                  
+                  {/* Circular Progress */}
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <svg className="w-16 h-16 transform -rotate-90">
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                        className="text-muted/20"
+                      />
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 28}`}
+                        strokeDashoffset={`${2 * Math.PI * 28 * (1 - course.progress / 100)}`}
+                        className="text-primary transition-all duration-1000"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm font-bold">{course.progress}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Course progress</span>
+                    <span className="font-semibold">{course.progress}%</span>
+                  </div>
+                  <Progress value={course.progress} className="h-2" />
+                </div>
+
+                {/* Participants & Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 text-muted-foreground mr-2" />
+                      <span className="text-xs text-muted-foreground">Participants</span>
+                    </div>
+                    <div className="flex -space-x-2">
+                      {course.participants.map((participant, i) => (
+                        <Avatar key={i} className="w-7 h-7 border-2 border-card">
+                          <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                            {participant.avatar}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Button className="bg-gradient-primary hover:opacity-90 transition-opacity w-full sm:w-auto">
+                    Continue Learning
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
