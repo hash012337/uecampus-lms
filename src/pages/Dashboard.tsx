@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Users, Mail, Edit2, Save, Plus, Trash2, X } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { BookOpen, Clock, Video, Calendar, PlayCircle, CheckCircle2, AlertCircle, Plus, Trash2, Copy, Edit2 } from "lucide-react";
 import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useEditMode } from "@/contexts/EditModeContext";
 
 interface WeeklyActivity {
   day: string;
@@ -43,7 +43,7 @@ interface SupportOption {
 }
 
 export default function Dashboard() {
-  const [isEditMode, setIsEditMode] = useState(false);
+  const { isEditMode } = useEditMode();
   
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivity[]>([
     { day: "Mon", hours: 2.5 },
@@ -73,12 +73,7 @@ export default function Dashboard() {
       timeSlot: "10:00 - 12:00",
       status: "active",
       grade: "A",
-      participants: [
-        { name: "John", avatar: "JD" },
-        { name: "Sarah", avatar: "SM" },
-        { name: "Mike", avatar: "MK" },
-        { name: "Emma", avatar: "EW" },
-      ],
+      participants: [],
     },
     {
       id: 2,
@@ -90,26 +85,7 @@ export default function Dashboard() {
       timeSlot: "14:00 - 16:00",
       status: "active",
       grade: "A-",
-      participants: [
-        { name: "Alex", avatar: "AL" },
-        { name: "Lisa", avatar: "LS" },
-        { name: "Tom", avatar: "TM" },
-      ],
-    },
-    {
-      id: 3,
-      title: "Database Management",
-      code: "CS202",
-      progress: 45,
-      instructor: "Dr. Emily Rodriguez",
-      nextClass: "Wed, 9:00 AM",
-      timeSlot: "09:00 - 11:00",
-      status: "active",
-      grade: "B+",
-      participants: [
-        { name: "Chris", avatar: "CH" },
-        { name: "Nina", avatar: "NA" },
-      ],
+      participants: [],
     },
   ]);
 
@@ -126,54 +102,31 @@ export default function Dashboard() {
       available: "Available now",
       color: "success"
     },
-    { 
-      type: "Email Support", 
-      description: "Detailed help", 
-      available: "24h response time",
-      color: "accent"
-    },
   ]);
 
   const maxHours = Math.max(...weeklyActivity.map(d => d.hours));
-
-  const handleSaveAll = () => {
-    console.log("=== DASHBOARD DATA FOR DATABASE ===");
-    console.log("Weekly Activity:", weeklyActivity);
-    console.log("Progress Stats:", progressStats);
-    console.log("Courses:", courses);
-    console.log("Support Options:", supportOptions);
-    console.log("================================");
-    // TODO: await saveDashboardData({ weeklyActivity, progressStats, courses, supportOptions });
-    toast.success("Dashboard data saved successfully!");
-    setIsEditMode(false);
-  };
 
   const updateWeeklyActivity = (index: number, hours: number) => {
     const updated = [...weeklyActivity];
     updated[index].hours = hours;
     setWeeklyActivity(updated);
     console.log("Weekly activity updated - Save to DB:", updated);
-    // TODO: await updateWeeklyActivityInDatabase(updated);
   };
 
   const updateProgressStats = (field: keyof ProgressStats, value: number) => {
     const updated = { ...progressStats, [field]: value };
     setProgressStats(updated);
     console.log("Progress stats updated - Save to DB:", updated);
-    // TODO: await updateProgressStatsInDatabase(updated);
   };
 
   const updateCourse = (courseId: number, field: keyof Course, value: any) => {
     const updated = courses.map(c => c.id === courseId ? { ...c, [field]: value } : c);
     setCourses(updated);
     console.log(`Course ${courseId} updated - Save to DB:`, { field, value });
-    // TODO: await updateCourseInDatabase(courseId, { [field]: value });
   };
 
   const deleteCourse = (courseId: number) => {
     setCourses(courses.filter(c => c.id !== courseId));
-    console.log("Course deleted - Remove from DB:", courseId);
-    // TODO: await deleteCourseFromDatabase(courseId);
     toast.success("Course removed");
   };
 
@@ -191,17 +144,24 @@ export default function Dashboard() {
       participants: []
     };
     setCourses([...courses, newCourse]);
-    console.log("Course added - Save to DB:", newCourse);
-    // TODO: await addCourseToDatabase(newCourse);
     toast.success("Course added");
+  };
+
+  const duplicateCourse = (course: Course) => {
+    const duplicated: Course = {
+      ...course,
+      id: Date.now(),
+      title: `${course.title} (Copy)`,
+      code: `${course.code}-COPY`
+    };
+    setCourses([...courses, duplicated]);
+    toast.success("Course duplicated");
   };
 
   const updateSupportOption = (index: number, field: keyof SupportOption, value: string) => {
     const updated = [...supportOptions];
     updated[index] = { ...updated[index], [field]: value };
     setSupportOptions(updated);
-    console.log("Support option updated - Save to DB:", updated);
-    // TODO: await updateSupportOptionsInDatabase(updated);
   };
 
   return (
@@ -210,24 +170,15 @@ export default function Dashboard() {
       
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="flex gap-2">
-          {isEditMode && (
-            <Button onClick={handleSaveAll} className="gap-2 bg-gradient-primary">
-              <Save className="h-4 w-4" />
-              Save All Changes
-            </Button>
-          )}
-          <Button 
-            onClick={() => setIsEditMode(!isEditMode)} 
-            variant={isEditMode ? "destructive" : "outline"}
-            className="gap-2"
-          >
-            {isEditMode ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-            {isEditMode ? "Cancel Edit" : "Edit Mode"}
-          </Button>
-        </div>
+        {isEditMode && (
+          <Badge variant="outline" className="animate-pulse">
+            <Edit2 className="h-3 w-3 mr-1" />
+            Edit Mode Active
+          </Badge>
+        )}
       </div>
 
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6 bg-gradient-card border-border/50 hover:shadow-glow transition-all duration-300 relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
@@ -379,14 +330,24 @@ export default function Dashboard() {
           {courses.map((course) => (
             <Card key={course.id} className="p-6 hover:shadow-glow transition-all duration-300 bg-gradient-card border-border/50 group relative">
               {isEditMode && (
-                <Button
-                  onClick={() => deleteCourse(course.id)}
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-2 right-2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    onClick={() => duplicateCourse(course)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => deleteCourse(course.id)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -533,3 +494,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

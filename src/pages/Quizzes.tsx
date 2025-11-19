@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Timer, Target, PlayCircle, Edit2, Save, Plus, Trash2, X } from "lucide-react";
+import { Trophy, Timer, Target, PlayCircle, Plus, Trash2, Copy, Edit2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useEditMode } from "@/contexts/EditModeContext";
 
 interface Quiz {
   id: number;
@@ -20,7 +21,7 @@ interface Quiz {
 }
 
 export default function Quizzes() {
-  const [isEditMode, setIsEditMode] = useState(false);
+  const { isEditMode } = useEditMode();
 
   const [quizzes, setQuizzes] = useState<Quiz[]>([
     { 
@@ -58,27 +59,14 @@ export default function Quizzes() {
     avgScore: 92
   });
 
-  const handleSaveAll = () => {
-    console.log("=== QUIZZES DATA FOR DATABASE ===");
-    console.log("Quizzes:", quizzes);
-    console.log("Stats:", stats);
-    console.log("================================");
-    // TODO: await saveQuizzesData({ quizzes, stats });
-    toast.success("Quizzes data saved successfully!");
-    setIsEditMode(false);
-  };
-
   const updateQuiz = (id: number, field: keyof Quiz, value: any) => {
     const updated = quizzes.map(q => q.id === id ? { ...q, [field]: value } : q);
     setQuizzes(updated);
     console.log(`Quiz ${id} updated - Save to DB:`, { field, value });
-    // TODO: await updateQuizInDatabase(id, { [field]: value });
   };
 
   const deleteQuiz = (id: number) => {
     setQuizzes(quizzes.filter(q => q.id !== id));
-    console.log("Quiz deleted - Remove from DB:", id);
-    // TODO: await deleteQuizFromDatabase(id);
     toast.success("Quiz deleted");
   };
 
@@ -93,38 +81,35 @@ export default function Quizzes() {
       difficulty: "Medium"
     };
     setQuizzes([...quizzes, newQuiz]);
-    console.log("Quiz added - Save to DB:", newQuiz);
-    // TODO: await addQuizToDatabase(newQuiz);
     toast.success("Quiz added");
+  };
+
+  const duplicateQuiz = (quiz: Quiz) => {
+    const duplicated: Quiz = {
+      ...quiz,
+      id: Date.now(),
+      title: `${quiz.title} (Copy)`
+    };
+    setQuizzes([...quizzes, duplicated]);
+    toast.success("Quiz duplicated");
   };
 
   const updateStats = (field: "completed" | "avgScore", value: number) => {
     const updated = { ...stats, [field]: value };
     setStats(updated);
     console.log("Stats updated - Save to DB:", updated);
-    // TODO: await updateStatsInDatabase(updated);
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Quizzes</h1>
-        <div className="flex gap-2">
-          {isEditMode && (
-            <Button onClick={handleSaveAll} className="gap-2 bg-gradient-primary">
-              <Save className="h-4 w-4" />
-              Save All Changes
-            </Button>
-          )}
-          <Button 
-            onClick={() => setIsEditMode(!isEditMode)} 
-            variant={isEditMode ? "destructive" : "outline"}
-            className="gap-2"
-          >
-            {isEditMode ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-            {isEditMode ? "Cancel Edit" : "Edit Mode"}
-          </Button>
-        </div>
+        {isEditMode && (
+          <Badge variant="outline" className="animate-pulse">
+            <Edit2 className="h-3 w-3 mr-1" />
+            Edit Mode Active
+          </Badge>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -183,14 +168,24 @@ export default function Quizzes() {
           {quizzes.map((q) => (
             <Card key={q.id} className="p-6 hover:shadow-glow transition-all bg-gradient-card relative group">
               {isEditMode && (
-                <Button
-                  onClick={() => deleteQuiz(q.id)}
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-2 right-2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    onClick={() => duplicateQuiz(q)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => deleteQuiz(q.id)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
               <div className="space-y-4">
                 {isEditMode ? (

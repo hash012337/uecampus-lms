@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, CheckCircle, Upload, Download, Calendar, Edit2, Save, Plus, Trash2, X } from "lucide-react";
+import { Clock, CheckCircle, Upload, Download, Calendar, Plus, Trash2, Copy, Edit2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useEditMode } from "@/contexts/EditModeContext";
 
 interface PendingAssignment {
   id: number;
@@ -34,7 +35,7 @@ interface CompletedAssignment {
 }
 
 export default function Assignments() {
-  const [isEditMode, setIsEditMode] = useState(false);
+  const { isEditMode } = useEditMode();
   
   const [pendingAssignments, setPendingAssignments] = useState<PendingAssignment[]>([
     { 
@@ -47,7 +48,7 @@ export default function Assignments() {
       hoursLeft: 8, 
       points: 100, 
       description: "Implement BST operations", 
-      attachments: ["requirements.pdf"] 
+      attachments: [] 
     },
     { 
       id: 2, 
@@ -59,7 +60,7 @@ export default function Assignments() {
       hoursLeft: 48, 
       points: 80, 
       description: "Build component library", 
-      attachments: ["specs.pdf"] 
+      attachments: [] 
     },
   ]);
 
@@ -74,53 +75,27 @@ export default function Assignments() {
       feedback: "Excellent work!", 
       points: 100 
     },
-    { 
-      id: 4, 
-      title: "UI/UX Design Project", 
-      course: "Web Development", 
-      courseCode: "CS301", 
-      submittedDate: "2024-01-10", 
-      grade: "88/100", 
-      feedback: "Good design", 
-      points: 100 
-    },
   ]);
-
-  const handleSaveAll = () => {
-    console.log("=== ASSIGNMENTS DATA FOR DATABASE ===");
-    console.log("Pending:", pendingAssignments);
-    console.log("Completed:", completedAssignments);
-    console.log("================================");
-    // TODO: await saveAssignmentsData({ pending: pendingAssignments, completed: completedAssignments });
-    toast.success("Assignments data saved successfully!");
-    setIsEditMode(false);
-  };
 
   const updatePendingAssignment = (id: number, field: keyof PendingAssignment, value: any) => {
     const updated = pendingAssignments.map(a => a.id === id ? { ...a, [field]: value } : a);
     setPendingAssignments(updated);
     console.log(`Pending assignment ${id} updated - Save to DB:`, { field, value });
-    // TODO: await updateAssignmentInDatabase(id, { [field]: value });
   };
 
   const updateCompletedAssignment = (id: number, field: keyof CompletedAssignment, value: any) => {
     const updated = completedAssignments.map(a => a.id === id ? { ...a, [field]: value } : a);
     setCompletedAssignments(updated);
     console.log(`Completed assignment ${id} updated - Save to DB:`, { field, value });
-    // TODO: await updateAssignmentInDatabase(id, { [field]: value });
   };
 
   const deletePendingAssignment = (id: number) => {
     setPendingAssignments(pendingAssignments.filter(a => a.id !== id));
-    console.log("Pending assignment deleted - Remove from DB:", id);
-    // TODO: await deleteAssignmentFromDatabase(id);
     toast.success("Assignment deleted");
   };
 
   const deleteCompletedAssignment = (id: number) => {
     setCompletedAssignments(completedAssignments.filter(a => a.id !== id));
-    console.log("Completed assignment deleted - Remove from DB:", id);
-    // TODO: await deleteAssignmentFromDatabase(id);
     toast.success("Assignment deleted");
   };
 
@@ -138,9 +113,17 @@ export default function Assignments() {
       attachments: []
     };
     setPendingAssignments([...pendingAssignments, newAssignment]);
-    console.log("Pending assignment added - Save to DB:", newAssignment);
-    // TODO: await addAssignmentToDatabase(newAssignment);
     toast.success("Assignment added");
+  };
+
+  const duplicatePendingAssignment = (assignment: PendingAssignment) => {
+    const duplicated: PendingAssignment = {
+      ...assignment,
+      id: Date.now(),
+      title: `${assignment.title} (Copy)`
+    };
+    setPendingAssignments([...pendingAssignments, duplicated]);
+    toast.success("Assignment duplicated");
   };
 
   const addCompletedAssignment = () => {
@@ -155,31 +138,29 @@ export default function Assignments() {
       points: 100
     };
     setCompletedAssignments([...completedAssignments, newAssignment]);
-    console.log("Completed assignment added - Save to DB:", newAssignment);
-    // TODO: await addAssignmentToDatabase(newAssignment);
     toast.success("Assignment added");
+  };
+
+  const duplicateCompletedAssignment = (assignment: CompletedAssignment) => {
+    const duplicated: CompletedAssignment = {
+      ...assignment,
+      id: Date.now(),
+      title: `${assignment.title} (Copy)`
+    };
+    setCompletedAssignments([...completedAssignments, duplicated]);
+    toast.success("Assignment duplicated");
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Assignments</h1>
-        <div className="flex gap-2">
-          {isEditMode && (
-            <Button onClick={handleSaveAll} className="gap-2 bg-gradient-primary">
-              <Save className="h-4 w-4" />
-              Save All Changes
-            </Button>
-          )}
-          <Button 
-            onClick={() => setIsEditMode(!isEditMode)} 
-            variant={isEditMode ? "destructive" : "outline"}
-            className="gap-2"
-          >
-            {isEditMode ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-            {isEditMode ? "Cancel Edit" : "Edit Mode"}
-          </Button>
-        </div>
+        {isEditMode && (
+          <Badge variant="outline" className="animate-pulse">
+            <Edit2 className="h-3 w-3 mr-1" />
+            Edit Mode Active
+          </Badge>
+        )}
       </div>
 
       <Tabs defaultValue="pending">
@@ -198,14 +179,24 @@ export default function Assignments() {
           {pendingAssignments.map((a) => (
             <Card key={a.id} className="p-6 border-l-4 border-l-accent hover:shadow-glow transition-all relative group">
               {isEditMode && (
-                <Button
-                  onClick={() => deletePendingAssignment(a.id)}
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-2 right-2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    onClick={() => duplicatePendingAssignment(a)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => deletePendingAssignment(a.id)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
               <div className="flex justify-between items-start gap-4">
                 <div className="space-y-3 flex-1">
@@ -311,14 +302,24 @@ export default function Assignments() {
           {completedAssignments.map((a) => (
             <Card key={a.id} className="p-6 border-l-4 border-l-success hover:shadow-glow transition-all relative group">
               {isEditMode && (
-                <Button
-                  onClick={() => deleteCompletedAssignment(a.id)}
-                  size="icon"
-                  variant="ghost"
-                  className="absolute top-2 right-2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    onClick={() => duplicateCompletedAssignment(a)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => deleteCompletedAssignment(a.id)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
               <div className="space-y-3">
                 {isEditMode ? (
