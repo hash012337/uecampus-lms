@@ -8,12 +8,14 @@ import {
   Award,
   Clock,
   User,
-  Sparkles
+  Sparkles,
+  LayoutDashboard
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: BookOpen, label: "My Courses", href: "/courses" },
   { icon: ClipboardList, label: "Assignments", href: "/assignments" },
   { icon: Calendar, label: "Timetable", href: "/timetable" },
