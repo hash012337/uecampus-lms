@@ -24,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
           <Route path="/courses" element={<DashboardLayout><Courses /></DashboardLayout>} />
+          <Route path="/courses/:courseId" element={<DashboardLayout><CourseDetail /></DashboardLayout>} />
           <Route path="/assignments" element={<DashboardLayout><Assignments /></DashboardLayout>} />
           <Route path="/quizzes" element={<DashboardLayout><Quizzes /></DashboardLayout>} />
           <Route path="/timetable" element={<DashboardLayout><div className="text-center py-12">Timetable - Coming Soon</div></DashboardLayout>} />
