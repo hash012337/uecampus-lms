@@ -376,6 +376,7 @@ export default function Timetable() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Weekly Calendar View */}
