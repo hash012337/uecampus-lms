@@ -7,9 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Clock, Upload, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Upload, Trash2 } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 
 interface TimetableEntry {
   id: string;
@@ -22,34 +22,32 @@ interface TimetableEntry {
   room?: string;
   color: string;
   notes?: string;
+  date?: string;
 }
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => {
-  const hour = i + 8; // Start from 8 AM
-  return `${hour.toString().padStart(2, "0")}:00`;
-});
+const COLORS = ["#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899", "#14B8A6"];
 
 export default function Timetable() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     course_code: "",
     course_name: "",
-    day_of_week: "Monday",
     start_time: "09:00",
     end_time: "10:00",
     instructor: "",
     room: "",
-    color: "#8B5CF6",
+    color: COLORS[0],
     notes: "",
   });
 
@@ -59,7 +57,7 @@ export default function Timetable() {
       checkAdminStatus();
       fetchUsers();
     }
-  }, [user]);
+  }, [user, currentDate]);
 
   const checkAdminStatus = async () => {
     if (!user) return;
@@ -84,7 +82,6 @@ export default function Timetable() {
     }
 
     toast.info("PDF parsing will be implemented with document parsing API");
-    // TODO: Implement PDF parsing to extract timetable data
     setUploadDialogOpen(false);
     setPdfFile(null);
     setSelectedUser("");
@@ -96,8 +93,7 @@ export default function Timetable() {
       const { data, error } = await supabase
         .from("timetable")
         .select("*")
-        .order("day_of_week")
-        .order("start_time");
+        .eq("user_id", user?.id);
 
       if (error) throw error;
       setEntries(data || []);
@@ -110,11 +106,24 @@ export default function Timetable() {
   };
 
   const handleSave = async () => {
+    if (!selectedDate) {
+      toast.error("Please select a date");
+      return;
+    }
+
     try {
+      const dayOfWeek = format(selectedDate, "EEEE");
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+
       if (editingEntry) {
         const { error } = await supabase
           .from("timetable")
-          .update({ ...formData, user_id: user?.id })
+          .update({ 
+            ...formData, 
+            user_id: user?.id,
+            day_of_week: dayOfWeek,
+            date: dateStr
+          })
           .eq("id", editingEntry.id);
 
         if (error) throw error;
@@ -122,7 +131,12 @@ export default function Timetable() {
       } else {
         const { error } = await supabase
           .from("timetable")
-          .insert({ ...formData, user_id: user?.id });
+          .insert({ 
+            ...formData, 
+            user_id: user?.id,
+            day_of_week: dayOfWeek,
+            date: dateStr
+          });
 
         if (error) throw error;
         toast.success("Entry added successfully");
@@ -130,6 +144,7 @@ export default function Timetable() {
 
       setDialogOpen(false);
       setEditingEntry(null);
+      setSelectedDate(null);
       resetForm();
       loadTimetable();
     } catch (error) {
@@ -159,7 +174,6 @@ export default function Timetable() {
     setFormData({
       course_code: entry.course_code,
       course_name: entry.course_name,
-      day_of_week: entry.day_of_week,
       start_time: entry.start_time,
       end_time: entry.end_time,
       instructor: entry.instructor || "",
@@ -174,18 +188,33 @@ export default function Timetable() {
     setFormData({
       course_code: "",
       course_name: "",
-      day_of_week: "Monday",
       start_time: "09:00",
       end_time: "10:00",
       instructor: "",
       room: "",
-      color: "#8B5CF6",
+      color: COLORS[0],
       notes: "",
     });
   };
 
-  const getEntriesForDay = (day: string) => {
-    return entries.filter((entry) => entry.day_of_week === day);
+  const getDaysInMonth = () => {
+    const start = startOfMonth(currentDate);
+    const end = endOfMonth(currentDate);
+    return eachDayOfInterval({ start, end });
+  };
+
+  const getEntriesForDate = (date: Date) => {
+    return entries.filter((entry) => {
+      if (entry.date) {
+        return isSameDay(new Date(entry.date), date);
+      }
+      return entry.day_of_week === format(date, "EEEE");
+    });
+  };
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    setDialogOpen(true);
   };
 
   if (loading) {
@@ -196,16 +225,31 @@ export default function Timetable() {
     );
   }
 
+  const daysInMonth = getDaysInMonth();
+  const firstDayOfMonth = startOfMonth(currentDate);
+  const startingDayOfWeek = firstDayOfMonth.getDay();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Weekly Timetable
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-3xl font-bold">
+            {format(currentDate, "MMMM yyyy")}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your weekly class schedule
-          </p>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
         <div className="flex gap-2">
           {isAdmin && (
@@ -244,193 +288,196 @@ export default function Timetable() {
                       onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
                     />
                   </div>
-                  <Button onClick={handlePdfUpload} className="w-full bg-gradient-primary">
-                    <FileText className="h-4 w-4 mr-2" />
+                  <Button onClick={handlePdfUpload} className="w-full">
                     Parse & Add Timetable
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           )}
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) {
-              setEditingEntry(null);
-              resetForm();
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Class
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEntry ? "Edit Class" : "Add New Class"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="course_code">Course Code</Label>
-                  <Input
-                    id="course_code"
-                    value={formData.course_code}
-                    onChange={(e) => setFormData({ ...formData, course_code: e.target.value })}
-                    placeholder="e.g., CS101"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="course_name">Course Name</Label>
-                  <Input
-                    id="course_name"
-                    value={formData.course_name}
-                    onChange={(e) => setFormData({ ...formData, course_name: e.target.value })}
-                    placeholder="e.g., Introduction to Programming"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="day_of_week">Day</Label>
-                  <Select value={formData.day_of_week} onValueChange={(value) => setFormData({ ...formData, day_of_week: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DAYS.map((day) => (
-                        <SelectItem key={day} value={day}>{day}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="start_time">Start Time</Label>
-                  <Input
-                    id="start_time"
-                    type="time"
-                    value={formData.start_time}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end_time">End Time</Label>
-                  <Input
-                    id="end_time"
-                    type="time"
-                    value={formData.end_time}
-                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="instructor">Instructor</Label>
-                  <Input
-                    id="instructor"
-                    value={formData.instructor}
-                    onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
-                    placeholder="Instructor name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="room">Room</Label>
-                  <Input
-                    id="room"
-                    value={formData.room}
-                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                    placeholder="Room number or location"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="h-10 w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Additional notes"
-                  rows={3}
-                />
-              </div>
-
-              <Button onClick={handleSave} className="w-full">
-                {editingEntry ? "Update Class" : "Add Class"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
         </div>
       </div>
 
-      {/* Weekly Calendar View */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-        {DAYS.map((day) => (
-          <Card key={day} className="p-4 border-border/50">
-            <h3 className="font-semibold text-center mb-4 text-sm uppercase tracking-wide text-primary">
+      {/* Calendar Grid */}
+      <Card className="p-6">
+        <div className="grid grid-cols-7 gap-2">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+            <div key={day} className="text-center font-semibold text-sm py-2 text-muted-foreground">
               {day}
-            </h3>
-            <div className="space-y-2">
-              {getEntriesForDay(day).map((entry) => (
-                <div
-                  key={entry.id}
-                  className="p-3 rounded-lg text-white text-sm relative group hover:shadow-lg transition-all"
-                  style={{ backgroundColor: entry.color }}
-                >
-                  <div className="font-semibold">{entry.course_code}</div>
-                  <div className="text-xs opacity-90 truncate">{entry.course_name}</div>
-                  <div className="flex items-center gap-1 text-xs opacity-90 mt-1">
-                    <Clock className="h-3 w-3" />
-                    {entry.start_time} - {entry.end_time}
-                  </div>
-                  {entry.room && (
-                    <div className="text-xs opacity-90">📍 {entry.room}</div>
-                  )}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6 bg-white/20 hover:bg-white/30"
-                      onClick={() => handleEdit(entry)}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6 bg-white/20 hover:bg-white/30"
-                      onClick={() => handleDelete(entry.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {getEntriesForDay(day).length === 0 && (
-                <div className="text-center text-muted-foreground text-xs py-8">
-                  No classes
-                </div>
-              )}
             </div>
-          </Card>
-        ))}
-      </div>
+          ))}
+          
+          {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+            <div key={`empty-${i}`} className="min-h-[120px] border border-border/30" />
+          ))}
+          
+          {daysInMonth.map((date) => {
+            const dateEntries = getEntriesForDate(date);
+            const isToday = isSameDay(date, new Date());
+            
+            return (
+              <div
+                key={date.toISOString()}
+                className={`min-h-[120px] border border-border/30 p-2 hover:bg-muted/50 cursor-pointer transition-colors ${
+                  !isSameMonth(date, currentDate) ? "opacity-50" : ""
+                } ${isToday ? "bg-primary/5 border-primary" : ""}`}
+                onClick={() => isAdmin && handleDateClick(date)}
+              >
+                <div className="font-semibold text-sm mb-1">
+                  {format(date, "d")}
+                </div>
+                <div className="space-y-1">
+                  {dateEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="text-xs p-1 rounded group relative"
+                      style={{ backgroundColor: entry.color }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isAdmin) handleEdit(entry);
+                      }}
+                    >
+                      <div className="text-white font-medium truncate">
+                        {entry.course_code}
+                      </div>
+                      <div className="text-white/90 text-[10px] truncate">
+                        {entry.start_time}
+                      </div>
+                      {isAdmin && (
+                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-5 w-5 bg-white/20 hover:bg-white/30"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(entry.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-white" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setEditingEntry(null);
+          setSelectedDate(null);
+          resetForm();
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingEntry ? "Edit Class" : `Add Class - ${selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="course_code">Course Code</Label>
+                <Input
+                  id="course_code"
+                  value={formData.course_code}
+                  onChange={(e) => setFormData({ ...formData, course_code: e.target.value })}
+                  placeholder="e.g., CS101"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="course_name">Course Name</Label>
+                <Input
+                  id="course_name"
+                  value={formData.course_name}
+                  onChange={(e) => setFormData({ ...formData, course_name: e.target.value })}
+                  placeholder="e.g., Introduction to Programming"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_time">Start Time</Label>
+                <Input
+                  id="start_time"
+                  type="time"
+                  value={formData.start_time}
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_time">End Time</Label>
+                <Input
+                  id="end_time"
+                  type="time"
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="instructor">Instructor</Label>
+                <Input
+                  id="instructor"
+                  value={formData.instructor}
+                  onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                  placeholder="Instructor name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="room">Room</Label>
+                <Input
+                  id="room"
+                  value={formData.room}
+                  onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                  placeholder="Room number or location"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Color</Label>
+              <div className="flex gap-2">
+                {COLORS.map((color) => (
+                  <button
+                    key={color}
+                    className={`w-10 h-10 rounded-full border-2 ${
+                      formData.color === color ? "border-foreground" : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setFormData({ ...formData, color })}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Additional notes"
+              />
+            </div>
+
+            <Button onClick={handleSave} className="w-full">
+              {editingEntry ? "Update Class" : "Add Class"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

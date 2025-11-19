@@ -10,7 +10,8 @@ import {
   User,
   Users,
   Sparkles,
-  LayoutDashboard
+  LayoutDashboard,
+  CheckCircle2
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const navigationItems = [
   { icon: Award, label: "Certificates", href: "/certificates" },
   { icon: Clock, label: "My Progress", href: "/progress" },
   { icon: Users, label: "Users", href: "/users", adminOnly: true },
+  { icon: CheckCircle2, label: "Submissions", href: "/submissions", adminOnly: true },
   { icon: User, label: "Profile", href: "/profile" },
 ];
 

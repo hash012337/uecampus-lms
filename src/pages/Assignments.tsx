@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEditMode } from "@/contexts/EditModeContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Assignment {
   id: string;
@@ -31,17 +32,31 @@ interface Assignment {
 
 export default function Assignments() {
   const { isEditMode } = useEditMode();
+  const { user } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchAssignments();
     fetchUsers();
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+    setIsAdmin(!!data);
+  };
 
   const fetchUsers = async () => {
     const { data } = await supabase.from("profiles").select("*");
@@ -158,14 +173,64 @@ export default function Assignments() {
   if (loading) return <div className="animate-fade-in">Loading...</div>;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Assignments</h1>
-        {isEditMode && (
-          <Badge variant="outline" className="animate-pulse">
-            <Edit2 className="h-3 w-3 mr-1" />
-            Edit Mode Active
-          </Badge>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Assignments
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Track and manage your assignments
+          </p>
+        </div>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-primary/20">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Upload
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Assignments File</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label>Select User</Label>
+                    <Select value={selectedUser} onValueChange={setSelectedUser}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Upload File (CSV, Excel, or PDF)</Label>
+                    <Input
+                      type="file"
+                      accept=".pdf,.csv,.xlsx,.xls"
+                      onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Upload a file containing assignment details. The system will extract and create assignments for the selected user.
+                    </p>
+                  </div>
+                  <Button onClick={handlePdfUpload} className="w-full">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Parse & Add Assignments
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
 
