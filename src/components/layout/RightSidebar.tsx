@@ -1,4 +1,4 @@
-import { AlertCircle, Calendar, Clock } from "lucide-react";
+import { AlertCircle, Calendar, Clock, TrendingUp, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -45,10 +45,41 @@ const announcements = [
   },
 ];
 
+const todayStats = {
+  studyTime: "2h 45m",
+  completedTasks: 5,
+  streak: 7,
+};
+
 export function RightSidebar() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-6">
+        {/* Today's Stats */}
+        <div className="bg-gradient-hero p-4 rounded-lg shadow-glow">
+          <h2 className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
+            <Zap className="h-4 w-4 text-accent" />
+            Today's Activity
+          </h2>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center p-2 bg-card/50 rounded backdrop-blur-sm">
+              <Clock className="h-4 w-4 mx-auto mb-1 text-primary" />
+              <p className="text-xs text-muted-foreground">Study Time</p>
+              <p className="text-sm font-bold">{todayStats.studyTime}</p>
+            </div>
+            <div className="text-center p-2 bg-card/50 rounded backdrop-blur-sm">
+              <TrendingUp className="h-4 w-4 mx-auto mb-1 text-success" />
+              <p className="text-xs text-muted-foreground">Tasks</p>
+              <p className="text-sm font-bold">{todayStats.completedTasks}</p>
+            </div>
+            <div className="text-center p-2 bg-card/50 rounded backdrop-blur-sm">
+              <span className="text-xl">🔥</span>
+              <p className="text-xs text-muted-foreground">Streak</p>
+              <p className="text-sm font-bold">{todayStats.streak} days</p>
+            </div>
+          </div>
+        </div>
+
         {/* Urgent Deadlines */}
         <div>
           <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -60,10 +91,10 @@ export function RightSidebar() {
               <Card
                 key={deadline.id}
                 className={cn(
-                  "p-4 border-l-4 transition-all duration-200 hover:shadow-md",
-                  deadline.priority === "high" && "border-l-destructive bg-destructive/5",
-                  deadline.priority === "medium" && "border-l-warning bg-warning/5",
-                  deadline.priority === "low" && "border-l-success bg-success/5"
+                  "p-4 border-l-4 transition-all duration-300 hover:shadow-glow hover:scale-105 bg-gradient-card",
+                  deadline.priority === "high" && "border-l-destructive shadow-glow-accent",
+                  deadline.priority === "medium" && "border-l-warning",
+                  deadline.priority === "low" && "border-l-success"
                 )}
               >
                 <div className="space-y-2">
@@ -71,7 +102,7 @@ export function RightSidebar() {
                     <h3 className="font-medium text-sm leading-tight">{deadline.title}</h3>
                     <Badge
                       variant={deadline.priority === "high" ? "destructive" : "secondary"}
-                      className="shrink-0"
+                      className="shrink-0 animate-pulse"
                     >
                       {deadline.priority}
                     </Badge>
@@ -98,10 +129,12 @@ export function RightSidebar() {
             {announcements.map((announcement) => (
               <Card
                 key={announcement.id}
-                className="p-4 border-l-4 border-l-primary hover:shadow-md transition-all duration-200"
+                className="p-4 border-l-4 border-l-primary hover:shadow-glow hover:scale-105 transition-all duration-300 bg-gradient-card relative overflow-hidden group"
               >
-                <h3 className="font-medium text-sm mb-1">{announcement.title}</h3>
-                <p className="text-xs text-muted-foreground">{announcement.time}</p>
+                {/* Animated border effect */}
+                <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                <h3 className="font-medium text-sm mb-1 relative z-10">{announcement.title}</h3>
+                <p className="text-xs text-muted-foreground relative z-10">{announcement.time}</p>
               </Card>
             ))}
           </div>
