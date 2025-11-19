@@ -257,6 +257,54 @@ export type Database = {
         }
         Relationships: []
       }
+      timetable: {
+        Row: {
+          color: string | null
+          course_code: string
+          course_name: string
+          created_at: string | null
+          day_of_week: string
+          end_time: string
+          id: string
+          instructor: string | null
+          notes: string | null
+          room: string | null
+          start_time: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          course_code: string
+          course_name: string
+          created_at?: string | null
+          day_of_week: string
+          end_time: string
+          id?: string
+          instructor?: string | null
+          notes?: string | null
+          room?: string | null
+          start_time: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          course_code?: string
+          course_name?: string
+          created_at?: string | null
+          day_of_week?: string
+          end_time?: string
+          id?: string
+          instructor?: string | null
+          notes?: string | null
+          room?: string | null
+          start_time?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
