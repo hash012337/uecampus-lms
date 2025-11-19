@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { EditModeProvider } from "./contexts/EditModeContext";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
@@ -24,6 +25,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
           <Route path="/courses" element={<DashboardLayout><Courses /></DashboardLayout>} />
           <Route path="/courses/:courseId" element={<DashboardLayout><CourseDetail /></DashboardLayout>} />

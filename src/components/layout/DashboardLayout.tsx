@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Menu, X, Bell, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Menu, X, Bell, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { LeftSidebar } from "./LeftSidebar";
 import { RightSidebar } from "./RightSidebar";
 import { useEditMode } from "@/contexts/EditModeContext";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface DashboardLayoutProps {
@@ -21,11 +23,24 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const navigate = useNavigate();
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-  const { isEditMode, toggleEditMode } = useEditMode();
+  const { isEditMode, toggleEditMode, isAdmin } = useEditMode();
+  const { user, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
   const handleEditModeToggle = () => {
+    if (!isAdmin) {
+      toast.error("Only admins can enable edit mode");
+      return;
+    }
+    
     toggleEditMode();
     if (!isEditMode) {
       toast.info("Edit Mode Enabled - All content is now editable");
@@ -33,6 +48,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       toast.success("Edit Mode Disabled - Changes saved");
     }
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Signed out successfully");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -93,32 +125,40 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="flex items-center justify-between">
-                  Settings
-                  {isEditMode && <Badge variant="outline" className="text-xs">EDITING</Badge>}
+                <DropdownMenuLabel className="flex flex-col gap-1">
+                  <span>Settings</span>
+                  <div className="flex items-center gap-2">
+                    {isEditMode && <Badge variant="outline" className="text-xs">EDITING</Badge>}
+                    {isAdmin && <Badge className="text-xs bg-primary">ADMIN</Badge>}
+                  </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleEditModeToggle} className="cursor-pointer">
-                  {isEditMode ? (
-                    <>
-                      <Save className="mr-2 h-4 w-4 text-success" />
-                      <span>Save & Exit Edit Mode</span>
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 className="mr-2 h-4 w-4 text-primary" />
-                      <span>Enable Edit Mode</span>
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem onClick={handleEditModeToggle} className="cursor-pointer">
+                      {isEditMode ? (
+                        <>
+                          <Save className="mr-2 h-4 w-4 text-success" />
+                          <span>Save & Exit Edit Mode</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 className="mr-2 h-4 w-4 text-primary" />
+                          <span>Enable Edit Mode</span>
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
+                  <span>Profile: {user?.email}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Preferences</span>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
