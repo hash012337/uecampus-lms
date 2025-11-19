@@ -8,11 +8,13 @@ import {
   Award,
   Clock,
   User,
+  Users,
   Sparkles,
   LayoutDashboard
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
+import { useEditMode } from "@/contexts/EditModeContext";
 
 const navigationItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -24,10 +26,13 @@ const navigationItems = [
   { icon: Trophy, label: "Quizzes", href: "/quizzes" },
   { icon: Award, label: "Certificates", href: "/certificates" },
   { icon: Clock, label: "My Progress", href: "/progress" },
+  { icon: Users, label: "Users", href: "/users", adminOnly: true },
   { icon: User, label: "Profile", href: "/profile" },
 ];
 
 export function LeftSidebar() {
+  const { isAdmin } = useEditMode();
+  
   return (
     <nav className="flex flex-col h-full p-4 space-y-2 relative" aria-label="Main navigation">
       {/* Header with avatar */}
@@ -46,7 +51,9 @@ export function LeftSidebar() {
         </div>
       </div>
 
-      {navigationItems.map((item) => (
+      {navigationItems
+        .filter((item) => !item.adminOnly || isAdmin)
+        .map((item) => (
         <NavLink
           key={item.href}
           to={item.href}

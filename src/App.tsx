@@ -14,6 +14,9 @@ import Assignments from "./pages/Assignments";
 import Quizzes from "./pages/Quizzes";
 import Timetable from "./pages/Timetable";
 import Profile from "./pages/Profile";
+import Users from "./pages/Users";
+import Progress from "./pages/Progress";
+import Library from "./pages/Library";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,11 +37,12 @@ const App = () => (
             <Route path="/assignments" element={<DashboardLayout><Assignments /></DashboardLayout>} />
             <Route path="/quizzes" element={<DashboardLayout><Quizzes /></DashboardLayout>} />
             <Route path="/timetable" element={<DashboardLayout><Timetable /></DashboardLayout>} />
-            <Route path="/library" element={<DashboardLayout><div className="text-center py-12">eLibrary - Coming Soon</div></DashboardLayout>} />
+            <Route path="/library" element={<DashboardLayout><Library /></DashboardLayout>} />
             <Route path="/guides" element={<DashboardLayout><div className="text-center py-12">Learning Guides - Coming Soon</div></DashboardLayout>} />
             <Route path="/certificates" element={<DashboardLayout><div className="text-center py-12">Certificates - Coming Soon</div></DashboardLayout>} />
-            <Route path="/progress" element={<DashboardLayout><div className="text-center py-12">My Progress - Coming Soon</div></DashboardLayout>} />
+            <Route path="/progress" element={<DashboardLayout><Progress /></DashboardLayout>} />
             <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
+            <Route path="/users" element={<DashboardLayout><Users /></DashboardLayout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
