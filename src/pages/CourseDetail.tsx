@@ -74,6 +74,13 @@ export default function CourseDetail() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [completedMaterials, setCompletedMaterials] = useState<Set<string>>(new Set());
   const [courseProgress, setCourseProgress] = useState(0);
+  const [sectionQuizzes, setSectionQuizzes] = useState<any[]>([]);
+  const [newQuiz, setNewQuiz] = useState({
+    title: "",
+    quiz_url: "",
+    description: "",
+    duration: 30
+  });
 
   useEffect(() => {
     if (user) {
@@ -205,6 +212,15 @@ export default function CourseDetail() {
     
     if (assignmentsData) {
       setAssignments(assignmentsData);
+    }
+
+    const { data: quizzesData } = await supabase
+      .from("section_quizzes")
+      .select("*")
+      .eq("course_id", courseId);
+    
+    if (quizzesData) {
+      setSectionQuizzes(quizzesData);
     }
   };
 
@@ -379,6 +395,46 @@ export default function CourseDetail() {
       toast.success("Assignment submitted");
       setSubmissionDialogOpen(false);
       setSubmissionFile(null);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleAddQuiz = async () => {
+    if (!newQuiz.title || !newQuiz.quiz_url || !currentSectionId || !courseId) return;
+    
+    try {
+      const { error } = await supabase.from("section_quizzes").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: newQuiz.title,
+        quiz_url: newQuiz.quiz_url,
+        description: newQuiz.description,
+        duration: newQuiz.duration
+      });
+
+      if (error) throw error;
+      toast.success("Quiz added successfully");
+      setQuizDialogOpen(false);
+      setNewQuiz({ title: "", quiz_url: "", description: "", duration: 30 });
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add quiz");
+    }
+  };
+
+  const handleDeleteQuiz = async (quizId: string) => {
+    if (!confirm("Delete this quiz?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("section_quizzes")
+        .delete()
+        .eq("id", quizId);
+
+      if (error) throw error;
+      toast.success("Quiz deleted");
+      loadCourseData();
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -657,6 +713,27 @@ export default function CourseDetail() {
                               <span className="truncate text-left flex-1">{assignment.title}</span>
                             </button>
                           ))}
+                          
+                          {sectionQuizzes.filter(q => q.section_id === section.id).map((quiz) => (
+                            <a
+                              key={quiz.id}
+                              href={quiz.quiz_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors group"
+                            >
+                              <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-purple-500 flex items-center justify-center">
+                                <FileQuestion className="h-3 w-3 text-purple-500" />
+                              </div>
+                              <FileQuestion className="h-4 w-4 flex-shrink-0 text-purple-500" />
+                              <div className="flex-1 text-left">
+                                <div className="font-medium">{quiz.title}</div>
+                                {quiz.description && (
+                                  <div className="text-xs text-muted-foreground">{quiz.description}</div>
+                                )}
+                              </div>
+                            </a>
+                          ))}
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
@@ -831,6 +908,38 @@ export default function CourseDetail() {
                       </div>
                     ))}
 
+                    {sectionQuizzes.filter(q => q.section_id === section.id).map((quiz) => (
+                      <div key={quiz.id} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <FileQuestion className="h-4 w-4 text-purple-600" />
+                            <span className="font-medium">{quiz.title}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteQuiz(quiz.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                        {quiz.description && (
+                          <p className="text-sm text-muted-foreground mb-2">{quiz.description}</p>
+                        )}
+                        <div className="text-xs">
+                          <span className="font-semibold">Duration:</span> {quiz.duration} minutes
+                        </div>
+                        <a 
+                          href={quiz.quiz_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-purple-600 hover:underline"
+                        >
+                          Open Quiz →
+                        </a>
+                      </div>
+                    ))}
+
                     <div className="flex gap-2 mt-4 pt-4 border-t flex-wrap">
                       <Dialog open={textLessonDialogOpen && currentSectionId === section.id} onOpenChange={setTextLessonDialogOpen}>
                         <DialogTrigger asChild>
@@ -922,6 +1031,55 @@ export default function CourseDetail() {
                               <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
                             </div>
                             <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      
+                      <Dialog open={quizDialogOpen && currentSectionId === section.id} onOpenChange={setQuizDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
+                            <FileQuestion className="h-4 w-4 mr-2" />
+                            Add Quiz
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add Quiz</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Quiz Title</Label>
+                              <Input 
+                                value={newQuiz.title} 
+                                onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+                                placeholder="Enter quiz title" 
+                              />
+                            </div>
+                            <div>
+                              <Label>Quiz URL</Label>
+                              <Input 
+                                value={newQuiz.quiz_url} 
+                                onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
+                                placeholder="Paste Google Forms or Typeform link" 
+                              />
+                            </div>
+                            <div>
+                              <Label>Description (Optional)</Label>
+                              <Textarea 
+                                value={newQuiz.description} 
+                                onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
+                                placeholder="Brief description of the quiz" 
+                              />
+                            </div>
+                            <div>
+                              <Label>Duration (minutes)</Label>
+                              <Input 
+                                type="number"
+                                value={newQuiz.duration} 
+                                onChange={(e) => setNewQuiz({ ...newQuiz, duration: parseInt(e.target.value) || 30 })}
+                              />
+                            </div>
+                            <Button onClick={handleAddQuiz} className="w-full">Add Quiz</Button>
                           </div>
                         </DialogContent>
                       </Dialog>

@@ -718,6 +718,57 @@ export type Database = {
         }
         Relationships: []
       }
+      section_quizzes: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          id: string
+          quiz_url: string
+          section_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          quiz_url: string
+          section_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          quiz_url?: string
+          section_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "section_quizzes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "section_quizzes_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "course_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timetable: {
         Row: {
           color: string | null
