@@ -14,7 +14,9 @@ import {
   Video,
   File,
   Upload,
-  Download
+  Download,
+  BookOpen,
+  FileQuestion
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -24,6 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 export default function CourseDetail() {
   const { courseId } = useParams();
@@ -39,12 +42,15 @@ export default function CourseDetail() {
   
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
+  const [textLessonDialogOpen, setTextLessonDialogOpen] = useState(false);
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [currentSectionId, setCurrentSectionId] = useState("");
   const [newSection, setNewSection] = useState({ title: "", description: "" });
+  const [newTextLesson, setNewTextLesson] = useState({ title: "", content: "" });
   const [newAssignment, setNewAssignment] = useState({
     title: "",
     unit_name: "",
@@ -216,6 +222,30 @@ export default function CourseDetail() {
     }
   };
 
+  const handleAddTextLesson = async () => {
+    if (!newTextLesson.title || !currentSectionId || !courseId) return;
+    
+    try {
+      const { error } = await supabase.from("course_materials").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: newTextLesson.title,
+        file_path: "text-lesson",
+        file_type: "text/html",
+        description: newTextLesson.content,
+        order_index: materials.filter(m => m.section_id === currentSectionId).length
+      });
+
+      if (error) throw error;
+      toast.success("Text lesson added");
+      setTextLessonDialogOpen(false);
+      setNewTextLesson({ title: "", content: "" });
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const handleAddAssignment = async () => {
     if (!newAssignment.title || !courseId) return;
     
@@ -287,6 +317,7 @@ export default function CourseDetail() {
   };
 
   const getFileIcon = (fileType: string) => {
+    if (fileType === "text/html") return <BookOpen className="h-4 w-4" />;
     if (fileType?.includes("video")) return <Video className="h-4 w-4" />;
     if (fileType?.includes("pdf")) return <FileText className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
@@ -371,7 +402,6 @@ export default function CourseDetail() {
       <Tabs defaultValue="content" className="w-full">
         <TabsList>
           <TabsTrigger value="content">Course Content</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
           {course.quiz_url && <TabsTrigger value="quiz">Quiz</TabsTrigger>}
           {isAdmin && <TabsTrigger value="students">Enrolled Students</TabsTrigger>}
         </TabsList>
@@ -416,17 +446,27 @@ export default function CourseDetail() {
                     <div key={material.id} className="flex items-center justify-between p-4 border-b hover:bg-accent/50">
                       <div className="flex items-center gap-3">
                         {getFileIcon(material.file_type)}
-                        <span className="text-sm">{material.title}</span>
+                        <div>
+                          <div className="text-sm font-medium">{material.title}</div>
+                          {material.file_type === "text/html" && material.description && (
+                            <div 
+                              className="text-xs text-muted-foreground mt-1 prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: material.description.substring(0, 100) + "..." }}
+                            />
+                          )}
+                        </div>
                         <Badge variant="outline" className="text-xs">Free</Badge>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => downloadMaterial(material.file_path, material.title)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
+                        {material.file_type !== "text/html" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => downloadMaterial(material.file_path, material.title)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -434,9 +474,14 @@ export default function CourseDetail() {
                   {sectionAssignments.map((assignment) => (
                     <div key={assignment.id} className="flex items-center justify-between p-4 border-b hover:bg-accent/50">
                       <div className="flex items-center gap-3">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-sm">{assignment.title}</span>
-                        <Badge variant="outline" className="text-xs">Assignment</Badge>
+                        <FileQuestion className="h-4 w-4 text-orange-500" />
+                        <div>
+                          <div className="text-sm font-medium">{assignment.title}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Due: {assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : "No deadline"}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">Assignment • {assignment.points} pts</Badge>
                       </div>
                       {!isAdmin && (
                         <Button size="sm" onClick={() => {
@@ -451,17 +496,30 @@ export default function CourseDetail() {
                   
                   {isAdmin && (
                     <div className="p-4 border-t bg-muted/30">
-                      <div className="flex gap-2">
-                        <Input
-                          type="file"
-                          multiple
-                          onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                          className="text-sm"
-                        />
-                        <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload File
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          onClick={() => {
+                            setCurrentSectionId(section.id);
+                            setTextLessonDialogOpen(true);
+                          }} 
+                          size="sm"
+                          variant="outline"
+                        >
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Add Text Lesson
                         </Button>
+                        <div className="flex gap-2 flex-1">
+                          <Input
+                            type="file"
+                            multiple
+                            onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                            className="text-sm flex-1"
+                          />
+                          <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload File
+                          </Button>
+                        </div>
                         <Button 
                           onClick={() => {
                             setNewAssignment({ ...newAssignment, unit_name: section.id });
@@ -492,89 +550,49 @@ export default function CourseDetail() {
                   <Input
                     value={newSection.title}
                     onChange={(e) => setNewSection({ ...newSection, title: e.target.value })}
+                    placeholder="e.g., Unit 1: Introduction"
                   />
                 </div>
                 <div>
-                  <Label>Description</Label>
+                  <Label>Description (Optional)</Label>
                   <Textarea
                     value={newSection.description}
                     onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
+                    placeholder="Brief description of this section"
                   />
                 </div>
                 <Button onClick={handleAddSection} className="w-full">Add Section</Button>
               </div>
             </DialogContent>
           </Dialog>
-        </TabsContent>
 
-        <TabsContent value="assignments" className="space-y-4">
-          {assignments.filter(a => !a.unit_name || !sections.find(s => s.id === a.unit_name)).map((assignment) => (
-            <Card key={assignment.id}>
-              <CardHeader>
-                <CardTitle>{assignment.title}</CardTitle>
-                {assignment.unit_name && <p className="text-sm text-muted-foreground">{assignment.unit_name}</p>}
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">{assignment.description}</p>
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <span className="font-semibold">Marks:</span> {assignment.points}
-                    {assignment.due_date && <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>}
-                  </div>
-                  {!isAdmin && (
-                    <Button onClick={() => {
-                      setSelectedAssignment(assignment);
-                      setSubmissionDialogOpen(true);
-                    }}>Submit</Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
-            <DialogContent>
+          <Dialog open={textLessonDialogOpen} onOpenChange={setTextLessonDialogOpen}>
+            <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>Add Assignment</DialogTitle>
+                <DialogTitle>Add Text Lesson</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Title</Label>
-                  <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
+                  <Label>Lesson Title</Label>
+                  <Input
+                    value={newTextLesson.title}
+                    onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
+                    placeholder="e.g., Introduction to Programming"
+                  />
                 </div>
                 <div>
-                  <Label>Unit Name</Label>
-                  <Input value={newAssignment.unit_name} onChange={(e) => setNewAssignment({ ...newAssignment, unit_name: e.target.value })} />
+                  <Label>Content</Label>
+                  <RichTextEditor
+                    content={newTextLesson.content}
+                    onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
+                  />
                 </div>
-                <div>
-                  <Label>Description</Label>
-                  <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Marks</Label>
-                  <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
-                </div>
-                <div>
-                  <Label>Deadline</Label>
-                  <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
-                </div>
-                <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Submit Assignment</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input type="file" onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)} />
-                <Button onClick={handleSubmitAssignment} className="w-full">Submit</Button>
+                <Button onClick={handleAddTextLesson} className="w-full">Add Lesson</Button>
               </div>
             </DialogContent>
           </Dialog>
         </TabsContent>
+
 
         {course.quiz_url && (
           <TabsContent value="quiz">
@@ -597,6 +615,48 @@ export default function CourseDetail() {
             </Card>
           </TabsContent>
         )}
+
+        <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Submit Assignment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Upload File</Label>
+                <Input type="file" onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)} />
+              </div>
+              <Button onClick={handleSubmitAssignment} className="w-full">Submit Assignment</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Assignment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Title</Label>
+                <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
+              </div>
+              <div>
+                <Label>Marks</Label>
+                <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Deadline</Label>
+                <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
+              </div>
+              <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {isAdmin && (
           <TabsContent value="students">
