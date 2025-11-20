@@ -63,10 +63,10 @@ export default function CourseDetail() {
     title: "",
     unit_name: "",
     description: "",
-    assessment_brief: "",
     points: 100,
     due_date: ""
   });
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
@@ -263,13 +263,26 @@ export default function CourseDetail() {
     if (!newAssignment.title || !courseId || !currentSectionId) return;
     
     try {
+      let assessmentBriefPath = null;
+      
+      // Upload assessment brief file if provided
+      if (assignmentFile) {
+        const filePath = `${courseId}/${currentSectionId}/assignments/${Date.now()}-${assignmentFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("course-materials")
+          .upload(filePath, assignmentFile);
+
+        if (uploadError) throw uploadError;
+        assessmentBriefPath = filePath;
+      }
+
       const { error } = await supabase.from("assignments").insert({
         course: courseId,
         course_code: course.code,
         title: newAssignment.title,
         unit_name: currentSectionId,
         description: newAssignment.description,
-        feedback: newAssignment.assessment_brief,
+        feedback: assessmentBriefPath,
         points: newAssignment.points,
         due_date: newAssignment.due_date || null
       });
@@ -277,7 +290,8 @@ export default function CourseDetail() {
       if (error) throw error;
       toast.success("Assignment added");
       setAssignmentDialogOpen(false);
-      setNewAssignment({ title: "", unit_name: "", description: "", assessment_brief: "", points: 100, due_date: "" });
+      setNewAssignment({ title: "", unit_name: "", description: "", points: 100, due_date: "" });
+      setAssignmentFile(null);
       loadCourseData();
     } catch (error: any) {
       toast.error(error.message);
@@ -547,126 +561,156 @@ export default function CourseDetail() {
           </Dialog>
 
           {sections.map((section) => (
-            <Card key={section.id}>
-              <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
-                {section.description && <p className="text-sm text-muted-foreground">{section.description}</p>}
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {materials.filter(m => m.section_id === section.id).map((material) => (
-                  <div key={material.id} className="flex items-center justify-between p-3 bg-secondary rounded">
-                    <div className="flex items-center gap-2">
-                      {getFileIcon(material.file_type)}
-                      <span>{material.title}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => downloadMaterial(material.file_path, material.title)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
-                  <div key={assignment.id} className="p-3 bg-accent rounded">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileQuestion className="h-4 w-4" />
-                      <span className="font-medium">{assignment.title}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
-                    <div className="text-xs">
-                      <span className="font-semibold">Marks:</span> {assignment.points}
-                      {assignment.due_date && <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex gap-2 mt-4 pt-4 border-t">
-                  <Dialog open={textLessonDialogOpen && currentSectionId === section.id} onOpenChange={setTextLessonDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Add Text Lesson
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
-                      <DialogHeader>
-                        <DialogTitle>Add Text Lesson</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Lesson Title</Label>
-                          <Input
-                            value={newTextLesson.title}
-                            onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
-                          />
+            <Collapsible
+              key={section.id}
+              open={openSections[section.id]}
+              onOpenChange={() => toggleSection(section.id)}
+            >
+              <Card>
+                <CardHeader>
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full hover:opacity-80">
+                    {openSections[section.id] ? (
+                      <ChevronDown className="h-5 w-5 flex-shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 flex-shrink-0" />
+                    )}
+                    <CardTitle className="text-left">{section.title}</CardTitle>
+                  </CollapsibleTrigger>
+                  {section.description && <p className="text-sm text-muted-foreground ml-7">{section.description}</p>}
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-2">
+                    {materials.filter(m => m.section_id === section.id).map((material) => (
+                      <div key={material.id} className="flex items-center justify-between p-3 bg-secondary rounded">
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(material.file_type)}
+                          <span>{material.title}</span>
                         </div>
-                        <div>
-                          <Label>Content</Label>
-                          <RichTextEditor
-                            content={newTextLesson.content}
-                            onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
-                          />
-                        </div>
-                        <Button onClick={handleAddTextLesson} className="w-full">Add Lesson</Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadMaterial(material.file_path, material.title)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <div className="flex gap-2 flex-1">
-                    <Input
-                      type="file"
-                      multiple
-                      onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                      className="flex-1"
-                    />
-                    <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Files
-                    </Button>
-                  </div>
-
-                  <Dialog open={assignmentDialogOpen && currentSectionId === section.id} onOpenChange={setAssignmentDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
-                        <FileQuestion className="h-4 w-4 mr-2" />
-                        Add Assignment
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Assignment</DialogTitle>
-                      </DialogHeader>
-                       <div className="space-y-4">
-                        <div>
-                          <Label>Title</Label>
-                          <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
+                    ))}
+                    
+                    {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
+                      <div key={assignment.id} className="p-3 bg-accent rounded">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileQuestion className="h-4 w-4" />
+                          <span className="font-medium">{assignment.title}</span>
                         </div>
-                        <div>
-                          <Label>Description</Label>
-                          <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} rows={2} />
+                        <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
+                        <div className="text-xs">
+                          <span className="font-semibold">Marks:</span> {assignment.points}
+                          {assignment.due_date && (
+                            <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>
+                          )}
                         </div>
-                        <div>
-                          <Label>Assessment Brief</Label>
-                          <Textarea value={newAssignment.assessment_brief} onChange={(e) => setNewAssignment({ ...newAssignment, assessment_brief: e.target.value })} rows={5} placeholder="Enter detailed assignment instructions and requirements" />
-                        </div>
-                        <div>
-                          <Label>Marks</Label>
-                          <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
-                        </div>
-                        <div>
-                          <Label>Deadline</Label>
-                          <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
-                        </div>
-                        <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+
+                    <div className="flex gap-2 mt-4 pt-4 border-t flex-wrap">
+                      <Dialog open={textLessonDialogOpen && currentSectionId === section.id} onOpenChange={setTextLessonDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Add Text
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Add Text Lesson</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Lesson Title</Label>
+                              <Input
+                                value={newTextLesson.title}
+                                onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label>Content (You can add text and YouTube videos)</Label>
+                              <RichTextEditor
+                                content={newTextLesson.content}
+                                onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
+                              />
+                            </div>
+                            <Button onClick={handleAddTextLesson} className="w-full">Add Lesson</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+
+                      <div className="flex gap-2 flex-1">
+                        <Input
+                          type="file"
+                          multiple
+                          onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                          className="flex-1"
+                        />
+                        <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload File
+                        </Button>
+                      </div>
+
+                      <Dialog open={assignmentDialogOpen && currentSectionId === section.id} onOpenChange={setAssignmentDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
+                            <FileQuestion className="h-4 w-4 mr-2" />
+                            Add Assignment
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Add Assignment</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Assignment Title</Label>
+                              <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} placeholder="Enter assignment title" />
+                            </div>
+                            <div>
+                              <Label>Description (Optional)</Label>
+                              <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} rows={2} placeholder="Brief description" />
+                            </div>
+                            <div>
+                              <Label>Assessment Brief (Upload PDF or Word)</Label>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => document.getElementById("assignment-file-input")?.click()}
+                                  className="w-full"
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  {assignmentFile ? assignmentFile.name : "Choose File"}
+                                </Button>
+                                <input
+                                  id="assignment-file-input"
+                                  type="file"
+                                  accept=".pdf,.doc,.docx"
+                                  onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)}
+                                  className="hidden"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Marks</Label>
+                              <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
+                            </div>
+                            <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           ))}
         </TabsContent>
 

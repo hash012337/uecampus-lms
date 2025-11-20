@@ -156,9 +156,33 @@ export function FileViewer({ file }: FileViewerProps) {
           {file.feedback && (
             <div className="p-6 bg-card rounded-lg border">
               <h2 className="text-xl font-semibold mb-4">Assessment Brief</h2>
-              <div className="prose prose-sm max-w-none whitespace-pre-wrap">
-                {file.feedback}
-              </div>
+              {file.feedback.endsWith('.pdf') || file.feedback.endsWith('.doc') || file.feedback.endsWith('.docx') ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">View the assessment brief document:</p>
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const { data } = await supabase.storage
+                          .from("course-materials")
+                          .createSignedUrl(file.feedback!, 3600);
+                        if (data?.signedUrl) {
+                          window.open(data.signedUrl, '_blank');
+                        }
+                      } catch (error) {
+                        toast.error("Failed to load document");
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    View Assessment Brief
+                  </Button>
+                </div>
+              ) : (
+                <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+                  {file.feedback}
+                </div>
+              )}
             </div>
           )}
 
@@ -252,7 +276,7 @@ export function FileViewer({ file }: FileViewerProps) {
         {isTextLesson && file.description && (
           <div className="max-w-4xl mx-auto p-8">
             <div 
-              className="prose prose-lg dark:prose-invert max-w-none"
+              className="prose prose-lg dark:prose-invert max-w-none [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-lg"
               dangerouslySetInnerHTML={{ __html: file.description }}
             />
           </div>
