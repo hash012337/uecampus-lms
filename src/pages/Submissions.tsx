@@ -46,7 +46,7 @@ export default function Submissions() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
-  const [courses, setCourses] = useState<{id: string; name: string}[]>([]);
+  const [courses, setCourses] = useState<Array<{id: string; name: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"submitted" | "not-submitted">("submitted");
   const [gradingDialog, setGradingDialog] = useState(false);
@@ -241,8 +241,8 @@ export default function Submissions() {
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
               {courses.map((course) => (
-                <SelectItem key={course} value={course}>
-                  {course}
+                <SelectItem key={course.id} value={course.id}>
+                  {course.name}
                 </SelectItem>
               ))}
             </SelectContent>
