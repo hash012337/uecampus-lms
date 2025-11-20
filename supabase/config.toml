@@ -1,1 +1,4 @@
 project_id = "dzgffouacmskkasnhkol"
+
+[functions.grade-assignment]
+verify_jwt = true

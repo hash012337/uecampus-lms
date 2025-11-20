@@ -11,8 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Eye, Award, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, Award, Download, Sparkles, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface Assignment {
   id: string;
@@ -22,6 +23,7 @@ interface Assignment {
   due_date: string | null;
   points: number | null;
   passing_marks: number | null;
+  assessment_brief: string | null;
 }
 
 interface Submission {
@@ -50,7 +52,9 @@ export default function Submissions() {
   const [viewMode, setViewMode] = useState<"submitted" | "not-submitted">("submitted");
   const [gradingDialog, setGradingDialog] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<{ assignment: Assignment; submission: Submission } | null>(null);
-  const [gradeData, setGradeData] = useState({ marks: "", feedback: "" });
+  const [gradeData, setGradeData] = useState({ marks: "", feedback: "", comments: "" });
+  const [filePreview, setFilePreview] = useState<string>("");
+  const [isAutoGrading, setIsAutoGrading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -147,13 +151,65 @@ export default function Submissions() {
     }
   };
 
-  const handleGrade = (assignment: Assignment, submission: Submission) => {
+  const handleGrade = async (assignment: Assignment, submission: Submission) => {
     setSelectedSubmission({ assignment, submission });
     setGradeData({ 
       marks: submission.marks_obtained?.toString() || "", 
-      feedback: submission.feedback || "" 
+      feedback: submission.feedback || "",
+      comments: ""
     });
+    
+    // Load file preview
+    if (submission.file_path) {
+      try {
+        const { data, error } = await supabase.storage
+          .from('assignment-submissions')
+          .download(submission.file_path);
+        
+        if (!error && data) {
+          const text = await data.text();
+          setFilePreview(text);
+        }
+      } catch (err) {
+        console.error('Error loading file preview:', err);
+      }
+    }
+    
     setGradingDialog(true);
+  };
+
+  const handleAutoGrade = async () => {
+    if (!selectedSubmission) return;
+    
+    setIsAutoGrading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('grade-assignment', {
+        body: {
+          submissionId: selectedSubmission.submission.id,
+          assignmentTitle: selectedSubmission.assignment.title,
+          assignmentBrief: selectedSubmission.assignment.assessment_brief,
+          maxPoints: selectedSubmission.assignment.points || 100
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+      } else {
+        setGradeData({
+          marks: data.marks.toString(),
+          feedback: data.feedback,
+          comments: data.comments || ""
+        });
+        toast.success('AI grading completed!');
+      }
+    } catch (error: any) {
+      console.error('Auto-grading error:', error);
+      toast.error(error.message || 'Failed to auto-grade assignment');
+    } finally {
+      setIsAutoGrading(false);
+    }
   };
 
   const saveGrade = async () => {
@@ -351,30 +407,93 @@ export default function Submissions() {
       </Tabs>
 
       <Dialog open={gradingDialog} onOpenChange={setGradingDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Grade Submission</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Grade Submission: {selectedSubmission?.assignment.title}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAutoGrade}
+                disabled={isAutoGrading}
+                className="ml-4"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {isAutoGrading ? 'AI Grading...' : 'Auto Grade with AI'}
+              </Button>
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Marks Obtained</Label>
-              <Input
-                type="number"
-                value={gradeData.marks}
-                onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
-                placeholder={`Out of ${selectedSubmission?.assignment.points}`}
-              />
+          
+          <div className="grid grid-cols-2 gap-6 mt-4">
+            {/* Left: Assignment Preview */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <FileText className="h-4 w-4" />
+                Assignment Preview
+              </div>
+              <Card className="p-4 max-h-[500px] overflow-y-auto bg-muted/30">
+                <pre className="whitespace-pre-wrap text-sm font-mono">
+                  {filePreview || 'Loading preview...'}
+                </pre>
+              </Card>
             </div>
-            <div>
-              <Label>Feedback</Label>
-              <Textarea
-                value={gradeData.feedback}
-                onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
-                rows={4}
-                placeholder="Enter feedback..."
-              />
+
+            {/* Right: Grading Form */}
+            <div className="space-y-4">
+              <div className="text-sm font-medium text-muted-foreground">
+                Grading Details
+              </div>
+              
+              <div>
+                <Label>Student</Label>
+                <div className="text-sm mt-1">
+                  <p className="font-medium">{selectedSubmission?.submission.user_name}</p>
+                  <p className="text-muted-foreground">{selectedSubmission?.submission.user_email}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label htmlFor="marks">Marks Obtained</Label>
+                <Input
+                  id="marks"
+                  type="number"
+                  value={gradeData.marks}
+                  onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
+                  placeholder={`Out of ${selectedSubmission?.assignment.points}`}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="feedback">Feedback</Label>
+                <Textarea
+                  id="feedback"
+                  value={gradeData.feedback}
+                  onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                  rows={5}
+                  placeholder="Enter detailed feedback..."
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="comments">Comments</Label>
+                <Textarea
+                  id="comments"
+                  value={gradeData.comments}
+                  onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })}
+                  rows={3}
+                  placeholder="Additional comments..."
+                  className="mt-1"
+                />
+              </div>
+
+              <Button onClick={saveGrade} className="w-full" size="lg">
+                Save Grade
+              </Button>
             </div>
-            <Button onClick={saveGrade} className="w-full">Save Grade</Button>
           </div>
         </DialogContent>
       </Dialog>
