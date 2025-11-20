@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          feedback: string | null
+          file_path: string | null
+          graded_at: string | null
+          graded_by: string | null
+          id: string
+          marks_obtained: number | null
+          status: string | null
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assignment_id: string
+          feedback?: string | null
+          file_path?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          marks_obtained?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assignment_id?: string
+          feedback?: string | null
+          file_path?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          marks_obtained?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignments: {
         Row: {
           course: string
@@ -30,6 +77,7 @@ export type Database = {
           status: string | null
           submitted_date: string | null
           title: string
+          unit_name: string | null
           updated_at: string | null
         }
         Insert: {
@@ -47,6 +95,7 @@ export type Database = {
           status?: string | null
           submitted_date?: string | null
           title: string
+          unit_name?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -64,6 +113,7 @@ export type Database = {
           status?: string | null
           submitted_date?: string | null
           title?: string
+          unit_name?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -160,6 +210,101 @@ export type Database = {
         }
         Relationships: []
       }
+      course_materials: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          order_index: number
+          section_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          order_index?: number
+          section_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          order_index?: number
+          section_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_materials_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_materials_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "course_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_sections: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          order_index: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          order_index?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          order_index?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_sections_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           accreditation: string | null
@@ -183,6 +328,7 @@ export type Database = {
           overview: string | null
           partner: string | null
           progress: number | null
+          quiz_url: string | null
           rating: number | null
           status: string | null
           subcategory: string | null
@@ -213,6 +359,7 @@ export type Database = {
           overview?: string | null
           partner?: string | null
           progress?: number | null
+          quiz_url?: string | null
           rating?: number | null
           status?: string | null
           subcategory?: string | null
@@ -243,6 +390,7 @@ export type Database = {
           overview?: string | null
           partner?: string | null
           progress?: number | null
+          quiz_url?: string | null
           rating?: number | null
           status?: string | null
           subcategory?: string | null
