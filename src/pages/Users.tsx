@@ -38,18 +38,26 @@ export default function Users() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [courses, setCourses] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     user_id: "",
     email: "",
     password: "",
     full_name: "",
     role: "student",
+    course_id: "",
   });
 
   useEffect(() => {
     loadUsers();
     loadCohorts();
+    loadCourses();
   }, []);
+
+  const loadCourses = async () => {
+    const { data } = await supabase.from("courses").select("id, title, code");
+    if (data) setCourses(data);
+  };
 
   const loadUsers = async () => {
     try {
@@ -140,11 +148,24 @@ export default function Users() {
           });
 
         if (roleError) throw roleError;
+
+        if (formData.course_id) {
+          const { error: enrollError } = await supabase
+            .from("enrollments")
+            .insert({
+              user_id: authData.user.id,
+              course_id: formData.course_id,
+              role: "student",
+              enrolled_by: authData.user.id
+            });
+
+          if (enrollError) throw enrollError;
+        }
       }
 
       toast.success("User created successfully");
       setDialogOpen(false);
-      setFormData({ user_id: "", email: "", password: "", full_name: "", role: "student" });
+      setFormData({ user_id: "", email: "", password: "", full_name: "", role: "student", course_id: "" });
       loadUsers();
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -253,6 +274,21 @@ export default function Users() {
                     <SelectItem value="teacher">Teacher</SelectItem>
                     <SelectItem value="non_editing_teacher">Non-editing Teacher</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="course">Enroll in Course (Optional)</Label>
+                <Select value={formData.course_id} onValueChange={(value) => setFormData({ ...formData, course_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map(course => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.code} - {course.title}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

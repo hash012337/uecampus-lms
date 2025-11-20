@@ -1,21 +1,18 @@
 import { useParams, Link } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { 
   ArrowLeft, 
-  Save,
+  UserPlus,
   Plus,
   Trash2,
-  GripVertical,
-  Edit2,
-  X,
-  UserPlus
+  FileUp,
+  FileText,
+  HelpCircle,
+  BookOpen
 } from "lucide-react";
 import { allCoursesData } from "@/data/coursesData";
 import { useState, useEffect } from "react";
@@ -25,19 +22,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface CurriculumSection {
+interface CourseSection {
   id: string;
   title: string;
-  description: string;
-  duration: string;
-  lessons: Lesson[];
-}
-
-interface Lesson {
-  id: string;
-  title: string;
-  duration: string;
-  type: string;
+  activities: {
+    id: string;
+    type: 'assignment' | 'file' | 'quiz' | 'book';
+    title: string;
+  }[];
 }
 
 export default function CourseDetail() {
@@ -48,6 +40,12 @@ export default function CourseDetail() {
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [users, setUsers] = useState<any[]>([]);
+  const [sections, setSections] = useState<CourseSection[]>([]);
+  const [newSectionTitle, setNewSectionTitle] = useState("");
+  const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [currentSectionId, setCurrentSectionId] = useState("");
+  const [newActivity, setNewActivity] = useState({ type: 'assignment' as const, title: '' });
 
   useEffect(() => {
     checkAdminAndEnroll();
@@ -66,7 +64,6 @@ export default function CourseDetail() {
       .maybeSingle();
     
     if (data && courseId) {
-      // Auto-enroll admin in this course
       await supabase
         .from("enrollments")
         .upsert({
@@ -85,7 +82,7 @@ export default function CourseDetail() {
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "admin")
-      .single();
+      .maybeSingle();
     setIsAdmin(!!data);
   };
 
@@ -114,713 +111,249 @@ export default function CourseDetail() {
     }
   };
 
-  const [courseData, setCourseData] = useState({
-    id: course?.id || "",
-    code: course?.code || "",
-    title: course?.title || "",
-    category: course?.category || "",
-    subcategory: course?.subcategory || "",
-    level: course?.level || "",
-    duration: course?.duration || "",
-    mode: course?.mode || "",
-    partner: course?.partner || "",
-    description: course?.description || "",
-    overview: course?.overview || "",
-    tuition: course?.fees.tuition || "",
-    installments: course?.fees.installments || false,
-    accreditation: course?.accreditation || "",
-    rating: course?.rating || 0,
-    enrolledStudents: course?.enrolledStudents || 0,
-    learningOutcomes: course?.learningOutcomes || [],
-    modules: course?.modules || [],
-    entryRequirements: course?.entryRequirements || [],
-    careerOpportunities: course?.careerOpportunities || []
-  });
-
-  const [curriculumSections, setCurriculumSections] = useState<CurriculumSection[]>([
-    {
-      id: "1",
-      title: "Introduction to the Course",
-      description: "Get started with the fundamentals",
-      duration: "2 weeks",
-      lessons: [
-        { id: "1-1", title: "Welcome and Course Overview", duration: "15 min", type: "video" },
-        { id: "1-2", title: "Setting Up Your Environment", duration: "30 min", type: "video" },
-        { id: "1-3", title: "First Assignment", duration: "45 min", type: "assignment" }
-      ]
+  const handleAddSection = () => {
+    if (!newSectionTitle.trim()) {
+      toast.error("Please enter a section title");
+      return;
     }
-  ]);
+    const newSection: CourseSection = {
+      id: Date.now().toString(),
+      title: newSectionTitle,
+      activities: []
+    };
+    setSections([...sections, newSection]);
+    setNewSectionTitle("");
+    setAddSectionDialogOpen(false);
+    toast.success("Section added");
+  };
 
-  const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [editingLesson, setEditingLesson] = useState<string | null>(null);
+  const handleDeleteSection = (sectionId: string) => {
+    setSections(sections.filter(s => s.id !== sectionId));
+    toast.success("Section deleted");
+  };
 
-  // Handler for updating basic course fields
-  const handleCourseFieldUpdate = (field: keyof typeof courseData, value: any) => {
-    const updatedData = { ...courseData, [field]: value };
-    setCourseData(updatedData);
-    console.log(`Course ${field} updated - Save to DB:`, { field, value });
-    // TODO: await updateCourseFieldInDatabase(courseData.id, { [field]: value });
+  const handleAddActivity = () => {
+    if (!newActivity.title.trim()) {
+      toast.error("Please enter an activity title");
+      return;
+    }
+    setSections(sections.map(section => {
+      if (section.id === currentSectionId) {
+        return {
+          ...section,
+          activities: [...section.activities, { ...newActivity, id: Date.now().toString() }]
+        };
+      }
+      return section;
+    }));
+    setNewActivity({ type: 'assignment', title: '' });
+    setActivityDialogOpen(false);
+    toast.success("Activity added");
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch(type) {
+      case 'assignment': return <FileText className="h-4 w-4" />;
+      case 'quiz': return <HelpCircle className="h-4 w-4" />;
+      case 'file': return <FileUp className="h-4 w-4" />;
+      case 'book': return <BookOpen className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
   };
 
   if (!course) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <Card className="p-12 text-center bg-gradient-card">
-          <h2 className="text-2xl font-bold mb-2">Course Not Found</h2>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-2xl font-bold mb-4">Course not found</p>
           <Link to="/courses">
-            <Button className="bg-gradient-primary mt-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Courses
-            </Button>
+            <Button>Back to Courses</Button>
           </Link>
-        </Card>
+        </div>
       </div>
     );
   }
 
-  const handleSaveCourse = () => {
-    // Complete course data package ready for database
-    const completeCourseData = {
-      ...courseData,
-      curriculumSections: curriculumSections
-    };
-    
-    console.log("=== COURSE DATA FOR DATABASE ===");
-    console.log("Basic Info:", courseData);
-    console.log("Curriculum Sections:", curriculumSections);
-    console.log("Complete Package:", completeCourseData);
-    console.log("================================");
-    
-    // TODO: Add your database save logic here
-    // Example: await saveCourseToDatabase(completeCourseData);
-    
-    toast.success("Course updated successfully!");
-  };
-
-  const handleAddSection = () => {
-    const newSection: CurriculumSection = {
-      id: Date.now().toString(),
-      title: "New Section",
-      description: "Section description",
-      duration: "1 week",
-      lessons: []
-    };
-    const updatedSections = [...curriculumSections, newSection];
-    setCurriculumSections(updatedSections);
-    console.log("Section added - Save to DB:", newSection);
-    // TODO: await addSectionToDatabase(courseData.id, newSection);
-    toast.success("New section added");
-  };
-
-  const handleDeleteSection = (sectionId: string) => {
-    setCurriculumSections(curriculumSections.filter(s => s.id !== sectionId));
-    console.log("Section deleted - Remove from DB:", sectionId);
-    // TODO: await deleteSectionFromDatabase(courseData.id, sectionId);
-    toast.success("Section deleted");
-  };
-
-  const handleUpdateSection = (sectionId: string, field: keyof CurriculumSection, value: any) => {
-    const updatedSections = curriculumSections.map(section => 
-      section.id === sectionId ? { ...section, [field]: value } : section
-    );
-    setCurriculumSections(updatedSections);
-    console.log(`Section ${sectionId} updated - Save to DB:`, { field, value });
-    // TODO: await updateSectionInDatabase(courseData.id, sectionId, { [field]: value });
-  };
-
-  const handleAddLesson = (sectionId: string) => {
-    const newLesson: Lesson = {
-      id: Date.now().toString(),
-      title: "New Lesson",
-      duration: "15 min",
-      type: "video"
-    };
-    setCurriculumSections(curriculumSections.map(section => 
-      section.id === sectionId 
-        ? { ...section, lessons: [...section.lessons, newLesson] }
-        : section
-    ));
-    console.log("Lesson added - Save to DB:", { sectionId, lesson: newLesson });
-    // TODO: await addLessonToDatabase(courseData.id, sectionId, newLesson);
-    toast.success("Lesson added");
-  };
-
-  const handleDeleteLesson = (sectionId: string, lessonId: string) => {
-    setCurriculumSections(curriculumSections.map(section => 
-      section.id === sectionId 
-        ? { ...section, lessons: section.lessons.filter(l => l.id !== lessonId) }
-        : section
-    ));
-    console.log("Lesson deleted - Remove from DB:", { sectionId, lessonId });
-    // TODO: await deleteLessonFromDatabase(courseData.id, sectionId, lessonId);
-    toast.success("Lesson deleted");
-  };
-
-  const handleUpdateLesson = (sectionId: string, lessonId: string, field: keyof Lesson, value: string) => {
-    setCurriculumSections(curriculumSections.map(section => 
-      section.id === sectionId 
-        ? { 
-            ...section, 
-            lessons: section.lessons.map(lesson => 
-              lesson.id === lessonId ? { ...lesson, [field]: value } : lesson
-            )
-          }
-        : section
-    ));
-    console.log(`Lesson ${lessonId} updated - Save to DB:`, { sectionId, field, value });
-    // TODO: await updateLessonInDatabase(courseData.id, sectionId, lessonId, { [field]: value });
-  };
-
-  const handleArrayFieldAdd = (field: keyof typeof courseData) => {
-    const currentArray = courseData[field] as string[];
-    const updatedData = {
-      ...courseData,
-      [field]: [...currentArray, ""]
-    };
-    setCourseData(updatedData);
-    console.log(`${field} item added - Save to DB:`, updatedData[field]);
-    // TODO: await updateCourseFieldInDatabase(courseData.id, field, updatedData[field]);
-  };
-
-  const handleArrayFieldUpdate = (field: keyof typeof courseData, index: number, value: string) => {
-    const currentArray = courseData[field] as string[];
-    const newArray = [...currentArray];
-    newArray[index] = value;
-    const updatedData = {
-      ...courseData,
-      [field]: newArray
-    };
-    setCourseData(updatedData);
-    console.log(`${field}[${index}] updated - Save to DB:`, updatedData[field]);
-    // TODO: await updateCourseFieldInDatabase(courseData.id, field, updatedData[field]);
-  };
-
-  const handleArrayFieldDelete = (field: keyof typeof courseData, index: number) => {
-    const currentArray = courseData[field] as string[];
-    const updatedData = {
-      ...courseData,
-      [field]: currentArray.filter((_, i) => i !== index)
-    };
-    setCourseData(updatedData);
-    console.log(`${field}[${index}] deleted - Save to DB:`, updatedData[field]);
-    // TODO: await updateCourseFieldInDatabase(courseData.id, field, updatedData[field]);
-  };
-
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Link to="/courses">
-          <Button variant="ghost" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Courses
-          </Button>
-        </Link>
-        <Button onClick={handleSaveCourse} className="gap-2 bg-gradient-primary">
-          <Save className="h-4 w-4" />
-          Save Changes
+    <div className="space-y-6">
+      <Link to="/courses">
+        <Button variant="ghost" className="gap-2 mb-4">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Courses
         </Button>
-      </div>
+      </Link>
 
-      {/* Course Basic Information */}
-      <Card className="p-8 bg-gradient-card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Course Information</h2>
-          <Badge variant="outline">Admin Edit Mode</Badge>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="course-id">Course ID</Label>
-            <Input
-              id="course-id"
-              value={courseData.id}
-              onChange={(e) => handleCourseFieldUpdate("id", e.target.value)}
-              placeholder="course-id"
-            />
+      <div className="relative h-64 rounded-lg overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-glow/90" />
+        <div className="relative h-full flex items-center justify-between px-8">
+          <div className="flex-1">
+            <Badge className="mb-2">{course.category}</Badge>
+            <h1 className="text-4xl font-bold text-white mb-2">{course.title}</h1>
+            <p className="text-white/80">{course.code}</p>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="course-code">Course Code</Label>
-            <Input
-              id="course-code"
-              value={courseData.code}
-              onChange={(e) => handleCourseFieldUpdate("code", e.target.value)}
-              placeholder="CS-101"
-            />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="course-title">Course Title</Label>
-            <Input
-              id="course-title"
-              value={courseData.title}
-              onChange={(e) => handleCourseFieldUpdate("title", e.target.value)}
-              placeholder="Enter course title"
-              className="text-lg font-semibold"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              value={courseData.category}
-              onChange={(e) => handleCourseFieldUpdate("category", e.target.value)}
-              placeholder="Bachelor's Programs"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="subcategory">Subcategory</Label>
-            <Input
-              id="subcategory"
-              value={courseData.subcategory}
-              onChange={(e) => handleCourseFieldUpdate("subcategory", e.target.value)}
-              placeholder="Information Technology"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="level">Level</Label>
-            <Input
-              id="level"
-              value={courseData.level}
-              onChange={(e) => handleCourseFieldUpdate("level", e.target.value)}
-              placeholder="Undergraduate"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="duration">Duration</Label>
-            <Input
-              id="duration"
-              value={courseData.duration}
-              onChange={(e) => handleCourseFieldUpdate("duration", e.target.value)}
-              placeholder="3-4 years"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="mode">Mode</Label>
-            <Input
-              id="mode"
-              value={courseData.mode}
-              onChange={(e) => handleCourseFieldUpdate("mode", e.target.value)}
-              placeholder="Online"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="partner">Partner Institution</Label>
-            <Input
-              id="partner"
-              value={courseData.partner}
-              onChange={(e) => handleCourseFieldUpdate("partner", e.target.value)}
-              placeholder="Walsh College"
-            />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={courseData.description}
-              onChange={(e) => handleCourseFieldUpdate("description", e.target.value)}
-              placeholder="Brief course description"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="overview">Overview</Label>
-            <Textarea
-              id="overview"
-              value={courseData.overview}
-              onChange={(e) => handleCourseFieldUpdate("overview", e.target.value)}
-              placeholder="Detailed course overview"
-              rows={4}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tuition">Tuition Fees</Label>
-            <Input
-              id="tuition"
-              value={courseData.tuition}
-              onChange={(e) => handleCourseFieldUpdate("tuition", e.target.value)}
-              placeholder="$12,000 - $15,000 per year"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accreditation">Accreditation</Label>
-            <Input
-              id="accreditation"
-              value={courseData.accreditation}
-              onChange={(e) => handleCourseFieldUpdate("accreditation", e.target.value)}
-              placeholder="Accreditation body"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rating">Rating</Label>
-            <Input
-              id="rating"
-              type="number"
-              step="0.1"
-              min="0"
-              max="5"
-              value={courseData.rating}
-              onChange={(e) => handleCourseFieldUpdate("rating", parseFloat(e.target.value))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="enrolled">Enrolled Students</Label>
-            <Input
-              id="enrolled"
-              type="number"
-              value={courseData.enrolledStudents}
-              onChange={(e) => handleCourseFieldUpdate("enrolledStudents", parseInt(e.target.value))}
-            />
-          </div>
-
-          <div className="space-y-2 flex items-center gap-3">
-            <Switch
-              id="installments"
-              checked={courseData.installments}
-              onCheckedChange={(checked) => handleCourseFieldUpdate("installments", checked)}
-            />
-            <Label htmlFor="installments" className="cursor-pointer">
-              Installment plans available
-            </Label>
-          </div>
-        </div>
-      </Card>
-
-      {/* Learning Outcomes */}
-      <Card className="p-8 bg-gradient-card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Learning Outcomes</h2>
-          <Button onClick={() => handleArrayFieldAdd("learningOutcomes")} size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Outcome
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {courseData.learningOutcomes.map((outcome, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                value={outcome}
-                onChange={(e) => handleArrayFieldUpdate("learningOutcomes", index, e.target.value)}
-                placeholder="Enter learning outcome"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleArrayFieldDelete("learningOutcomes", index)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Modules/Topics */}
-      <Card className="p-8 bg-gradient-card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Course Modules</h2>
-          <Button onClick={() => handleArrayFieldAdd("modules")} size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Module
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {courseData.modules.map((module, index) => (
-            <div key={index} className="flex gap-2">
-              <div className="flex items-center gap-2 flex-1">
-                <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                <Input
-                  value={module}
-                  onChange={(e) => handleArrayFieldUpdate("modules", index, e.target.value)}
-                  placeholder="Enter module name"
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleArrayFieldDelete("modules", index)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Entry Requirements */}
-      <Card className="p-8 bg-gradient-card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Entry Requirements</h2>
-          <Button onClick={() => handleArrayFieldAdd("entryRequirements")} size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Requirement
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {courseData.entryRequirements.map((req, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                value={req}
-                onChange={(e) => handleArrayFieldUpdate("entryRequirements", index, e.target.value)}
-                placeholder="Enter requirement"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleArrayFieldDelete("entryRequirements", index)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Career Opportunities */}
-      <Card className="p-8 bg-gradient-card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Career Opportunities</h2>
-          <Button onClick={() => handleArrayFieldAdd("careerOpportunities")} size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Career
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {courseData.careerOpportunities.map((career, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                value={career}
-                onChange={(e) => handleArrayFieldUpdate("careerOpportunities", index, e.target.value)}
-                placeholder="Enter career opportunity"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleArrayFieldDelete("careerOpportunities", index)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Separator className="my-8" />
-
-      {/* Curriculum Sections */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">Course Curriculum</h2>
-          <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
-            <Plus className="h-4 w-4" />
-            Add Section
-          </Button>
-        </div>
-
-        <div className="space-y-6">
-          {curriculumSections.map((section, sectionIndex) => (
-            <Card key={section.id} className="p-6 bg-gradient-card border-primary/20">
-              <div className="space-y-4">
-                {/* Section Header */}
-                <div className="flex items-start gap-4">
-                  <div className="flex items-center gap-2 mt-2">
-                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                    <Badge variant="outline" className="font-mono">
-                      Section {sectionIndex + 1}
-                    </Badge>
+          {isAdmin && (
+            <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Enroll User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Enroll User in Course</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select User</Label>
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map(u => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
-                  <div className="flex-1 space-y-4">
-                    {editingSection === section.id ? (
-                      <>
-                        <Input
-                          value={section.title}
-                          onChange={(e) => handleUpdateSection(section.id, "title", e.target.value)}
-                          placeholder="Section title"
-                          className="text-lg font-semibold"
-                        />
-                        <Textarea
-                          value={section.description}
-                          onChange={(e) => handleUpdateSection(section.id, "description", e.target.value)}
-                          placeholder="Section description"
-                          rows={2}
-                        />
-                        <div className="flex gap-2">
-                          <Input
-                            value={section.duration}
-                            onChange={(e) => handleUpdateSection(section.id, "duration", e.target.value)}
-                            placeholder="Duration"
-                            className="w-40"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingSection(null)}
-                          >
-                            Done
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-xl font-semibold">{section.title}</h3>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditingSection(section.id)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteSection(section.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="text-muted-foreground">{section.description}</p>
-                        <Badge variant="secondary">{section.duration}</Badge>
-                      </>
-                    )}
-                  </div>
+                  <Button onClick={handleEnrollUser} className="w-full">Enroll</Button>
                 </div>
-
-                <Separator />
-
-                {/* Lessons */}
-                <div className="space-y-3 pl-12">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm text-muted-foreground">Lessons</h4>
-                    <Button
-                      onClick={() => handleAddLesson(section.id)}
-                      size="sm"
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      <Plus className="h-3 w-3" />
-                      Add Lesson
-                    </Button>
-                  </div>
-
-                  {section.lessons.map((lesson, lessonIndex) => (
-                    <div
-                      key={lesson.id}
-                      className="flex items-center gap-3 p-4 rounded-lg bg-background/50 border border-border/50"
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                      <Badge variant="secondary" className="font-mono text-xs">
-                        {lessonIndex + 1}
-                      </Badge>
-                      
-                      {editingLesson === lesson.id ? (
-                        <div className="flex-1 flex gap-2">
-                          <Input
-                            value={lesson.title}
-                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "title", e.target.value)}
-                            placeholder="Lesson title"
-                            className="flex-1"
-                          />
-                          <Input
-                            value={lesson.duration}
-                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "duration", e.target.value)}
-                            placeholder="Duration"
-                            className="w-24"
-                          />
-                          <Input
-                            value={lesson.type}
-                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "type", e.target.value)}
-                            placeholder="Type"
-                            className="w-32"
-                          />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setEditingLesson(null)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{lesson.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {lesson.duration} • {lesson.type}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditingLesson(lesson.id)}
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteLesson(section.id, lesson.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-
-                  {section.lessons.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No lessons yet. Click &quot;Add Lesson&quot; to get started.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-
-          {curriculumSections.length === 0 && (
-            <Card className="p-12 text-center bg-gradient-card">
-              <p className="text-muted-foreground mb-4">No curriculum sections yet.</p>
-              <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
-                <Plus className="h-4 w-4" />
-                Add First Section
-              </Button>
-            </Card>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>
 
-      {/* Save Button at Bottom */}
-      <div className="flex justify-end pt-6">
-        <Button onClick={handleSaveCourse} size="lg" className="gap-2 bg-gradient-primary">
-          <Save className="h-4 w-4" />
-          Save All Changes
-        </Button>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Course Sections</CardTitle>
+          {isAdmin && (
+            <Dialog open={addSectionDialogOpen} onOpenChange={setAddSectionDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Section
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Section</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Section Title</Label>
+                    <Input
+                      value={newSectionTitle}
+                      onChange={(e) => setNewSectionTitle(e.target.value)}
+                      placeholder="Enter section title"
+                    />
+                  </div>
+                  <Button onClick={handleAddSection} className="w-full">Add Section</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {sections.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              {isAdmin ? "No sections yet. Add your first section to get started." : "No sections available."}
+            </p>
+          ) : (
+            sections.map((section) => (
+              <Card key={section.id} className="border-border/50">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg">{section.title}</CardTitle>
+                  <div className="flex gap-2">
+                    {isAdmin && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setCurrentSectionId(section.id);
+                            setActivityDialogOpen(true);
+                          }}
+                          className="gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Activity
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteSection(section.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {section.activities.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No activities yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {section.activities.map((activity) => (
+                        <div
+                          key={activity.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                        >
+                          {getActivityIcon(activity.type)}
+                          <span className="flex-1">{activity.title}</span>
+                          <Badge variant="outline" className="capitalize">
+                            {activity.type}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Activity</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Activity Type</Label>
+              <Select
+                value={newActivity.type}
+                onValueChange={(value: any) => setNewActivity({ ...newActivity, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="assignment">Assignment</SelectItem>
+                  <SelectItem value="file">File Upload</SelectItem>
+                  <SelectItem value="quiz">Quiz</SelectItem>
+                  <SelectItem value="book">Book</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Activity Title</Label>
+              <Input
+                value={newActivity.title}
+                onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
+                placeholder="Enter activity title"
+              />
+            </div>
+            <Button onClick={handleAddActivity} className="w-full">Add Activity</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
