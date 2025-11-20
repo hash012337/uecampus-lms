@@ -272,41 +272,78 @@ export function FileViewer({ file }: FileViewerProps) {
                 <CardTitle>Your Submissions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {userSubmissions.map((submission) => (
-                  <div key={submission.id} className="p-4 border rounded-lg space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">Status:</span>
-                          <Badge variant={submission.status === 'submitted' ? 'default' : 'secondary'}>
-                            {submission.status}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <span className="font-semibold">Submitted:</span> {new Date(submission.submitted_at).toLocaleString()}
-                        </div>
-                        {submission.marks_obtained !== null && (
-                          <div className="text-sm">
-                            <span className="font-semibold">Grade:</span> {submission.marks_obtained}/{file.points}
+                {userSubmissions.map((submission) => {
+                  const submittedDate = new Date(submission.submitted_at);
+                  const dueDate = file.due_date ? new Date(file.due_date) : null;
+                  const timeBeforeDeadline = dueDate 
+                    ? Math.round((dueDate.getTime() - submittedDate.getTime()) / (1000 * 60 * 60 * 24))
+                    : null;
+                  
+                  return (
+                    <div key={submission.id} className="p-4 border-2 rounded-lg space-y-3 bg-accent/50">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-muted-foreground">Status:</span>
+                            <Badge variant={submission.status === 'submitted' ? 'default' : submission.marks_obtained !== null ? 'secondary' : 'outline'}>
+                              {submission.marks_obtained !== null ? 'Graded' : submission.status}
+                            </Badge>
                           </div>
-                        )}
-                        {submission.feedback && (
-                          <div className="text-sm">
-                            <span className="font-semibold">Feedback:</span> {submission.feedback}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-muted-foreground">Submission Time:</span>
+                              <span>{submittedDate.toLocaleString()}</span>
+                            </div>
+                            
+                            {dueDate && (
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-muted-foreground">Deadline:</span>
+                                <span>{dueDate.toLocaleString()}</span>
+                              </div>
+                            )}
+                            
+                            {timeBeforeDeadline !== null && (
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-muted-foreground">Submitted:</span>
+                                <span className={timeBeforeDeadline >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                  {timeBeforeDeadline >= 0 
+                                    ? `${timeBeforeDeadline} days before deadline` 
+                                    : `${Math.abs(timeBeforeDeadline)} days late`}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {submission.marks_obtained !== null && (
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-muted-foreground">Grade:</span>
+                                <span className="font-bold">{submission.marks_obtained}/{file.points}</span>
+                              </div>
+                            )}
                           </div>
+                          
+                          {submission.feedback && (
+                            <div className="mt-2 p-3 bg-background rounded border">
+                              <span className="font-semibold text-sm text-muted-foreground">Feedback:</span>
+                              <p className="text-sm mt-1">{submission.feedback}</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {!submission.marks_obtained && timeBeforeDeadline && timeBeforeDeadline >= 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteSubmission(submission.id, submission.file_path)}
+                            className="text-destructive ml-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteSubmission(submission.id, submission.file_path)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           )}

@@ -231,11 +231,13 @@ export default function CourseDetail() {
       .order("order_index");
     
     if (materialsData) {
-      setMaterials(materialsData);
+      // Filter hidden materials for non-admin users
+      const filteredMaterials = isAdmin ? materialsData : materialsData.filter(m => !m.is_hidden);
+      setMaterials(filteredMaterials);
       
       // Auto-select first material for students
-      if (!isAdmin && materialsData.length > 0) {
-        setSelectedFile(materialsData[0]);
+      if (!isAdmin && filteredMaterials.length > 0) {
+        setSelectedFile(filteredMaterials[0]);
       }
     }
 
@@ -264,10 +266,12 @@ export default function CourseDetail() {
     const { data: assignmentsData } = await supabase
       .from("assignments")
       .select("*")
-      .eq("course", courseId);
+      .eq("course_code", courseData?.code || "");
     
     if (assignmentsData) {
-      setAssignments(assignmentsData);
+      // Filter hidden assignments for non-admin users
+      const filteredAssignments = isAdmin ? assignmentsData : assignmentsData.filter(a => !a.is_hidden);
+      setAssignments(filteredAssignments);
     }
 
     const { data: quizzesData } = await supabase
@@ -276,7 +280,9 @@ export default function CourseDetail() {
       .eq("course_id", courseId);
     
     if (quizzesData) {
-      setSectionQuizzes(quizzesData);
+      // Filter hidden quizzes for non-admin users
+      const filteredQuizzes = isAdmin ? quizzesData : quizzesData.filter(q => !q.is_hidden);
+      setSectionQuizzes(filteredQuizzes);
     }
   };
 
@@ -887,7 +893,7 @@ export default function CourseDetail() {
                                   </svg>
                                 )}
                               </div>
-                              <FileQuestion className="h-4 w-4 flex-shrink-0 text-orange-500" />
+                              <Upload className="h-4 w-4 flex-shrink-0 text-orange-500" />
                               <span className="truncate text-left flex-1">{assignment.title}</span>
                             </button>
                           ))}
