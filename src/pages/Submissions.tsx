@@ -312,10 +312,10 @@ export default function Submissions() {
 
         <TabsContent value="unmarked" className="space-y-4">
           {assignments.map((assignment) => {
-            const markedSubmissions = getSubmissionsForAssignment(assignment.id)
-              .filter(s => s.marks_obtained !== null);
+            const unmarkedSubmissions = getSubmissionsForAssignment(assignment.id)
+              .filter(s => s.marks_obtained === null);
             
-            if (markedSubmissions.length === 0) return null;
+            if (unmarkedSubmissions.length === 0) return null;
 
             return (
               <Card key={assignment.id} className="p-6">
@@ -325,14 +325,16 @@ export default function Submissions() {
                 </div>
 
                 <div className="space-y-3">
-                  {markedSubmissions.map((submission) => (
+                  {unmarkedSubmissions.map((submission) => (
                     <div
                       key={submission.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg"
+                      className="flex items-center justify-between p-4 border border-border rounded-lg bg-amber-50 dark:bg-amber-950/20"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30">
+                            Pending
+                          </Badge>
                           <div>
                             <p className="font-medium">{submission.user_name}</p>
                             <p className="text-sm text-muted-foreground">{submission.user_email}</p>
@@ -340,12 +342,8 @@ export default function Submissions() {
                         </div>
                         <div className="mt-2 flex items-center gap-4 text-sm">
                           <span>
-                            Graded: {submission.graded_at ? format(new Date(submission.graded_at), "PPp") : "N/A"}
+                            Submitted: {submission.submitted_at ? format(new Date(submission.submitted_at), "PPp") : "N/A"}
                           </span>
-                          <Badge variant="default">
-                            <Award className="h-3 w-3 mr-1" />
-                            {submission.marks_obtained} / {assignment.points}
-                          </Badge>
                         </div>
                       </div>
                       
@@ -366,7 +364,7 @@ export default function Submissions() {
                           onClick={() => handleGrade(assignment, submission)}
                         >
                           <Eye className="h-4 w-4 mr-1" />
-                          View Grade
+                          Grade Now
                         </Button>
                       </div>
                     </div>
@@ -377,7 +375,7 @@ export default function Submissions() {
           })}
         </TabsContent>
 
-        <TabsContent value="unmarked" className="space-y-4">
+        <TabsContent value="marked" className="space-y-4">
           {assignments.map((assignment) => {
             const unmarkedSubmissions = getSubmissionsForAssignment(assignment.id)
               .filter(s => s.marks_obtained === null);
