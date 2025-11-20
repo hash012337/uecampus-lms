@@ -114,13 +114,18 @@ export function DraggableMaterialList({
     }
   };
 
+  // Don't render if no items
+  if (!items || items.length === 0) {
+    return null;
+  }
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext items={items} strategy={verticalListSortingStrategy}>
+      <SortableContext items={items.map(item => item.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2">
           {items.map((material) => (
             <SortableItem
