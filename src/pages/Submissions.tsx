@@ -47,6 +47,7 @@ export default function Submissions() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
+  const [selectedStudent, setSelectedStudent] = useState<string>("all");
   const [courses, setCourses] = useState<Array<{id: string; name: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"marked" | "unmarked">("unmarked");
@@ -66,7 +67,7 @@ export default function Submissions() {
     if (user && isAdmin) {
       fetchData();
     }
-  }, [user, selectedCourse, isAdmin]);
+  }, [user, selectedCourse, selectedStudent, isAdmin]);
 
   const checkAdminStatus = async () => {
     if (!user) return;
@@ -260,7 +261,11 @@ export default function Submissions() {
   };
 
   const getSubmissionsForAssignment = (assignmentId: string) => {
-    return submissions.filter(s => s.assignment_id === assignmentId);
+    let filtered = submissions.filter(s => s.assignment_id === assignmentId);
+    if (selectedStudent !== "all") {
+      filtered = filtered.filter(s => s.user_id === selectedStudent);
+    }
+    return filtered;
   };
 
   const getUsersWithoutSubmission = (assignmentId: string) => {
@@ -289,19 +294,34 @@ export default function Submissions() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Assignment Submissions</h1>
-        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder="Filter by course" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
-            {courses.map((course) => (
-              <SelectItem key={course.id} value={course.id}>
-                {course.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-3">
+          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Filter by course" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Courses</SelectItem>
+              {courses.map((course) => (
+                <SelectItem key={course.id} value={course.id}>
+                  {course.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Filter by student" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Students</SelectItem>
+              {allUsers.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.full_name || user.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "marked" | "unmarked")}>
@@ -377,10 +397,10 @@ export default function Submissions() {
 
         <TabsContent value="marked" className="space-y-4">
           {assignments.map((assignment) => {
-            const unmarkedSubmissions = getSubmissionsForAssignment(assignment.id)
-              .filter(s => s.marks_obtained === null);
+            const markedSubmissions = getSubmissionsForAssignment(assignment.id)
+              .filter(s => s.marks_obtained !== null);
             
-            if (unmarkedSubmissions.length === 0) return null;
+            if (markedSubmissions.length === 0) return null;
 
             return (
               <Card key={assignment.id} className="p-6">
@@ -390,15 +410,15 @@ export default function Submissions() {
                 </div>
 
                 <div className="space-y-3">
-                  {unmarkedSubmissions.map((submission) => (
+                  {markedSubmissions.map((submission) => (
                     <div
                       key={submission.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg bg-amber-50 dark:bg-amber-950/20"
+                      className="flex items-center justify-between p-4 border border-border rounded-lg bg-green-50 dark:bg-green-950/20"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/30">
-                            Pending
+                          <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30">
+                            Graded
                           </Badge>
                           <div>
                             <p className="font-medium">{submission.user_name}</p>
@@ -409,6 +429,14 @@ export default function Submissions() {
                           <span>
                             Submitted: {submission.submitted_at ? format(new Date(submission.submitted_at), "PPp") : "N/A"}
                           </span>
+                          <span className="font-medium">
+                            Marks: {submission.marks_obtained}/{assignment.points || 100}
+                          </span>
+                          {submission.graded_at && (
+                            <span>
+                              Graded: {format(new Date(submission.graded_at), "PPp")}
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -429,7 +457,7 @@ export default function Submissions() {
                           onClick={() => handleGrade(assignment, submission)}
                         >
                           <Eye className="h-4 w-4 mr-1" />
-                          Grade Now
+                          View/Edit Grade
                         </Button>
                       </div>
                     </div>
