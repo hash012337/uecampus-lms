@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Eye, Award, Download } from "lucide-react";
 import { format } from "date-fns";
+
 interface Assignment {
   id: string;
   title: string;
@@ -224,161 +225,159 @@ export default function Submissions() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Assignment Submissions</h1>
-          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Filter by course" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Courses</SelectItem>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "submitted" | "not-submitted")}>
-          <TabsList>
-            <TabsTrigger value="submitted">Submitted</TabsTrigger>
-            <TabsTrigger value="not-submitted">Not Submitted</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="submitted" className="space-y-4">
-            {assignments.map((assignment) => {
-              const assignmentSubmissions = getSubmissionsForAssignment(assignment.id);
-              
-              if (assignmentSubmissions.length === 0) return null;
-
-              return (
-                <Card key={assignment.id} className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold">{assignment.title}</h3>
-                    <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {assignmentSubmissions.map((submission) => (
-                      <div
-                        key={submission.id}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                            <div>
-                              <p className="font-medium">{submission.user_name}</p>
-                              <p className="text-sm text-muted-foreground">{submission.user_email}</p>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex items-center gap-4 text-sm">
-                            <span>
-                              Submitted: {submission.submitted_at ? format(new Date(submission.submitted_at), "PPp") : "N/A"}
-                            </span>
-                            {submission.marks_obtained !== null && (
-                              <Badge variant="default">
-                                <Award className="h-3 w-3 mr-1" />
-                                {submission.marks_obtained} / {assignment.points}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          {submission.file_path && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => downloadFile(submission.file_path!)}
-                            >
-                              <Download className="h-4 w-4 mr-1" />
-                              Download
-                            </Button>
-                          )}
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleGrade(assignment, submission)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            {submission.marks_obtained !== null ? "Update Grade" : "Grade"}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              );
-            })}
-          </TabsContent>
-
-          <TabsContent value="not-submitted" className="space-y-4">
-            {assignments.map((assignment) => {
-              const usersWithoutSubmission = getUsersWithoutSubmission(assignment.id);
-              
-              if (usersWithoutSubmission.length === 0) return null;
-
-              return (
-                <Card key={assignment.id} className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold">{assignment.title}</h3>
-                    <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {usersWithoutSubmission.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center gap-3 p-4 border border-border rounded-lg"
-                      >
-                        <XCircle className="h-5 w-5 text-red-600" />
-                        <div>
-                          <p className="font-medium">{user.full_name || "Unknown"}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              );
-            })}
-          </TabsContent>
-        </Tabs>
-
-        <Dialog open={gradingDialog} onOpenChange={setGradingDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Grade Submission</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Marks Obtained</Label>
-                <Input
-                  type="number"
-                  value={gradeData.marks}
-                  onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
-                  placeholder={`Out of ${selectedSubmission?.assignment.points}`}
-                />
-              </div>
-              <div>
-                <Label>Feedback</Label>
-                <Textarea
-                  value={gradeData.feedback}
-                  onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
-                  rows={4}
-                  placeholder="Enter feedback..."
-                />
-              </div>
-              <Button onClick={saveGrade} className="w-full">Save Grade</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Assignment Submissions</h1>
+        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Filter by course" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Courses</SelectItem>
+            {courses.map((course) => (
+              <SelectItem key={course.id} value={course.id}>
+                {course.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "submitted" | "not-submitted")}>
+        <TabsList>
+          <TabsTrigger value="submitted">Submitted</TabsTrigger>
+          <TabsTrigger value="not-submitted">Not Submitted</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="submitted" className="space-y-4">
+          {assignments.map((assignment) => {
+            const assignmentSubmissions = getSubmissionsForAssignment(assignment.id);
+            
+            if (assignmentSubmissions.length === 0) return null;
+
+            return (
+              <Card key={assignment.id} className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold">{assignment.title}</h3>
+                  <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
+                </div>
+
+                <div className="space-y-3">
+                  {assignmentSubmissions.map((submission) => (
+                    <div
+                      key={submission.id}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium">{submission.user_name}</p>
+                            <p className="text-sm text-muted-foreground">{submission.user_email}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center gap-4 text-sm">
+                          <span>
+                            Submitted: {submission.submitted_at ? format(new Date(submission.submitted_at), "PPp") : "N/A"}
+                          </span>
+                          {submission.marks_obtained !== null && (
+                            <Badge variant="default">
+                              <Award className="h-3 w-3 mr-1" />
+                              {submission.marks_obtained} / {assignment.points}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {submission.file_path && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadFile(submission.file_path!)}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        )}
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleGrade(assignment, submission)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          {submission.marks_obtained !== null ? "Update Grade" : "Grade"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })}
+        </TabsContent>
+
+        <TabsContent value="not-submitted" className="space-y-4">
+          {assignments.map((assignment) => {
+            const usersWithoutSubmission = getUsersWithoutSubmission(assignment.id);
+            
+            if (usersWithoutSubmission.length === 0) return null;
+
+            return (
+              <Card key={assignment.id} className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold">{assignment.title}</h3>
+                  <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
+                </div>
+
+                <div className="space-y-2">
+                  {usersWithoutSubmission.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center gap-3 p-4 border border-border rounded-lg"
+                    >
+                      <XCircle className="h-5 w-5 text-red-600" />
+                      <div>
+                        <p className="font-medium">{user.full_name || "Unknown"}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })}
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={gradingDialog} onOpenChange={setGradingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grade Submission</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Marks Obtained</Label>
+              <Input
+                type="number"
+                value={gradeData.marks}
+                onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
+                placeholder={`Out of ${selectedSubmission?.assignment.points}`}
+              />
+            </div>
+            <div>
+              <Label>Feedback</Label>
+              <Textarea
+                value={gradeData.feedback}
+                onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                rows={4}
+                placeholder="Enter feedback..."
+              />
+            </div>
+            <Button onClick={saveGrade} className="w-full">Save Grade</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
