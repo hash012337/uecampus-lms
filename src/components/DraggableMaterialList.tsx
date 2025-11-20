@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -88,6 +88,11 @@ export function DraggableMaterialList({
   getFileIcon,
 }: DraggableMaterialListProps) {
   const [items, setItems] = useState(materials);
+
+  // Sync internal state with materials prop
+  useEffect(() => {
+    setItems(materials);
+  }, [materials]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
