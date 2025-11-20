@@ -158,21 +158,31 @@ export default function CourseDetail() {
         return;
       }
 
-      // Insert progress tracking record
+      // Find the material to get its details
+      const material = materials.find(m => m.id === materialId);
+      if (!material) return;
+
+      // Insert progress tracking record with material reference
       const { error } = await supabase.from('progress_tracking').insert({
         user_id: user.id,
         course_id: courseId,
         item_type: 'material',
-        status: 'completed'
+        status: 'completed',
+        completed_at: new Date().toISOString()
       });
 
       if (error) throw error;
+
+      // Update the material's completed status
+      setMaterials(prev => prev.map(m => 
+        m.id === materialId ? { ...m, completed: true } : m
+      ));
 
       // Update local state
       setCompletedMaterials(prev => new Set([...prev, materialId]));
       toast.success("Marked as complete");
       
-      // Reload progress
+      // Reload progress to update the progress bar
       loadUserProgress();
     } catch (error: any) {
       console.error("Error marking complete:", error);
