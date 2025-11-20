@@ -257,6 +257,10 @@ export function FileViewer({ file }: FileViewerProps) {
                 points: file.points || 100
               }}
               submission={latestSubmission}
+              onResubmit={() => {
+                setUserSubmissions([]);
+                loadUserSubmissions();
+              }}
             />
           </div>
         </div>

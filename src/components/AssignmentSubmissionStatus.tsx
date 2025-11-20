@@ -1,6 +1,10 @@
 import { Card } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
 
 interface AssignmentSubmissionStatusProps {
   assignment: {
@@ -9,16 +13,75 @@ interface AssignmentSubmissionStatusProps {
     points: number | null;
   };
   submission: {
+    id: string;
     submitted_at: string | null;
     status: string | null;
     marks_obtained: number | null;
     file_path: string | null;
     feedback: string | null;
     graded_at: string | null;
+    graded_by: string | null;
   };
+  onResubmit?: () => void;
 }
 
-export function AssignmentSubmissionStatus({ assignment, submission }: AssignmentSubmissionStatusProps) {
+export function AssignmentSubmissionStatus({ assignment, submission, onResubmit }: AssignmentSubmissionStatusProps) {
+  const [graderName, setGraderName] = useState<string | null>(null);
+  const canDelete = submission.graded_at === null && assignment.due_date && new Date() < new Date(assignment.due_date);
+
+  useEffect(() => {
+    if (submission.graded_by) {
+      fetchGraderName();
+    }
+  }, [submission.graded_by]);
+
+  const fetchGraderName = async () => {
+    if (!submission.graded_by) return;
+    
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', submission.graded_by)
+        .maybeSingle();
+      
+      if (data) {
+        setGraderName(data.full_name || data.email || 'Instructor');
+      }
+    } catch (error) {
+      console.error("Error fetching grader name:", error);
+    }
+  };
+
+  const handleDeleteSubmission = async () => {
+    if (!confirm("Are you sure you want to delete this submission? You can resubmit before the deadline.")) {
+      return;
+    }
+
+    try {
+      // Delete file from storage
+      if (submission.file_path) {
+        await supabase.storage
+          .from('assignment-submissions')
+          .remove([submission.file_path]);
+      }
+
+      // Delete submission record
+      const { error } = await supabase
+        .from('assignment_submissions')
+        .delete()
+        .eq('id', submission.id);
+
+      if (error) throw error;
+
+      toast.success("Submission deleted. You can now resubmit.");
+      if (onResubmit) onResubmit();
+    } catch (error: any) {
+      console.error("Error deleting submission:", error);
+      toast.error("Failed to delete submission");
+    }
+  };
+
   const calculateTimeRemaining = () => {
     if (!submission.submitted_at || !assignment.due_date) return null;
     
@@ -142,11 +205,70 @@ export function AssignmentSubmissionStatus({ assignment, submission }: Assignmen
           </table>
         </div>
 
-        {submission.feedback && submission.graded_at && (
-          <Card className="mt-4 p-4 bg-muted/50">
-            <h4 className="font-semibold mb-2">Feedback</h4>
-            <p className="text-sm">{submission.feedback}</p>
-          </Card>
+        {submission.graded_at && (
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Feedback</h3>
+            
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b">
+                    <td className="py-3 px-4 font-medium bg-muted/50 w-48">Grade</td>
+                    <td className="py-3 px-4">
+                      {submission.marks_obtained} / {assignment.points}
+                    </td>
+                  </tr>
+                  
+                  <tr className="border-b">
+                    <td className="py-3 px-4 font-medium bg-muted/50">Graded on</td>
+                    <td className="py-3 px-4">
+                      {format(new Date(submission.graded_at), "EEEE, MMMM d, yyyy, h:mm a")}
+                    </td>
+                  </tr>
+                  
+                  {submission.graded_by && (
+                    <tr className="border-b">
+                      <td className="py-3 px-4 font-medium bg-muted/50">Graded by</td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="inline-block px-2 py-0.5 rounded bg-muted text-xs">BY</span>
+                          <span>{graderName || 'Instructor'}</span>
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                  
+                  <tr>
+                    <td className="py-3 px-4 font-medium bg-muted/50">Feedback comments</td>
+                    <td className="py-3 px-4">
+                      {submission.feedback || "No feedback provided"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {canDelete && (
+          <div className="mt-6 pt-6 border-t">
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="font-medium">Want to resubmit?</p>
+                <p className="text-sm text-muted-foreground">
+                  You can delete this submission and upload a new one before the deadline.
+                </p>
+              </div>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteSubmission}
+                className="ml-4"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Submission
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
