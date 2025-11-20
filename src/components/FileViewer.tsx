@@ -211,6 +211,7 @@ export function FileViewer({ file }: FileViewerProps) {
 
   // Assignment Brief view
   if (file._isBrief) {
+    // Always show text content for briefs, but allow file download if available
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="p-4 border-b flex items-center justify-between bg-background sticky top-0 z-10">
@@ -218,32 +219,24 @@ export function FileViewer({ file }: FileViewerProps) {
           {file.file_path && (
             <Button variant="outline" size="sm" onClick={downloadFile}>
               <Download className="h-4 w-4 mr-2" />
-              Download
+              Download Brief
             </Button>
           )}
         </div>
         
         <div className="flex-1 overflow-auto">
-          {file.file_path && fileUrl ? (
-            <iframe
-              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
-              className="w-full h-full border-0"
-              title={file.title}
-            />
-          ) : (
-            <div className="max-w-4xl mx-auto p-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Assessment Brief</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose dark:prose-invert max-w-none">
-                    <p className="whitespace-pre-wrap">{file.assessment_brief || file.description}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          <div className="max-w-4xl mx-auto p-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Assessment Brief</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose dark:prose-invert max-w-none">
+                  <p className="whitespace-pre-wrap">{file.assessment_brief || file.description || "No brief content available"}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
