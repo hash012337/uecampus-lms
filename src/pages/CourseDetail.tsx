@@ -63,6 +63,7 @@ export default function CourseDetail() {
     title: "",
     unit_name: "",
     description: "",
+    assessment_brief: "",
     points: 100,
     due_date: ""
   });
@@ -268,6 +269,7 @@ export default function CourseDetail() {
         title: newAssignment.title,
         unit_name: currentSectionId,
         description: newAssignment.description,
+        feedback: newAssignment.assessment_brief,
         points: newAssignment.points,
         due_date: newAssignment.due_date || null
       });
@@ -275,7 +277,7 @@ export default function CourseDetail() {
       if (error) throw error;
       toast.success("Assignment added");
       setAssignmentDialogOpen(false);
-      setNewAssignment({ title: "", unit_name: "", description: "", points: 100, due_date: "" });
+      setNewAssignment({ title: "", unit_name: "", description: "", assessment_brief: "", points: 100, due_date: "" });
       loadCourseData();
     } catch (error: any) {
       toast.error(error.message);
@@ -421,45 +423,23 @@ export default function CourseDetail() {
                           </button>
                         ))}
                       
-                      {assignments
+                       {assignments
                         .filter(a => a.unit_name === section.id)
                         .map((assignment) => (
-                          <Dialog key={assignment.id}>
-                            <DialogTrigger asChild>
-                              <button
-                                onClick={() => setSelectedAssignment(assignment)}
-                                className="flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent transition-colors"
-                              >
-                                <FileQuestion className="h-4 w-4 flex-shrink-0" />
-                                <span className="truncate text-left">{assignment.title}</span>
-                              </button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>{assignment.title}</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <p>{assignment.description}</p>
-                                <div className="text-sm">
-                                  <span className="font-semibold">Marks:</span> {assignment.points}
-                                  {assignment.due_date && (
-                                    <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>
-                                  )}
-                                </div>
-                                <div>
-                                  <Label>Submit Assignment</Label>
-                                  <Input
-                                    type="file"
-                                    onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                                    className="mt-2"
-                                  />
-                                </div>
-                                <Button onClick={handleSubmitAssignment} className="w-full">
-                                  Submit
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                          <button
+                            key={assignment.id}
+                            onClick={() => setSelectedFile({
+                              ...assignment,
+                              file_type: 'assignment',
+                              _isAssignment: true
+                            })}
+                            className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent transition-colors ${
+                              selectedFile?._isAssignment && selectedFile?.id === assignment.id ? 'bg-accent font-medium' : ''
+                            }`}
+                          >
+                            <FileQuestion className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate text-left">{assignment.title}</span>
+                          </button>
                         ))}
                     </CollapsibleContent>
                   </Collapsible>
@@ -659,14 +639,18 @@ export default function CourseDetail() {
                       <DialogHeader>
                         <DialogTitle>Add Assignment</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
+                       <div className="space-y-4">
                         <div>
                           <Label>Title</Label>
                           <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
                         </div>
                         <div>
                           <Label>Description</Label>
-                          <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
+                          <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} rows={2} />
+                        </div>
+                        <div>
+                          <Label>Assessment Brief</Label>
+                          <Textarea value={newAssignment.assessment_brief} onChange={(e) => setNewAssignment({ ...newAssignment, assessment_brief: e.target.value })} rows={5} placeholder="Enter detailed assignment instructions and requirements" />
                         </div>
                         <div>
                           <Label>Marks</Label>
