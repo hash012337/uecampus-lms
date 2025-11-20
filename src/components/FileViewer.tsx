@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Video, File as FileIcon } from "lucide-react";
+import { Download, FileText, File as FileIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -10,6 +9,7 @@ interface FileViewerProps {
     title: string;
     file_path: string;
     file_type: string;
+    description?: string;
   } | null;
 }
 
@@ -63,72 +63,96 @@ export function FileViewer({ file }: FileViewerProps) {
 
   if (!file) {
     return (
-      <Card className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-background">
         <div className="text-center p-12">
           <FileIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No file selected</h3>
           <p className="text-muted-foreground">Select a file from the sidebar to view it here</p>
         </div>
-      </Card>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <Card className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-background">
         <p>Loading...</p>
-      </Card>
+      </div>
     );
   }
 
   const isPdf = file.file_type?.includes("pdf");
   const isVideo = file.file_type?.includes("video");
   const isImage = file.file_type?.includes("image");
+  const isTextLesson = file.file_type?.includes("text/html");
+  const isWord = file.file_type?.includes("word") || file.file_type?.includes("document");
+  const isPowerpoint = file.file_type?.includes("presentation") || file.file_type?.includes("powerpoint");
 
   return (
-    <Card className="h-full flex flex-col">
-      <div className="p-4 border-b flex items-center justify-between">
-        <h3 className="font-semibold">{file.title}</h3>
+    <div className="h-full flex flex-col bg-background">
+      <div className="p-4 border-b flex items-center justify-between bg-background sticky top-0 z-10">
+        <h3 className="font-semibold text-lg">{file.title}</h3>
         <Button variant="outline" size="sm" onClick={downloadFile}>
           <Download className="h-4 w-4 mr-2" />
           Download
         </Button>
       </div>
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 overflow-auto">
         {isPdf && fileUrl && (
           <iframe
-            src={fileUrl}
-            className="w-full h-full min-h-[600px] border-0"
+            src={`${fileUrl}#view=FitH`}
+            className="w-full h-full border-0"
             title={file.title}
           />
         )}
         {isVideo && fileUrl && (
-          <video
-            src={fileUrl}
-            controls
-            className="w-full h-auto max-h-[600px]"
-          />
+          <div className="flex items-center justify-center h-full p-8">
+            <video
+              src={fileUrl}
+              controls
+              className="w-full max-w-5xl rounded-lg shadow-lg"
+            />
+          </div>
         )}
         {isImage && fileUrl && (
-          <img
-            src={fileUrl}
-            alt={file.title}
-            className="w-full h-auto"
+          <div className="flex items-center justify-center h-full p-8">
+            <img
+              src={fileUrl}
+              alt={file.title}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+            />
+          </div>
+        )}
+        {isTextLesson && file.description && (
+          <div className="max-w-4xl mx-auto p-8">
+            <div 
+              className="prose prose-lg dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: file.description }}
+            />
+          </div>
+        )}
+        {(isWord || isPowerpoint) && fileUrl && (
+          <iframe
+            src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
+            className="w-full h-full border-0"
+            title={file.title}
           />
         )}
-        {!isPdf && !isVideo && !isImage && (
-          <div className="text-center p-12">
-            <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">
-              Preview not available for this file type
-            </p>
-            <Button onClick={downloadFile}>
-              <Download className="h-4 w-4 mr-2" />
-              Download to view
-            </Button>
+        {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center p-12">
+              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">
+                Preview not available for this file type
+              </p>
+              <Button onClick={downloadFile}>
+                <Download className="h-4 w-4 mr-2" />
+                Download to view
+              </Button>
+            </div>
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 }

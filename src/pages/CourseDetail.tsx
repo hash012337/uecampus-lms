@@ -32,6 +32,8 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileViewer } from "@/components/FileViewer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 export default function CourseDetail() {
   const { courseId } = useParams();
   const { user } = useAuth();
@@ -361,32 +363,32 @@ export default function CourseDetail() {
 
   if (!course) return <div className="flex justify-center items-center min-h-96">Loading...</div>;
 
-  // Student View
+  // Student View - No layout, just back arrow and content
   if (!isAdmin) {
     return (
-      <div className="h-screen flex flex-col">
-        <div className="border-b p-4 bg-background">
+      <div className="h-screen flex flex-col bg-background">
+        <div className="absolute top-4 left-4 z-50">
           <Link to="/courses">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Courses
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <div className="mt-4">
-            <Badge className="mb-2">{course.category}</Badge>
-            <h1 className="text-3xl font-bold">{course.title}</h1>
-            <p className="text-muted-foreground">{course.code}</p>
-          </div>
         </div>
         
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 p-6 overflow-auto">
+          <div className="flex-1 overflow-hidden">
             <FileViewer file={selectedFile} />
           </div>
           
-          <div className="w-80 border-l bg-muted/30 overflow-auto">
+          <div className="w-80 border-l bg-card overflow-auto">
             <div className="p-4">
-              <h3 className="font-semibold mb-4">Course Content</h3>
+              <div className="mb-4">
+                <Badge className="mb-2">{course.category}</Badge>
+                <h2 className="text-xl font-bold">{course.title}</h2>
+                <p className="text-sm text-muted-foreground">{course.code}</p>
+              </div>
+              
+              <h3 className="font-semibold mb-4 text-sm uppercase tracking-wide">Course Content</h3>
               
               <div className="space-y-2">
                 {sections.map((section) => (
@@ -397,11 +399,11 @@ export default function CourseDetail() {
                   >
                     <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-accent rounded text-left">
                       {openSections[section.id] ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
                       )}
-                      <span className="font-medium">{section.title}</span>
+                      <span className="font-medium text-sm">{section.title}</span>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-6 mt-2 space-y-1">
                       {materials
@@ -410,12 +412,12 @@ export default function CourseDetail() {
                           <button
                             key={material.id}
                             onClick={() => setSelectedFile(material)}
-                            className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent ${
-                              selectedFile?.id === material.id ? 'bg-accent' : ''
+                            className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent transition-colors ${
+                              selectedFile?.id === material.id ? 'bg-accent font-medium' : ''
                             }`}
                           >
                             {getFileIcon(material.file_type)}
-                            <span className="truncate">{material.title}</span>
+                            <span className="truncate text-left">{material.title}</span>
                           </button>
                         ))}
                       
@@ -426,10 +428,10 @@ export default function CourseDetail() {
                             <DialogTrigger asChild>
                               <button
                                 onClick={() => setSelectedAssignment(assignment)}
-                                className="flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent"
+                                className="flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent transition-colors"
                               >
-                                <FileQuestion className="h-4 w-4" />
-                                <span className="truncate">{assignment.title}</span>
+                                <FileQuestion className="h-4 w-4 flex-shrink-0" />
+                                <span className="truncate text-left">{assignment.title}</span>
                               </button>
                             </DialogTrigger>
                             <DialogContent>
@@ -470,9 +472,10 @@ export default function CourseDetail() {
     );
   }
 
-  // Admin View
+  // Admin View - wrapped in DashboardLayout
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
       <Link to="/courses">
         <Button variant="ghost" className="gap-2 mb-4">
           <ArrowLeft className="h-4 w-4" />
@@ -751,6 +754,7 @@ export default function CourseDetail() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
