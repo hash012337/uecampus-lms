@@ -899,23 +899,16 @@ export default function CourseDetail() {
                           ))}
                           
                           {sectionQuizzes.filter(q => q.section_id === section.id).map((quiz) => (
-                            <button
+                            <a
                               key={quiz.id}
-                              onClick={() => setSelectedFile({
-                                ...quiz,
-                                file_type: 'quiz',
-                                _isQuiz: true
-                              })}
-                              className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
-                                selectedFile?.id === quiz.id ? 'bg-accent' : ''
-                              }`}
+                              href={quiz.quiz_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20"
                             >
-                              <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-purple-500 flex items-center justify-center">
-                                <FileQuestion className="h-3 w-3 text-purple-500" />
-                              </div>
                               <FileQuestion className="h-4 w-4 flex-shrink-0 text-purple-600" />
                               <span className="truncate text-left flex-1">{quiz.title}</span>
-                            </button>
+                            </a>
                           ))}
                         </div>
                       </CollapsibleContent>
