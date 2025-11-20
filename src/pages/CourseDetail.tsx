@@ -656,6 +656,24 @@ export default function CourseDetail() {
     }
   };
 
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!confirm("Delete this assignment?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from('assignments')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast.success('Assignment deleted');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete assignment');
+    }
+  };
+
   const handleDeleteSubmission = async (submissionId: string) => {
     if (!confirm("Delete this submission?")) return;
     
@@ -1090,6 +1108,13 @@ export default function CourseDetail() {
                               }}
                             >
                               Set Deadline
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteAssignment(assignment.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
