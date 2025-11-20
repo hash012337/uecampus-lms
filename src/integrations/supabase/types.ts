@@ -108,6 +108,7 @@ export type Database = {
           grade: string | null
           hours_left: number | null
           id: string
+          is_hidden: boolean | null
           passing_marks: number | null
           points: number | null
           priority: string | null
@@ -128,6 +129,7 @@ export type Database = {
           grade?: string | null
           hours_left?: number | null
           id?: string
+          is_hidden?: boolean | null
           passing_marks?: number | null
           points?: number | null
           priority?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           grade?: string | null
           hours_left?: number | null
           id?: string
+          is_hidden?: boolean | null
           passing_marks?: number | null
           points?: number | null
           priority?: string | null
@@ -260,6 +263,7 @@ export type Database = {
           file_size: number | null
           file_type: string
           id: string
+          is_hidden: boolean | null
           order_index: number
           section_id: string | null
           title: string
@@ -273,6 +277,7 @@ export type Database = {
           file_size?: number | null
           file_type: string
           id?: string
+          is_hidden?: boolean | null
           order_index?: number
           section_id?: string | null
           title: string
@@ -286,6 +291,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string
           id?: string
+          is_hidden?: boolean | null
           order_index?: number
           section_id?: string | null
           title?: string
@@ -766,6 +772,7 @@ export type Database = {
           description: string | null
           duration: number | null
           id: string
+          is_hidden: boolean | null
           quiz_url: string
           section_id: string
           title: string
@@ -777,6 +784,7 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_hidden?: boolean | null
           quiz_url: string
           section_id: string
           title: string
@@ -788,6 +796,7 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_hidden?: boolean | null
           quiz_url?: string
           section_id?: string
           title?: string
