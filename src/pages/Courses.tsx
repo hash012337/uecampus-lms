@@ -2,54 +2,216 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { BookOpen, Search, Star, Clock, Users, ChevronRight } from "lucide-react";
-import { allCoursesData } from "@/data/coursesData";
+import { Label } from "@/components/ui/label";
+import { BookOpen, Search, Plus, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ImportCoursesButton } from "@/components/ImportCoursesButton";
 import { useEditMode } from "@/contexts/EditModeContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+
+interface Course {
+  id: string;
+  title: string;
+  code: string;
+  category: string;
+  description: string;
+  duration: string;
+}
 
 export default function Courses() {
   const [searchQuery, setSearchQuery] = useState("");
   const { isAdmin } = useEditMode();
   const { user } = useAuth();
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    title: "",
+    duration: "",
+    category: "",
+    code: ""
+  });
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   useEffect(() => {
-    if (user) loadEnrolledCourses();
+    if (user) loadCourses();
   }, [user]);
 
-  const loadEnrolledCourses = async () => {
+  const loadCourses = async () => {
     if (!user) return;
-    const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    
     if (roleData) {
-      setEnrolledCourseIds(allCoursesData.map(c => c.id));
+      const { data } = await supabase.from("courses").select("*");
+      if (data) setCourses(data);
+    } else {
+      const { data: enrollments } = await supabase
+        .from("enrollments")
+        .select("course_id")
+        .eq("user_id", user.id)
+        .eq("status", "active");
+      
+      if (enrollments) {
+        const courseIds = enrollments.map(e => e.course_id);
+        const { data } = await supabase
+          .from("courses")
+          .select("*")
+          .in("id", courseIds);
+        if (data) setCourses(data);
+      }
+    }
+  };
+
+  const handleAddCourse = async () => {
+    if (!newCourse.title || !newCourse.category || !newCourse.duration) {
+      toast.error("Please fill all required fields");
       return;
     }
-    const { data: enrollments } = await supabase.from("enrollments").select("course_id").eq("user_id", user.id).eq("status", "active");
-    if (enrollments) setEnrolledCourseIds(enrollments.map(e => e.course_id));
+
+    try {
+      const courseCode = newCourse.code || `${newCourse.category.substring(0, 3).toUpperCase()}-${Date.now()}`;
+      
+      const { data, error } = await supabase
+        .from("courses")
+        .insert({
+          title: newCourse.title,
+          code: courseCode,
+          category: newCourse.category,
+          duration: newCourse.duration,
+          description: newCourse.title
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Upload attachments if any
+      if (attachments.length > 0 && data) {
+        for (const file of attachments) {
+          const filePath = `${data.id}/attachments/${file.name}`;
+          await supabase.storage.from("course-materials").upload(filePath, file);
+          
+          await supabase.from("course_materials").insert({
+            course_id: data.id,
+            title: file.name,
+            file_path: filePath,
+            file_type: file.type,
+            file_size: file.size
+          });
+        }
+      }
+
+      toast.success("Course added successfully");
+      setAddDialogOpen(false);
+      setNewCourse({ title: "", duration: "", category: "", code: "" });
+      setAttachments([]);
+      loadCourses();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add course");
+    }
   };
-  
-  const filteredCourses = allCoursesData.filter(course => enrolledCourseIds.includes(course.id)).filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || course.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+
+  const filteredCourses = courses.filter(course =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Course Catalog</h1>
-          <p className="text-muted-foreground mt-1">Explore your enrolled courses</p>
+          <p className="text-muted-foreground mt-1">
+            {isAdmin ? "Manage your courses" : "Your enrolled courses"}
+          </p>
         </div>
-        {isAdmin && <ImportCoursesButton />}
+        {isAdmin && (
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add New Course
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Course</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Course Name *</Label>
+                  <Input
+                    value={newCourse.title}
+                    onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                    placeholder="e.g., Bachelor of Science in Computer Science"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Duration *</Label>
+                  <Input
+                    value={newCourse.duration}
+                    onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
+                    placeholder="e.g., 4 years"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Program Category *</Label>
+                  <Select value={newCourse.category} onValueChange={(val) => setNewCourse({ ...newCourse, category: val })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bachelor's">Bachelor's Degree</SelectItem>
+                      <SelectItem value="Master's">Master's Degree</SelectItem>
+                      <SelectItem value="Doctorate">Doctorate</SelectItem>
+                      <SelectItem value="Diploma">Diploma</SelectItem>
+                      <SelectItem value="Certificate">Certificate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Course Code (Optional)</Label>
+                  <Input
+                    value={newCourse.code}
+                    onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
+                    placeholder="e.g., CS-101"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Attachments (Optional)</Label>
+                  <Input
+                    type="file"
+                    multiple
+                    onChange={(e) => setAttachments(Array.from(e.target.files || []))}
+                  />
+                  {attachments.length > 0 && (
+                    <p className="text-sm text-muted-foreground">{attachments.length} file(s) selected</p>
+                  )}
+                </div>
+                <Button onClick={handleAddCourse} className="w-full">Add Course</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search courses..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+        <Input
+          placeholder="Search courses..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -58,13 +220,11 @@ export default function Courses() {
             <Card className="h-full p-6 hover:shadow-xl transition-all">
               <Badge className="mb-2">{course.category}</Badge>
               <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{course.description}</p>
-              <div className="flex gap-4 text-xs text-muted-foreground mb-4">
-                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{course.duration}</span>
-                <span className="flex items-center gap-1"><Users className="h-3 w-3" />{course.enrolledStudents}</span>
-                <span className="flex items-center gap-1"><Star className="h-3 w-3" />{course.rating}</span>
+              <p className="text-sm text-muted-foreground mb-4">{course.code}</p>
+              <div className="text-xs text-muted-foreground mb-4">
+                Duration: {course.duration}
               </div>
-              <Button className="w-full">View Details <ChevronRight className="h-4 w-4 ml-2" /></Button>
+              <Button className="w-full">View Details</Button>
             </Card>
           </Link>
         ))}
@@ -72,7 +232,9 @@ export default function Courses() {
           <Card className="p-12 text-center col-span-full">
             <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No courses found</h3>
-            <p className="text-muted-foreground">{isAdmin ? "Try adjusting your search" : "You haven't been enrolled yet"}</p>
+            <p className="text-muted-foreground">
+              {isAdmin ? "Add your first course to get started" : "You haven't been enrolled yet"}
+            </p>
           </Card>
         )}
       </div>
