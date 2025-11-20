@@ -212,30 +212,38 @@ export function FileViewer({ file }: FileViewerProps) {
   // Assignment Brief view
   if (file._isBrief) {
     return (
-      <div className="h-full overflow-auto bg-background">
-        <div className="max-w-4xl mx-auto p-8">
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold mb-2">{file.title}</h2>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Assessment Brief</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose dark:prose-invert max-w-none">
-                <p className="whitespace-pre-wrap">{file.assessment_brief || file.description}</p>
-              </div>
-              {file.file_path && (
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={downloadFile} variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Brief Document
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      <div className="h-full flex flex-col bg-background">
+        <div className="p-4 border-b flex items-center justify-between bg-background sticky top-0 z-10">
+          <h3 className="font-semibold text-lg">{file.title}</h3>
+          {file.file_path && (
+            <Button variant="outline" size="sm" onClick={downloadFile}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-auto">
+          {file.file_path && fileUrl ? (
+            <iframe
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+              className="w-full h-full border-0"
+              title={file.title}
+            />
+          ) : (
+            <div className="max-w-4xl mx-auto p-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Assessment Brief</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose dark:prose-invert max-w-none">
+                    <p className="whitespace-pre-wrap">{file.assessment_brief || file.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -378,18 +386,11 @@ export function FileViewer({ file }: FileViewerProps) {
           </div>
         )}
         {(isWord || isPowerpoint) && fileUrl && (
-          <div className="flex items-center justify-center h-full p-8">
-            <div className="text-center space-y-4">
-              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Preview not available for PowerPoint files
-              </p>
-              <Button onClick={downloadFile} size="lg">
-                <Download className="h-4 w-4 mr-2" />
-                Download to view
-              </Button>
-            </div>
-          </div>
+          <iframe
+            src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+            className="w-full h-full border-0"
+            title={file.title}
+          />
         )}
         {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && (
           <div className="flex items-center justify-center h-full">
