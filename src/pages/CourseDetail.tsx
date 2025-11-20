@@ -1469,7 +1469,7 @@ export default function CourseDetail() {
                                 <Input 
                                   value={newQuiz.quiz_url} 
                                   onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
-                                  placeholder="Paste Google Forms or Typeform link" 
+                                  placeholder="Enter quiz URL" 
                                 />
                               </div>
                               <div>
