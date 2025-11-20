@@ -95,27 +95,30 @@ export default function Submissions() {
         setCourses(uniqueCourses);
       }
 
-      // Fetch all submissions with user info
-      const { data: submissionsData } = await supabase
-        .from("assignment_submissions")
-        .select(`
-          *,
-          profiles!assignment_submissions_user_id_fkey(full_name, email)
-        `);
-
-      if (submissionsData) {
-        const submissionsWithUserInfo = submissionsData.map((sub: any) => ({
-          ...sub,
-          user_name: sub.profiles?.full_name || "Unknown",
-          user_email: sub.profiles?.email || "Unknown"
-        }));
-        setSubmissions(submissionsWithUserInfo);
-      }
-
-      // Fetch all users
+      // Fetch all users/profiles first
       const { data: usersData } = await supabase.from("profiles").select("*");
+      const usersMap = new Map(usersData?.map(u => [u.id, u]) || []);
+      
       if (usersData) {
         setAllUsers(usersData);
+      }
+
+      // Fetch all submissions
+      const { data: submissionsData } = await supabase
+        .from("assignment_submissions")
+        .select("*");
+
+      if (submissionsData) {
+        // Manually join with user profiles
+        const submissionsWithUserInfo = submissionsData.map((sub: any) => {
+          const userProfile = usersMap.get(sub.user_id);
+          return {
+            ...sub,
+            user_name: userProfile?.full_name || "Unknown User",
+            user_email: userProfile?.email || "No email"
+          };
+        });
+        setSubmissions(submissionsWithUserInfo);
       }
 
       setLoading(false);
