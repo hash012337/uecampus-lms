@@ -31,6 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileViewer } from "@/components/FileViewer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DraggableMaterialList } from "@/components/DraggableMaterialList";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
@@ -116,8 +117,11 @@ export default function CourseDetail() {
     
     if (sectionsData) {
       setSections(sectionsData);
+      // Initialize all sections as open
       const openState: Record<string, boolean> = {};
-      sectionsData.forEach(s => openState[s.id] = true);
+      sectionsData.forEach(section => {
+        openState[section.id] = true;
+      });
       setOpenSections(openState);
     }
 
@@ -125,28 +129,47 @@ export default function CourseDetail() {
       .from("course_materials")
       .select("*")
       .eq("course_id", courseId)
+      .order("section_id")
       .order("order_index");
     
-    if (materialsData) setMaterials(materialsData);
+    if (materialsData) {
+      setMaterials(materialsData);
+      
+      // Auto-select first material for students
+      if (!isAdmin && materialsData.length > 0) {
+        setSelectedFile(materialsData[0]);
+      }
+    }
+
+    if (isAdmin) {
+      const { data: enrollmentsData } = await supabase
+        .from("enrollments")
+        .select(`
+          *,
+          profiles!inner(*)
+        `)
+        .eq("course_id", courseId);
+      
+      if (enrollmentsData) {
+        setEnrolledStudents(enrollmentsData.map((e: any) => e.profiles));
+      }
+
+      const { data: usersData } = await supabase
+        .from("profiles")
+        .select("*");
+      
+      if (usersData) {
+        setUsers(usersData);
+      }
+    }
 
     const { data: assignmentsData } = await supabase
       .from("assignments")
       .select("*")
       .eq("course", courseId);
     
-    if (assignmentsData) setAssignments(assignmentsData);
-
-    if (isAdmin) {
-      const { data: usersData } = await supabase.from("profiles").select("*");
-      if (usersData) setUsers(usersData);
-
-      const { data: enrollmentsData } = await supabase
-        .from("enrollments")
-        .select("*, profiles(*)")
-        .eq("course_id", courseId)
-        .eq("status", "active");
-      
-      if (enrollmentsData) setEnrolledStudents(enrollmentsData);
+    if (assignmentsData) {
+      setAssignments(assignmentsData);
     }
   };
 
@@ -349,6 +372,53 @@ export default function CourseDetail() {
     if (fileType?.includes("pdf")) return <FileText className="h-4 w-4" />;
     if (fileType?.includes("text/html")) return <BookOpen className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
+  };
+
+  const handleReorderMaterials = async (sectionId: string, reorderedMaterials: any[]) => {
+    try {
+      // Update order_index for each material
+      const updates = reorderedMaterials.map((material, index) => 
+        supabase
+          .from('course_materials')
+          .update({ order_index: index })
+          .eq('id', material.id)
+      );
+
+      await Promise.all(updates);
+      
+      // Reload materials
+      loadCourseData();
+      toast.success('Materials reordered');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reorder materials');
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId: string) => {
+    try {
+      const material = materials.find(m => m.id === materialId);
+      if (!material) return;
+
+      // Delete from storage if it has a file
+      if (material.file_path) {
+        await supabase.storage
+          .from('course-materials')
+          .remove([material.file_path]);
+      }
+
+      // Delete from database
+      const { error } = await supabase
+        .from('course_materials')
+        .delete()
+        .eq('id', materialId);
+
+      if (error) throw error;
+
+      toast.success('Material deleted');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete material');
+    }
   };
 
   const downloadMaterial = async (filePath: string, title: string) => {
@@ -579,22 +649,13 @@ export default function CourseDetail() {
                   {section.description && <p className="text-sm text-muted-foreground ml-7">{section.description}</p>}
                 </CardHeader>
                 <CollapsibleContent>
-                  <CardContent className="space-y-2">
-                    {materials.filter(m => m.section_id === section.id).map((material) => (
-                      <div key={material.id} className="flex items-center justify-between p-3 bg-secondary rounded">
-                        <div className="flex items-center gap-2">
-                          {getFileIcon(material.file_type)}
-                          <span>{material.title}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => downloadMaterial(material.file_path, material.title)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                  <CardContent className="space-y-4">
+                    <DraggableMaterialList
+                      materials={materials.filter(m => m.section_id === section.id)}
+                      onReorder={(reordered) => handleReorderMaterials(section.id, reordered)}
+                      onDelete={handleDeleteMaterial}
+                      getFileIcon={getFileIcon}
+                    />
                     
                     {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
                       <div key={assignment.id} className="p-3 bg-accent rounded">
