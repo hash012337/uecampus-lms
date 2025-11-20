@@ -150,6 +150,38 @@ export default function CourseDetail() {
     }
   };
 
+  const handleMarkComplete = async (materialId: string) => {
+    if (!user || !courseId) return;
+    
+    try {
+      // Check if already completed
+      if (completedMaterials.has(materialId)) {
+        toast.info("Already marked as complete");
+        return;
+      }
+
+      // Insert progress tracking record
+      const { error } = await supabase.from('progress_tracking').insert({
+        user_id: user.id,
+        course_id: courseId,
+        item_type: 'material',
+        status: 'completed'
+      });
+
+      if (error) throw error;
+
+      // Update local state
+      setCompletedMaterials(prev => new Set([...prev, materialId]));
+      toast.success("Marked as complete");
+      
+      // Reload progress
+      loadUserProgress();
+    } catch (error: any) {
+      console.error("Error marking complete:", error);
+      toast.error(error.message || "Failed to mark as complete");
+    }
+  };
+
   const checkAdminStatus = async () => {
     if (!user) return;
     const { data } = await supabase
