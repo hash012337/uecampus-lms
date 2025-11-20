@@ -63,6 +63,7 @@ export type Database = {
       }
       assignments: {
         Row: {
+          assessment_brief: string | null
           course: string
           course_code: string
           created_at: string | null
@@ -72,6 +73,7 @@ export type Database = {
           grade: string | null
           hours_left: number | null
           id: string
+          passing_marks: number | null
           points: number | null
           priority: string | null
           status: string | null
@@ -81,6 +83,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          assessment_brief?: string | null
           course: string
           course_code: string
           created_at?: string | null
@@ -90,6 +93,7 @@ export type Database = {
           grade?: string | null
           hours_left?: number | null
           id?: string
+          passing_marks?: number | null
           points?: number | null
           priority?: string | null
           status?: string | null
@@ -99,6 +103,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          assessment_brief?: string | null
           course?: string
           course_code?: string
           created_at?: string | null
@@ -108,6 +113,7 @@ export type Database = {
           grade?: string | null
           hours_left?: number | null
           id?: string
+          passing_marks?: number | null
           points?: number | null
           priority?: string | null
           status?: string | null

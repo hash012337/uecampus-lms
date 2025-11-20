@@ -65,6 +65,8 @@ export default function CourseDetail() {
     unit_name: "",
     description: "",
     points: 100,
+    passing_marks: 50,
+    assessment_brief: "",
     due_date: ""
   });
   const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
@@ -81,6 +83,8 @@ export default function CourseDetail() {
     description: "",
     duration: 30
   });
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -356,15 +360,25 @@ export default function CourseDetail() {
         title: newAssignment.title,
         unit_name: currentSectionId,
         description: newAssignment.description,
+        assessment_brief: newAssignment.assessment_brief,
         feedback: assessmentBriefPath,
         points: newAssignment.points,
+        passing_marks: newAssignment.passing_marks,
         due_date: newAssignment.due_date || null
       });
 
       if (error) throw error;
       toast.success("Assignment added");
       setAssignmentDialogOpen(false);
-      setNewAssignment({ title: "", unit_name: "", description: "", points: 100, due_date: "" });
+      setNewAssignment({ 
+        title: "", 
+        unit_name: "", 
+        description: "", 
+        points: 100, 
+        passing_marks: 50,
+        assessment_brief: "",
+        due_date: "" 
+      });
       setAssignmentFile(null);
       loadCourseData();
     } catch (error: any) {
@@ -893,16 +907,42 @@ export default function CourseDetail() {
                     />
                     
                     {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
-                      <div key={assignment.id} className="p-3 bg-accent rounded">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileQuestion className="h-4 w-4" />
-                          <span className="font-medium">{assignment.title}</span>
+                      <div key={assignment.id} className="p-4 bg-accent/50 rounded-lg border border-border">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <FileQuestion className="h-5 w-5 text-primary" />
+                            <span className="font-semibold text-lg">{assignment.title}</span>
+                          </div>
+                          <Badge variant="secondary">
+                            {assignment.points} marks
+                          </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
-                        <div className="text-xs">
-                          <span className="font-semibold">Marks:</span> {assignment.points}
+                        
+                        {assignment.assessment_brief && (
+                          <div className="mb-3 p-3 bg-background rounded border border-border">
+                            <h4 className="font-medium text-sm mb-2">Assessment Brief</h4>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{assignment.assessment_brief}</p>
+                          </div>
+                        )}
+                        
+                        {assignment.description && (
+                          <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
+                        )}
+                        
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold">Total Marks:</span>
+                            <span>{assignment.points}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold">Passing Marks:</span>
+                            <span className="text-green-600 dark:text-green-400">{assignment.passing_marks || '50'}</span>
+                          </div>
                           {assignment.due_date && (
-                            <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>
+                            <div className="flex items-center gap-1">
+                              <span className="font-semibold">Due:</span>
+                              <span>{new Date(assignment.due_date).toLocaleDateString()}</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -940,147 +980,233 @@ export default function CourseDetail() {
                       </div>
                     ))}
 
-                    <div className="flex gap-2 mt-4 pt-4 border-t flex-wrap">
-                      <Dialog open={textLessonDialogOpen && currentSectionId === section.id} onOpenChange={setTextLessonDialogOpen}>
+                    <div className="mt-4 pt-4 border-t">
+                      <Dialog 
+                        open={activityDialogOpen && currentSectionId === section.id} 
+                        onOpenChange={(open) => {
+                          setActivityDialogOpen(open);
+                          if (!open) setActivityType(null);
+                        }}
+                      >
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Add Text
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={() => setCurrentSectionId(section.id)}
+                            className="w-full"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Activity
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Add Text Lesson</DialogTitle>
+                            <DialogTitle>
+                              {!activityType ? "Select Activity Type" : 
+                                activityType === "text" ? "Add Text Lesson" :
+                                activityType === "file" ? "Upload Files" :
+                                activityType === "assignment" ? "Add Assignment" :
+                                "Add Quiz"}
+                            </DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label>Lesson Title</Label>
-                              <Input
-                                value={newTextLesson.title}
-                                onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
-                              />
+                          
+                          {!activityType ? (
+                            <div className="grid grid-cols-2 gap-4">
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("text")}
+                              >
+                                <BookOpen className="h-8 w-8" />
+                                <span>Text Lesson</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("file")}
+                              >
+                                <Upload className="h-8 w-8" />
+                                <span>Upload Files</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("assignment")}
+                              >
+                                <FileQuestion className="h-8 w-8" />
+                                <span>Assignment</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("quiz")}
+                              >
+                                <FileQuestion className="h-8 w-8 text-purple-600" />
+                                <span>Quiz</span>
+                              </Button>
                             </div>
-                            <div>
-                              <Label>Content (You can add text and YouTube videos)</Label>
-                              <RichTextEditor
-                                content={newTextLesson.content}
-                                onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
-                              />
-                            </div>
-                            <Button onClick={handleAddTextLesson} className="w-full">Add Lesson</Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-
-                      <div className="flex gap-2 flex-1">
-                        <Input
-                          type="file"
-                          multiple
-                          onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                          className="flex-1"
-                        />
-                        <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload File
-                        </Button>
-                      </div>
-
-                      <Dialog open={assignmentDialogOpen && currentSectionId === section.id} onOpenChange={setAssignmentDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
-                            <FileQuestion className="h-4 w-4 mr-2" />
-                            Add Assignment
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Add Assignment</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label>Assignment Title</Label>
-                              <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} placeholder="Enter assignment title" />
-                            </div>
-                            <div>
-                              <Label>Description (Optional)</Label>
-                              <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} rows={2} placeholder="Brief description" />
-                            </div>
-                            <div>
-                              <Label>Assessment Brief (Upload PDF or Word)</Label>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => document.getElementById("assignment-file-input")?.click()}
-                                  className="w-full"
-                                >
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  {assignmentFile ? assignmentFile.name : "Choose File"}
-                                </Button>
-                                <input
-                                  id="assignment-file-input"
-                                  type="file"
-                                  accept=".pdf,.doc,.docx"
-                                  onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)}
-                                  className="hidden"
+                          ) : activityType === "text" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>Lesson Title</Label>
+                                <Input
+                                  value={newTextLesson.title}
+                                  onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
                                 />
                               </div>
+                              <div>
+                                <Label>Content (You can add text and YouTube videos)</Label>
+                                <RichTextEditor
+                                  content={newTextLesson.content}
+                                  onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
+                                />
+                              </div>
+                              <Button onClick={() => {
+                                handleAddTextLesson();
+                                setActivityDialogOpen(false);
+                                setActivityType(null);
+                              }} className="w-full">Add Lesson</Button>
                             </div>
-                            <div>
-                              <Label>Marks</Label>
-                              <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
+                          ) : activityType === "file" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>Upload Files (PDF, Word, PPT, etc.)</Label>
+                                <Input
+                                  type="file"
+                                  multiple
+                                  onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                                />
+                              </div>
+                              <Button onClick={() => {
+                                handleUploadMaterials(section.id);
+                                setActivityDialogOpen(false);
+                                setActivityType(null);
+                              }} className="w-full">
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Files
+                              </Button>
                             </div>
-                            <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Dialog open={quizDialogOpen && currentSectionId === section.id} onOpenChange={setQuizDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
-                            <FileQuestion className="h-4 w-4 mr-2" />
-                            Add Quiz
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add Quiz</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label>Quiz Title</Label>
-                              <Input 
-                                value={newQuiz.title} 
-                                onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
-                                placeholder="Enter quiz title" 
-                              />
+                          ) : activityType === "assignment" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>Assignment Title</Label>
+                                <Input 
+                                  value={newAssignment.title} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} 
+                                  placeholder="Enter assignment title" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Description (Optional)</Label>
+                                <Textarea 
+                                  value={newAssignment.description} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} 
+                                  rows={2} 
+                                  placeholder="Brief description" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Assessment Brief</Label>
+                                <Textarea 
+                                  value={newAssignment.assessment_brief} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, assessment_brief: e.target.value })} 
+                                  rows={4} 
+                                  placeholder="Enter detailed assessment criteria, grading rubric, and requirements..." 
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Total Marks</Label>
+                                  <Input 
+                                    type="number" 
+                                    value={newAssignment.points} 
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} 
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Passing Marks</Label>
+                                  <Input 
+                                    type="number" 
+                                    value={newAssignment.passing_marks} 
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, passing_marks: parseInt(e.target.value) })} 
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label>Assessment Brief File (Optional - PDF or Word)</Label>
+                                <Input 
+                                  type="file" 
+                                  accept=".pdf,.doc,.docx" 
+                                  onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)} 
+                                />
+                              </div>
+                              <div>
+                                <Label>Due Date (Optional)</Label>
+                                <Input 
+                                  type="date" 
+                                  value={newAssignment.due_date} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} 
+                                />
+                              </div>
+                              <Button onClick={() => {
+                                handleAddAssignment();
+                                setActivityDialogOpen(false);
+                                setActivityType(null);
+                              }} className="w-full">Add Assignment</Button>
                             </div>
-                            <div>
-                              <Label>Quiz URL</Label>
-                              <Input 
-                                value={newQuiz.quiz_url} 
-                                onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
-                                placeholder="Paste Google Forms or Typeform link" 
-                              />
+                          ) : (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>Quiz Title</Label>
+                                <Input 
+                                  value={newQuiz.title} 
+                                  onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+                                  placeholder="Enter quiz title" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Quiz URL</Label>
+                                <Input 
+                                  value={newQuiz.quiz_url} 
+                                  onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
+                                  placeholder="Paste Google Forms or Typeform link" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Description (Optional)</Label>
+                                <Textarea 
+                                  value={newQuiz.description} 
+                                  onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
+                                  placeholder="Brief description of the quiz" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Duration (minutes)</Label>
+                                <Input 
+                                  type="number"
+                                  value={newQuiz.duration} 
+                                  onChange={(e) => setNewQuiz({ ...newQuiz, duration: parseInt(e.target.value) || 30 })}
+                                />
+                              </div>
+                              <Button onClick={() => {
+                                handleAddQuiz();
+                                setActivityDialogOpen(false);
+                                setActivityType(null);
+                              }} className="w-full">Add Quiz</Button>
                             </div>
-                            <div>
-                              <Label>Description (Optional)</Label>
-                              <Textarea 
-                                value={newQuiz.description} 
-                                onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
-                                placeholder="Brief description of the quiz" 
-                              />
-                            </div>
-                            <div>
-                              <Label>Duration (minutes)</Label>
-                              <Input 
-                                type="number"
-                                value={newQuiz.duration} 
-                                onChange={(e) => setNewQuiz({ ...newQuiz, duration: parseInt(e.target.value) || 30 })}
-                              />
-                            </div>
-                            <Button onClick={handleAddQuiz} className="w-full">Add Quiz</Button>
-                          </div>
+                          )}
                         </DialogContent>
                       </Dialog>
                     </div>
