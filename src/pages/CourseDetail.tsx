@@ -451,6 +451,10 @@ export default function CourseDetail() {
 
   // Student View - No layout, just back arrow and content
   if (!isAdmin) {
+    const totalItems = materials.length + assignments.length;
+    const completedItems = materials.filter(m => m.completed).length + assignments.filter(a => a.status === 'completed').length;
+    const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
     return (
       <div className="h-screen flex flex-col bg-background">
         <div className="absolute top-4 left-4 z-50">
@@ -466,68 +470,150 @@ export default function CourseDetail() {
             <FileViewer file={selectedFile} />
           </div>
           
-          <div className="w-80 border-l bg-card overflow-auto">
-            <div className="p-4">
-              <div className="mb-4">
-                <Badge className="mb-2">{course.category}</Badge>
-                <h2 className="text-xl font-bold">{course.title}</h2>
-                <p className="text-sm text-muted-foreground">{course.code}</p>
+          <div className="w-96 border-l bg-card overflow-auto">
+            <div className="p-6">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <Badge className="mb-2">{course.category}</Badge>
+                </div>
+                <h2 className="text-2xl font-bold mb-1">{course.title}</h2>
+                <p className="text-sm text-muted-foreground mb-4">{course.code}</p>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Course Progress</span>
+                    <span className="font-semibold">{progressPercentage}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{ width: `${progressPercentage}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {completedItems} of {totalItems} items completed
+                  </p>
+                </div>
               </div>
               
-              <h3 className="font-semibold mb-4 text-sm uppercase tracking-wide">Course Content</h3>
-              
-              <div className="space-y-2">
-                {sections.map((section) => (
-                  <Collapsible
-                    key={section.id}
-                    open={openSections[section.id]}
-                    onOpenChange={() => toggleSection(section.id)}
-                  >
-                    <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-accent rounded text-left">
-                      {openSections[section.id] ? (
-                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
-                      )}
-                      <span className="font-medium text-sm">{section.title}</span>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-6 mt-2 space-y-1">
-                      {materials
-                        .filter(m => m.section_id === section.id)
-                        .map((material) => (
-                          <button
-                            key={material.id}
-                            onClick={() => setSelectedFile(material)}
-                            className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent transition-colors ${
-                              selectedFile?.id === material.id ? 'bg-accent font-medium' : ''
-                            }`}
-                          >
-                            {getFileIcon(material.file_type)}
-                            <span className="truncate text-left">{material.title}</span>
-                          </button>
-                        ))}
+              <div className="space-y-3">
+                {sections.map((section, index) => {
+                  const sectionMaterials = materials.filter(m => m.section_id === section.id);
+                  const sectionAssignments = assignments.filter(a => a.unit_name === section.id);
+                  const sectionTotal = sectionMaterials.length + sectionAssignments.length;
+                  const sectionCompleted = sectionMaterials.filter(m => m.completed).length + 
+                                          sectionAssignments.filter(a => a.status === 'completed').length;
+                  
+                  return (
+                    <Collapsible
+                      key={section.id}
+                      open={openSections[section.id]}
+                      onOpenChange={() => toggleSection(section.id)}
+                      className="border rounded-lg overflow-hidden bg-card"
+                    >
+                      <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-accent/50 transition-colors">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                            {index + 1}
+                          </div>
+                          <div className="text-left flex-1">
+                            <h3 className="font-semibold">{section.title}</h3>
+                            {section.description && (
+                              <p className="text-xs text-muted-foreground mt-1">{section.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {sectionCompleted}/{sectionTotal} completed
+                            </p>
+                          </div>
+                        </div>
+                        {openSections[section.id] ? (
+                          <ChevronDown className="h-5 w-5 flex-shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 flex-shrink-0" />
+                        )}
+                      </CollapsibleTrigger>
                       
-                       {assignments
-                        .filter(a => a.unit_name === section.id)
-                        .map((assignment) => (
-                          <button
-                            key={assignment.id}
-                            onClick={() => setSelectedFile({
-                              ...assignment,
-                              file_type: 'assignment',
-                              _isAssignment: true
-                            })}
-                            className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent transition-colors ${
-                              selectedFile?._isAssignment && selectedFile?.id === assignment.id ? 'bg-accent font-medium' : ''
-                            }`}
-                          >
-                            <FileQuestion className="h-4 w-4 flex-shrink-0" />
-                            <span className="truncate text-left">{assignment.title}</span>
-                          </button>
-                        ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
+                      <CollapsibleContent className="border-t">
+                        <div className="p-2 space-y-1">
+                          {sectionMaterials.map((material) => (
+                            <div key={material.id} className="group">
+                              <button
+                                onClick={() => setSelectedFile(material)}
+                                className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
+                                  selectedFile?.id === material.id ? 'bg-accent' : ''
+                                }`}
+                              >
+                                <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                  material.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
+                                }`}>
+                                  {material.completed && (
+                                    <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                                {getFileIcon(material.file_type)}
+                                <span className="truncate text-left flex-1">{material.title}</span>
+                              </button>
+                              {selectedFile?.id === material.id && !material.completed && (
+                                <div className="px-3 py-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full text-xs"
+                                    onClick={async () => {
+                                      try {
+                                        const { error } = await supabase
+                                          .from('course_materials')
+                                          .update({ completed: true })
+                                          .eq('id', material.id);
+                                        
+                                        if (error) throw error;
+                                        loadCourseData();
+                                        toast.success('Lesson marked as read!');
+                                      } catch (error: any) {
+                                        toast.error('Failed to mark as read');
+                                      }
+                                    }}
+                                  >
+                                    <BookOpen className="h-3 w-3 mr-1" />
+                                    Mark as Read
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          
+                          {sectionAssignments.map((assignment) => (
+                            <button
+                              key={assignment.id}
+                              onClick={() => setSelectedFile({
+                                ...assignment,
+                                file_type: 'assignment',
+                                _isAssignment: true
+                              })}
+                              className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
+                                selectedFile?._isAssignment && selectedFile?.id === assignment.id ? 'bg-accent' : ''
+                              }`}
+                            >
+                              <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                assignment.status === 'completed' ? 'bg-primary border-primary' : 'border-muted-foreground'
+                              }`}>
+                                {assignment.status === 'completed' && (
+                                  <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <FileQuestion className="h-4 w-4 flex-shrink-0 text-orange-500" />
+                              <span className="truncate text-left flex-1">{assignment.title}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
               </div>
             </div>
           </div>
