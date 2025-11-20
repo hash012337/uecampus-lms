@@ -11,8 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Eye, Award } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, Award, Download } from "lucide-react";
 import { format } from "date-fns";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 interface Assignment {
   id: string;
@@ -21,35 +22,59 @@ interface Assignment {
   course_code: string;
   due_date: string | null;
   points: number | null;
+  passing_marks: number | null;
 }
 
 interface Submission {
+  id: string;
   assignment_id: string;
   user_id: string;
-  submitted_date: string | null;
-  grade: string | null;
+  file_path: string | null;
+  submitted_at: string | null;
+  marks_obtained: number | null;
+  graded_at: string | null;
   feedback: string | null;
-  user_name: string;
-  user_email: string;
+  status: string | null;
+  user_name?: string;
+  user_email?: string;
 }
 
 export default function Submissions() {
   const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [submissions, setSubmissions] = useState<Record<string, Submission[]>>({});
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [courses, setCourses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"submitted" | "not-submitted">("submitted");
   const [gradingDialog, setGradingDialog] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<{ assignment: Assignment; submission: Submission } | null>(null);
-  const [gradeData, setGradeData] = useState({ grade: "", feedback: "" });
+  const [gradeData, setGradeData] = useState({ marks: "", feedback: "" });
 
   useEffect(() => {
     if (user) {
+      checkAdminStatus();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && isAdmin) {
       fetchData();
     }
-  }, [user, selectedCourse]);
+  }, [user, selectedCourse, isAdmin]);
+
+  const checkAdminStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .in("role", ["admin", "teacher"])
+      .maybeSingle();
+    setIsAdmin(!!data);
+  };
 
   const fetchData = async () => {
     try {
@@ -68,61 +93,44 @@ export default function Submissions() {
         // Get unique courses
         const uniqueCourses = [...new Set(assignmentsData.map(a => a.course))];
         setCourses(uniqueCourses);
-
-        // Fetch all users
-        const { data: usersData } = await supabase.from("profiles").select("*");
-
-        // Build submissions map
-        const submissionsMap: Record<string, Submission[]> = {};
-        
-        for (const assignment of assignmentsData) {
-          const assignmentSubmissions: Submission[] = [];
-          
-          if (usersData) {
-            for (const profile of usersData) {
-              // Check if user has submitted (simplified - in real app, fetch from submissions table)
-              const hasSubmitted = assignment.status === "completed" && Math.random() > 0.5; // Mock data
-              
-              if (hasSubmitted) {
-                assignmentSubmissions.push({
-                  assignment_id: assignment.id,
-                  user_id: profile.id,
-                  submitted_date: assignment.submitted_date,
-                  grade: assignment.grade,
-                  feedback: assignment.feedback,
-                  user_name: profile.full_name || "Unknown",
-                  user_email: profile.email,
-                });
-              } else {
-                assignmentSubmissions.push({
-                  assignment_id: assignment.id,
-                  user_id: profile.id,
-                  submitted_date: null,
-                  grade: null,
-                  feedback: null,
-                  user_name: profile.full_name || "Unknown",
-                  user_email: profile.email,
-                });
-              }
-            }
-          }
-          
-          submissionsMap[assignment.id] = assignmentSubmissions;
-        }
-
-        setSubmissions(submissionsMap);
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load submissions");
-    } finally {
+
+      // Fetch all submissions with user info
+      const { data: submissionsData } = await supabase
+        .from("assignment_submissions")
+        .select(`
+          *,
+          profiles!assignment_submissions_user_id_fkey(full_name, email)
+        `);
+
+      if (submissionsData) {
+        const submissionsWithUserInfo = submissionsData.map((sub: any) => ({
+          ...sub,
+          user_name: sub.profiles?.full_name || "Unknown",
+          user_email: sub.profiles?.email || "Unknown"
+        }));
+        setSubmissions(submissionsWithUserInfo);
+      }
+
+      // Fetch all users
+      const { data: usersData } = await supabase.from("profiles").select("*");
+      if (usersData) {
+        setAllUsers(usersData);
+      }
+
+      setLoading(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to fetch data");
       setLoading(false);
     }
   };
 
   const handleGrade = (assignment: Assignment, submission: Submission) => {
     setSelectedSubmission({ assignment, submission });
-    setGradeData({ grade: submission.grade || "", feedback: submission.feedback || "" });
+    setGradeData({ 
+      marks: submission.marks_obtained?.toString() || "", 
+      feedback: submission.feedback || "" 
+    });
     setGradingDialog(true);
   };
 
@@ -131,58 +139,81 @@ export default function Submissions() {
 
     try {
       const { error } = await supabase
-        .from("assignments")
+        .from("assignment_submissions")
         .update({
-          grade: gradeData.grade,
+          marks_obtained: parseInt(gradeData.marks),
           feedback: gradeData.feedback,
-          status: "completed",
+          graded_at: new Date().toISOString(),
+          graded_by: user?.id
         })
-        .eq("id", selectedSubmission.assignment.id);
+        .eq("id", selectedSubmission.submission.id);
 
       if (error) throw error;
 
       toast.success("Grade saved successfully");
       setGradingDialog(false);
-      setSelectedSubmission(null);
       fetchData();
-    } catch (error) {
-      console.error("Error saving grade:", error);
-      toast.error("Failed to save grade");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save grade");
     }
   };
 
-  const filteredSubmissions = (assignmentId: string) => {
-    const allSubmissions = submissions[assignmentId] || [];
-    if (viewMode === "submitted") {
-      return allSubmissions.filter(s => s.submitted_date !== null);
-    } else {
-      return allSubmissions.filter(s => s.submitted_date === null);
+  const downloadFile = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("assignment-submissions")
+        .download(filePath);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filePath.split("/").pop() || "file";
+      a.click();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to download file");
     }
   };
+
+  const getSubmissionsForAssignment = (assignmentId: string) => {
+    return submissions.filter(s => s.assignment_id === assignmentId);
+  };
+
+  const getUsersWithoutSubmission = (assignmentId: string) => {
+    const submittedUserIds = submissions
+      .filter(s => s.assignment_id === assignmentId)
+      .map(s => s.user_id);
+    
+    return allUsers.filter(u => !submittedUserIds.includes(u.id));
+  };
+
+  if (!isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="p-8">
+          <p>You do not have permission to view this page.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <DashboardLayout>
+        <div className="p-8">Loading...</div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Assignment Submissions
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            View and grade student submissions
-          </p>
-        </div>
-        <div className="flex gap-2 items-center">
+    <DashboardLayout>
+      <div className="p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Assignment Submissions</h1>
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All Courses" />
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Filter by course" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
@@ -194,175 +225,143 @@ export default function Submissions() {
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
-        <TabsList>
-          <TabsTrigger value="submitted">
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Submitted
-          </TabsTrigger>
-          <TabsTrigger value="not-submitted">
-            <XCircle className="h-4 w-4 mr-2" />
-            Not Submitted
-          </TabsTrigger>
-        </TabsList>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "submitted" | "not-submitted")}>
+          <TabsList>
+            <TabsTrigger value="submitted">Submitted</TabsTrigger>
+            <TabsTrigger value="not-submitted">Not Submitted</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="submitted" className="space-y-4 mt-6">
-          {assignments.map((assignment) => {
-            const submittedList = filteredSubmissions(assignment.id);
-            if (submittedList.length === 0) return null;
+          <TabsContent value="submitted" className="space-y-4">
+            {assignments.map((assignment) => {
+              const assignmentSubmissions = getSubmissionsForAssignment(assignment.id);
+              
+              if (assignmentSubmissions.length === 0) return null;
 
-            return (
-              <Card key={assignment.id} className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">{assignment.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {assignment.course} ({assignment.course_code})
-                    </p>
-                    {assignment.due_date && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Due: {format(new Date(assignment.due_date), "MMM d, yyyy")}
-                      </p>
-                    )}
+              return (
+                <Card key={assignment.id} className="p-6">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold">{assignment.title}</h3>
+                    <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
                   </div>
-                  <Badge variant="outline">
-                    {submittedList.length} submission{submittedList.length !== 1 ? "s" : ""}
-                  </Badge>
-                </div>
 
-                <div className="space-y-2">
-                  {submittedList.map((submission) => (
-                    <div
-                      key={submission.user_id}
-                      className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <div>
-                          <p className="font-medium">{submission.user_name}</p>
-                          <p className="text-xs text-muted-foreground">{submission.user_email}</p>
-                          {submission.submitted_date && (
-                            <p className="text-xs text-muted-foreground">
-                              Submitted: {format(new Date(submission.submitted_date), "MMM d, yyyy")}
-                            </p>
+                  <div className="space-y-3">
+                    {assignmentSubmissions.map((submission) => (
+                      <div
+                        key={submission.id}
+                        className="flex items-center justify-between p-4 border border-border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            <div>
+                              <p className="font-medium">{submission.user_name}</p>
+                              <p className="text-sm text-muted-foreground">{submission.user_email}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center gap-4 text-sm">
+                            <span>
+                              Submitted: {submission.submitted_at ? format(new Date(submission.submitted_at), "PPp") : "N/A"}
+                            </span>
+                            {submission.marks_obtained !== null && (
+                              <Badge variant="default">
+                                <Award className="h-3 w-3 mr-1" />
+                                {submission.marks_obtained} / {assignment.points}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          {submission.file_path && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadFile(submission.file_path!)}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                            </Button>
                           )}
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleGrade(assignment, submission)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            {submission.marks_obtained !== null ? "Update Grade" : "Grade"}
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {submission.grade ? (
-                          <Badge variant="secondary">
-                            <Award className="h-3 w-3 mr-1" />
-                            {submission.grade}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">Not Graded</Badge>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleGrade(assignment, submission)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Grade
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
-        </TabsContent>
-
-        <TabsContent value="not-submitted" className="space-y-4 mt-6">
-          {assignments.map((assignment) => {
-            const notSubmittedList = filteredSubmissions(assignment.id);
-            if (notSubmittedList.length === 0) return null;
-
-            return (
-              <Card key={assignment.id} className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">{assignment.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {assignment.course} ({assignment.course_code})
-                    </p>
-                    {assignment.due_date && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Due: {format(new Date(assignment.due_date), "MMM d, yyyy")}
-                      </p>
-                    )}
+                    ))}
                   </div>
-                  <Badge variant="destructive">
-                    {notSubmittedList.length} not submitted
-                  </Badge>
-                </div>
+                </Card>
+              );
+            })}
+          </TabsContent>
 
-                <div className="space-y-2">
-                  {notSubmittedList.map((submission) => (
-                    <div
-                      key={submission.user_id}
-                      className="flex items-center gap-3 p-3 border border-border/50 rounded-lg"
-                    >
-                      <XCircle className="h-5 w-5 text-red-500" />
-                      <div>
-                        <p className="font-medium">{submission.user_name}</p>
-                        <p className="text-xs text-muted-foreground">{submission.user_email}</p>
+          <TabsContent value="not-submitted" className="space-y-4">
+            {assignments.map((assignment) => {
+              const usersWithoutSubmission = getUsersWithoutSubmission(assignment.id);
+              
+              if (usersWithoutSubmission.length === 0) return null;
+
+              return (
+                <Card key={assignment.id} className="p-6">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold">{assignment.title}</h3>
+                    <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {usersWithoutSubmission.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center gap-3 p-4 border border-border rounded-lg"
+                      >
+                        <XCircle className="h-5 w-5 text-red-600" />
+                        <div>
+                          <p className="font-medium">{user.full_name || "Unknown"}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
-        </TabsContent>
-      </Tabs>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })}
+          </TabsContent>
+        </Tabs>
 
-      {/* Grading Dialog */}
-      <Dialog open={gradingDialog} onOpenChange={setGradingDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Grade Submission</DialogTitle>
-          </DialogHeader>
-          {selectedSubmission && (
-            <div className="space-y-4 py-4">
+        <Dialog open={gradingDialog} onOpenChange={setGradingDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Grade Submission</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
               <div>
-                <p className="font-semibold">{selectedSubmission.assignment.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  Student: {selectedSubmission.submission.user_name}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grade</Label>
+                <Label>Marks Obtained</Label>
                 <Input
-                  id="grade"
-                  value={gradeData.grade}
-                  onChange={(e) => setGradeData({ ...gradeData, grade: e.target.value })}
-                  placeholder="e.g., A+, 95/100"
+                  type="number"
+                  value={gradeData.marks}
+                  onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
+                  placeholder={`Out of ${selectedSubmission?.assignment.points}`}
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="feedback">Feedback</Label>
+              <div>
+                <Label>Feedback</Label>
                 <Textarea
-                  id="feedback"
                   value={gradeData.feedback}
                   onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
-                  placeholder="Provide feedback for the student"
                   rows={4}
+                  placeholder="Enter feedback..."
                 />
               </div>
-
-              <Button onClick={saveGrade} className="w-full">
-                Save Grade
-              </Button>
+              <Button onClick={saveGrade} className="w-full">Save Grade</Button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardLayout>
   );
 }

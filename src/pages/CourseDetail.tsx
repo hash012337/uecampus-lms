@@ -84,7 +84,13 @@ export default function CourseDetail() {
     duration: 30
   });
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
-  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | null>(null);
+  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | null>(null);
+  const [fileDisplayName, setFileDisplayName] = useState("");
+  const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
+  const [deadlineDialogOpen, setDeadlineDialogOpen] = useState(false);
+  const [selectedAssignmentForDeadline, setSelectedAssignmentForDeadline] = useState<any>(null);
+  const [selectedUserForDeadline, setSelectedUserForDeadline] = useState("");
+  const [customDeadline, setCustomDeadline] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -104,8 +110,22 @@ export default function CourseDetail() {
   useEffect(() => {
     if (user && !isAdmin) {
       loadUserProgress();
+      loadUserSubmissions();
     }
   }, [user, courseId, isAdmin]);
+
+  const loadUserSubmissions = async () => {
+    if (!user || !courseId) return;
+    
+    const { data } = await supabase
+      .from('assignment_submissions')
+      .select('*, assignments(*)')
+      .eq('user_id', user.id);
+    
+    if (data) {
+      setUserSubmissions(data);
+    }
+  };
 
   const loadUserProgress = async () => {
     if (!user || !courseId) return;
@@ -306,7 +326,10 @@ export default function CourseDetail() {
   };
 
   const handleUploadMaterials = async (sectionId: string) => {
-    if (uploadFiles.length === 0) return;
+    if (uploadFiles.length === 0 || !fileDisplayName) {
+      toast.error("Please provide a display name for the file");
+      return;
+    }
     
     try {
       for (const file of uploadFiles) {
@@ -320,7 +343,7 @@ export default function CourseDetail() {
         const { error: dbError } = await supabase.from("course_materials").insert({
           course_id: courseId,
           section_id: sectionId,
-          title: file.name,
+          title: fileDisplayName,
           file_path: filePath,
           file_type: file.type,
           file_size: file.size
@@ -331,6 +354,7 @@ export default function CourseDetail() {
 
       toast.success("Materials uploaded");
       setUploadFiles([]);
+      setFileDisplayName("");
       loadCourseData();
     } catch (error: any) {
       toast.error(error.message);
@@ -390,7 +414,7 @@ export default function CourseDetail() {
     if (!submissionFile || !selectedAssignment || !user) return;
     
     try {
-      const filePath = `${user.id}/${selectedAssignment.id}/${submissionFile.name}`;
+      const filePath = `${user.id}/${selectedAssignment.id}/${Date.now()}-${submissionFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("assignment-submissions")
         .upload(filePath, submissionFile);
@@ -409,6 +433,8 @@ export default function CourseDetail() {
       toast.success("Assignment submitted");
       setSubmissionDialogOpen(false);
       setSubmissionFile(null);
+      setSelectedAssignment(null);
+      loadUserSubmissions();
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -523,6 +549,59 @@ export default function CourseDetail() {
       loadCourseData();
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete material');
+    }
+  };
+
+  const handleSetUserDeadline = async () => {
+    if (!selectedAssignmentForDeadline || !selectedUserForDeadline || !customDeadline) {
+      toast.error("Please fill all fields");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.from("assignment_deadlines").upsert({
+        assignment_id: selectedAssignmentForDeadline.id,
+        user_id: selectedUserForDeadline,
+        deadline: customDeadline
+      });
+
+      if (error) throw error;
+      toast.success("Custom deadline set successfully");
+      setDeadlineDialogOpen(false);
+      setSelectedAssignmentForDeadline(null);
+      setSelectedUserForDeadline("");
+      setCustomDeadline("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to set deadline");
+    }
+  };
+
+  const handleDeleteSubmission = async (submissionId: string) => {
+    if (!confirm("Delete this submission?")) return;
+    
+    try {
+      const submission = userSubmissions.find(s => s.id === submissionId);
+      if (!submission) return;
+
+      // Delete from storage
+      if (submission.file_path) {
+        await supabase.storage
+          .from('assignment-submissions')
+          .remove([submission.file_path]);
+      }
+
+      // Delete from database
+      const { error } = await supabase
+        .from('assignment_submissions')
+        .delete()
+        .eq('id', submissionId);
+
+      if (error) throw error;
+
+      toast.success('Submission deleted');
+      loadUserSubmissions();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete submission');
     }
   };
 
@@ -1006,6 +1085,7 @@ export default function CourseDetail() {
                                 activityType === "text" ? "Add Text Lesson" :
                                 activityType === "file" ? "Upload Files" :
                                 activityType === "assignment" ? "Add Assignment" :
+                                activityType === "brief" ? "Add Assignment Brief" :
                                 "Add Quiz"}
                             </DialogTitle>
                           </DialogHeader>
@@ -1035,6 +1115,14 @@ export default function CourseDetail() {
                               >
                                 <FileQuestion className="h-8 w-8" />
                                 <span>Assignment</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("brief")}
+                              >
+                                <FileText className="h-8 w-8 text-blue-600" />
+                                <span>Assignment Brief</span>
                               </Button>
                               <Button
                                 variant="outline"
@@ -1076,6 +1164,14 @@ export default function CourseDetail() {
                                 ← Back
                               </Button>
                               <div>
+                                <Label>Display Name</Label>
+                                <Input
+                                  value={fileDisplayName}
+                                  onChange={(e) => setFileDisplayName(e.target.value)}
+                                  placeholder="Enter a name for this material"
+                                />
+                              </div>
+                              <div>
                                 <Label>Upload Files (PDF, Word, PPT, etc.)</Label>
                                 <Input
                                   type="file"
@@ -1114,15 +1210,6 @@ export default function CourseDetail() {
                                   placeholder="Brief description" 
                                 />
                               </div>
-                              <div>
-                                <Label>Assessment Brief</Label>
-                                <Textarea 
-                                  value={newAssignment.assessment_brief} 
-                                  onChange={(e) => setNewAssignment({ ...newAssignment, assessment_brief: e.target.value })} 
-                                  rows={4} 
-                                  placeholder="Enter detailed assessment criteria, grading rubric, and requirements..." 
-                                />
-                              </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <Label>Total Marks</Label>
@@ -1141,27 +1228,91 @@ export default function CourseDetail() {
                                   />
                                 </div>
                               </div>
+                              <Button onClick={() => {
+                                handleAddAssignment();
+                                setActivityDialogOpen(false);
+                                setActivityType(null);
+                              }} className="w-full">Add Assignment</Button>
+                            </div>
+                          ) : activityType === "brief" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
                               <div>
-                                <Label>Assessment Brief File (Optional - PDF or Word)</Label>
+                                <Label>Brief Title</Label>
+                                <Input 
+                                  value={newAssignment.title} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} 
+                                  placeholder="e.g., Assignment Brief, Instructions" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Brief Content</Label>
+                                <Textarea 
+                                  value={newAssignment.assessment_brief} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, assessment_brief: e.target.value })} 
+                                  rows={6} 
+                                  placeholder="Enter detailed assessment criteria, grading rubric, requirements..." 
+                                />
+                              </div>
+                              <div>
+                                <Label>Upload Brief File (Optional - PDF or Word)</Label>
                                 <Input 
                                   type="file" 
                                   accept=".pdf,.doc,.docx" 
                                   onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)} 
                                 />
                               </div>
-                              <div>
-                                <Label>Due Date (Optional)</Label>
-                                <Input 
-                                  type="date" 
-                                  value={newAssignment.due_date} 
-                                  onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} 
-                                />
-                              </div>
-                              <Button onClick={() => {
-                                handleAddAssignment();
+                              <Button onClick={async () => {
+                                if (!newAssignment.title || !currentSectionId) {
+                                  toast.error("Please enter a title");
+                                  return;
+                                }
+                                
+                                let briefFilePath = null;
+                                if (assignmentFile) {
+                                  const filePath = `${courseId}/${currentSectionId}/briefs/${Date.now()}-${assignmentFile.name}`;
+                                  const { error: uploadError } = await supabase.storage
+                                    .from("course-materials")
+                                    .upload(filePath, assignmentFile);
+
+                                  if (uploadError) {
+                                    toast.error(uploadError.message);
+                                    return;
+                                  }
+                                  briefFilePath = filePath;
+                                }
+
+                                const { error } = await supabase.from("course_materials").insert({
+                                  course_id: courseId,
+                                  section_id: currentSectionId,
+                                  title: newAssignment.title,
+                                  file_path: briefFilePath || `briefs/${Date.now()}.txt`,
+                                  file_type: "application/brief",
+                                  description: newAssignment.assessment_brief
+                                });
+
+                                if (error) {
+                                  toast.error(error.message);
+                                  return;
+                                }
+                                
+                                toast.success("Assignment brief added");
                                 setActivityDialogOpen(false);
                                 setActivityType(null);
-                              }} className="w-full">Add Assignment</Button>
+                                setNewAssignment({ 
+                                  title: "", 
+                                  unit_name: "", 
+                                  description: "", 
+                                  points: 100, 
+                                  passing_marks: 50,
+                                  assessment_brief: "",
+                                  due_date: "" 
+                                });
+                                setAssignmentFile(null);
+                                loadCourseData();
+                              }} className="w-full">Add Brief</Button>
                             </div>
                           ) : (
                             <div className="space-y-4">
@@ -1285,6 +1436,60 @@ export default function CourseDetail() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Submission Dialog */}
+      <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submit Assignment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Upload File</Label>
+              <Input
+                type="file"
+                onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
+              />
+            </div>
+            <Button onClick={handleSubmitAssignment} className="w-full">Submit</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deadline Dialog */}
+      <Dialog open={deadlineDialogOpen} onOpenChange={setDeadlineDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Custom Deadline</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Select User</Label>
+              <Select value={selectedUserForDeadline} onValueChange={setSelectedUserForDeadline}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map(u => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.full_name || u.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Deadline</Label>
+              <Input
+                type="datetime-local"
+                value={customDeadline}
+                onChange={(e) => setCustomDeadline(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleSetUserDeadline} className="w-full">Set Deadline</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </DashboardLayout>
   );
