@@ -49,7 +49,7 @@ export default function Submissions() {
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [courses, setCourses] = useState<Array<{id: string; name: string}>>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"submitted" | "not-submitted" | "marked" | "unmarked">("submitted");
+  const [viewMode, setViewMode] = useState<"marked" | "unmarked">("unmarked");
   const [gradingDialog, setGradingDialog] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<{ assignment: Assignment; submission: Submission } | null>(null);
   const [gradeData, setGradeData] = useState({ marks: "", feedback: "", comments: "" });
@@ -159,31 +159,22 @@ export default function Submissions() {
       comments: ""
     });
     
-    // Load file preview
+    // Load file preview - get public URL for Google Docs Viewer
     if (submission.file_path) {
       try {
-        const { data, error } = await supabase.storage
+        // Get a public URL for the file
+        const { data: urlData } = await supabase.storage
           .from('assignment-submissions')
-          .download(submission.file_path);
+          .createSignedUrl(submission.file_path, 3600); // 1 hour expiry
         
-        if (!error && data) {
-          const fileName = submission.file_path.toLowerCase();
-          const fileType = data.type;
-          
-          // Check if it's a text-based file
-          if (fileName.endsWith('.txt') || 
-              fileName.endsWith('.md') || 
-              fileType.startsWith('text/')) {
-            const text = await data.text();
-            setFilePreview(text);
-          } else {
-            // For binary files, show a message
-            setFilePreview(`📄 File: ${submission.file_path.split('/').pop()}\n\nThis file type cannot be previewed directly.\nFile Type: ${fileType || 'Unknown'}\n\nPlease download the file to view its contents.`);
-          }
+        if (urlData?.signedUrl) {
+          setFilePreview(urlData.signedUrl);
+        } else {
+          setFilePreview('');
         }
       } catch (err) {
         console.error('Error loading file preview:', err);
-        setFilePreview('Failed to load file preview. Please try downloading the file.');
+        setFilePreview('');
       }
     }
     
@@ -242,7 +233,9 @@ export default function Submissions() {
 
       toast.success("Grade saved successfully");
       setGradingDialog(false);
-      fetchData();
+      
+      // Refresh the data to update the tabs
+      await fetchData();
     } catch (error: any) {
       toast.error(error.message || "Failed to save grade");
     }
@@ -311,115 +304,13 @@ export default function Submissions() {
         </Select>
       </div>
 
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "submitted" | "not-submitted" | "marked" | "unmarked")}>
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "marked" | "unmarked")}>
         <TabsList>
-          <TabsTrigger value="submitted">Submitted</TabsTrigger>
-          <TabsTrigger value="not-submitted">Not Submitted</TabsTrigger>
-          <TabsTrigger value="marked">Marked</TabsTrigger>
           <TabsTrigger value="unmarked">Unmarked</TabsTrigger>
+          <TabsTrigger value="marked">Marked</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="submitted" className="space-y-4">
-          {assignments.map((assignment) => {
-            const assignmentSubmissions = getSubmissionsForAssignment(assignment.id);
-            
-            if (assignmentSubmissions.length === 0) return null;
-
-            return (
-              <Card key={assignment.id} className="p-6">
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold">{assignment.title}</h3>
-                  <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
-                </div>
-
-                <div className="space-y-3">
-                  {assignmentSubmissions.map((submission) => (
-                    <div
-                      key={submission.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          <div>
-                            <p className="font-medium">{submission.user_name}</p>
-                            <p className="text-sm text-muted-foreground">{submission.user_email}</p>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center gap-4 text-sm">
-                          <span>
-                            Submitted: {submission.submitted_at ? format(new Date(submission.submitted_at), "PPp") : "N/A"}
-                          </span>
-                          {submission.marks_obtained !== null && (
-                            <Badge variant="default">
-                              <Award className="h-3 w-3 mr-1" />
-                              {submission.marks_obtained} / {assignment.points}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {submission.file_path && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadFile(submission.file_path!)}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                        )}
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleGrade(assignment, submission)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          {submission.marks_obtained !== null ? "Update Grade" : "Grade"}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
-        </TabsContent>
-
-        <TabsContent value="not-submitted" className="space-y-4">
-          {assignments.map((assignment) => {
-            const usersWithoutSubmission = getUsersWithoutSubmission(assignment.id);
-            
-            if (usersWithoutSubmission.length === 0) return null;
-
-            return (
-              <Card key={assignment.id} className="p-6">
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold">{assignment.title}</h3>
-                  <p className="text-sm text-muted-foreground">{assignment.course_code}</p>
-                </div>
-
-                <div className="space-y-2">
-                  {usersWithoutSubmission.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center gap-3 p-4 border border-border rounded-lg"
-                    >
-                      <XCircle className="h-5 w-5 text-red-600" />
-                      <div>
-                        <p className="font-medium">{user.full_name || "Unknown"}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
-        </TabsContent>
-
-        <TabsContent value="marked" className="space-y-4">
+        <TabsContent value="unmarked" className="space-y-4">
           {assignments.map((assignment) => {
             const markedSubmissions = getSubmissionsForAssignment(assignment.id)
               .filter(s => s.marks_obtained !== null);
@@ -577,10 +468,18 @@ export default function Submissions() {
                 <FileText className="h-4 w-4" />
                 Assignment Preview
               </div>
-              <Card className="p-4 max-h-[500px] overflow-y-auto bg-muted/30">
-                <pre className="whitespace-pre-wrap text-sm font-mono">
-                  {filePreview || 'Loading preview...'}
-                </pre>
+              <Card className="p-0 overflow-hidden">
+                {filePreview ? (
+                  <iframe
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(filePreview)}&embedded=true`}
+                    className="w-full h-[500px] border-0"
+                    title="Assignment Preview"
+                  />
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Loading preview...
+                  </div>
+                )}
               </Card>
             </div>
 
