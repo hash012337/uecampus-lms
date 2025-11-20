@@ -46,7 +46,7 @@ export default function Submissions() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
-  const [courses, setCourses] = useState<string[]>([]);
+  const [courses, setCourses] = useState<{id: string; name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"submitted" | "not-submitted">("submitted");
   const [gradingDialog, setGradingDialog] = useState(false);
@@ -80,6 +80,10 @@ export default function Submissions() {
     try {
       setLoading(true);
 
+      // Fetch courses first to map IDs to names
+      const { data: coursesData } = await supabase.from("courses").select("id, title, code");
+      const coursesMap = new Map(coursesData?.map(c => [c.id, { title: c.title, code: c.code }]) || []);
+
       // Fetch assignments
       let assignmentsQuery = supabase.from("assignments").select("*");
       if (selectedCourse !== "all") {
@@ -88,11 +92,22 @@ export default function Submissions() {
       const { data: assignmentsData } = await assignmentsQuery;
 
       if (assignmentsData) {
-        setAssignments(assignmentsData);
+        // Deduplicate assignments by ID
+        const uniqueAssignments = Array.from(
+          new Map(assignmentsData.map(a => [a.id, a])).values()
+        );
+        setAssignments(uniqueAssignments);
         
-        // Get unique courses
-        const uniqueCourses = [...new Set(assignmentsData.map(a => a.course))];
-        setCourses(uniqueCourses);
+        // Get unique course IDs and create course list
+        const uniqueCourseIds = [...new Set(uniqueAssignments.map(a => a.course))];
+        const courseList = uniqueCourseIds.map(id => {
+          const course = coursesMap.get(id);
+          return {
+            id,
+            name: course ? `${course.title}` : id
+          };
+        });
+        setCourses(courseList);
       }
 
       // Fetch all users/profiles first
@@ -109,8 +124,13 @@ export default function Submissions() {
         .select("*");
 
       if (submissionsData) {
+        // Deduplicate submissions by ID
+        const uniqueSubmissions = Array.from(
+          new Map(submissionsData.map(s => [s.id, s])).values()
+        );
+        
         // Manually join with user profiles
-        const submissionsWithUserInfo = submissionsData.map((sub: any) => {
+        const submissionsWithUserInfo = uniqueSubmissions.map((sub: any) => {
           const userProfile = usersMap.get(sub.user_id);
           return {
             ...sub,
