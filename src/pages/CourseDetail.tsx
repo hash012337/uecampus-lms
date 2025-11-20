@@ -576,6 +576,54 @@ export default function CourseDetail() {
     }
   };
 
+  const handleToggleHideMaterial = async (materialId: string, currentlyHidden: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('course_materials')
+        .update({ is_hidden: !currentlyHidden })
+        .eq('id', materialId);
+
+      if (error) throw error;
+      
+      toast.success(currentlyHidden ? 'Material visible to students' : 'Material hidden from students');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update visibility');
+    }
+  };
+
+  const handleToggleHideAssignment = async (assignmentId: string, currentlyHidden: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('assignments')
+        .update({ is_hidden: !currentlyHidden })
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+      
+      toast.success(currentlyHidden ? 'Assignment visible to students' : 'Assignment hidden from students');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update visibility');
+    }
+  };
+
+  const handleToggleHideQuiz = async (quizId: string, currentlyHidden: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('section_quizzes')
+        .update({ is_hidden: !currentlyHidden })
+        .eq('id', quizId);
+
+      if (error) throw error;
+      
+      toast.success(currentlyHidden ? 'Quiz visible to students' : 'Quiz hidden from students');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update visibility');
+    }
+  };
+
   const handleDeleteSubmission = async (submissionId: string) => {
     if (!confirm("Delete this submission?")) return;
     
@@ -730,7 +778,12 @@ export default function CourseDetail() {
                           {sectionMaterials.map((material) => (
                             <div key={material.id} className="group">
                               <button
-                                onClick={() => setSelectedFile(material)}
+                                onClick={() => setSelectedFile(material.file_type === "application/brief" ? {
+                                  ...material,
+                                  _isBrief: true,
+                                  assessment_brief: material.description,
+                                  file_path: material.file_path
+                                } : material)}
                                 className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
                                   selectedFile?.id === material.id ? 'bg-accent' : ''
                                 }`}
@@ -740,38 +793,20 @@ export default function CourseDetail() {
                                 }`}>
                                   {material.completed && (
                                     <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
                                   )}
                                 </div>
                                 {getFileIcon(material.file_type)}
                                 <span className="truncate text-left flex-1">{material.title}</span>
                               </button>
-                              {selectedFile?.id === material.id && !material.completed && (
-                                <div className="px-3 py-2">
+                              {!isAdmin && (
+                                <div className="px-3 pb-2">
                                   <Button
+                                    variant="ghost"
                                     size="sm"
-                                    variant={completedMaterials.has(material.id) ? "default" : "outline"}
                                     className="w-full text-xs"
-                                    onClick={async () => {
-                                      try {
-                                        const { error } = await supabase
-                                          .from('progress_tracking')
-                                          .insert({
-                                            user_id: user?.id,
-                                            course_id: courseId,
-                                            item_type: 'material',
-                                            status: 'completed',
-                                            completed_at: new Date().toISOString()
-                                          });
-                                        
-                                        if (error) throw error;
-                                        loadUserProgress();
-                                        toast.success('Material completed!');
-                                      } catch (error: any) {
-                                        toast.error('Failed to mark as complete');
-                                      }
-                                    }}
+                                    onClick={() => handleMarkComplete(material.id)}
                                   >
                                     <BookOpen className="h-3 w-3 mr-1" />
                                     {completedMaterials.has(material.id) ? 'Completed ✓' : 'Mark Complete'}
@@ -808,24 +843,23 @@ export default function CourseDetail() {
                           ))}
                           
                           {sectionQuizzes.filter(q => q.section_id === section.id).map((quiz) => (
-                            <a
+                            <button
                               key={quiz.id}
-                              href={quiz.quiz_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors group"
+                              onClick={() => setSelectedFile({
+                                ...quiz,
+                                file_type: 'quiz',
+                                _isQuiz: true
+                              })}
+                              className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
+                                selectedFile?.id === quiz.id ? 'bg-accent' : ''
+                              }`}
                             >
                               <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-purple-500 flex items-center justify-center">
                                 <FileQuestion className="h-3 w-3 text-purple-500" />
                               </div>
-                              <FileQuestion className="h-4 w-4 flex-shrink-0 text-purple-500" />
-                              <div className="flex-1 text-left">
-                                <div className="font-medium">{quiz.title}</div>
-                                {quiz.description && (
-                                  <div className="text-xs text-muted-foreground">{quiz.description}</div>
-                                )}
-                              </div>
-                            </a>
+                              <FileQuestion className="h-4 w-4 flex-shrink-0 text-purple-600" />
+                              <span className="truncate text-left flex-1">{quiz.title}</span>
+                            </button>
                           ))}
                         </div>
                       </CollapsibleContent>
@@ -984,6 +1018,18 @@ export default function CourseDetail() {
                       onDelete={handleDeleteMaterial}
                       getFileIcon={getFileIcon}
                     />
+                    {materials.filter(m => m.section_id === section.id).map((material) => (
+                      <div key={material.id} className="flex items-center justify-between p-2 border rounded">
+                        <span className="text-sm">{material.title}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleHideMaterial(material.id, material.is_hidden)}
+                        >
+                          {material.is_hidden ? 'Show' : 'Hide'}
+                        </Button>
+                      </div>
+                    ))}
                     
                     {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
                       <div key={assignment.id} className="p-4 bg-accent/50 rounded-lg border border-border">
@@ -992,9 +1038,28 @@ export default function CourseDetail() {
                             <FileQuestion className="h-5 w-5 text-primary" />
                             <span className="font-semibold text-lg">{assignment.title}</span>
                           </div>
-                          <Badge variant="secondary">
-                            {assignment.points} marks
-                          </Badge>
+                          <div className="flex gap-2">
+                            <Badge variant="secondary">
+                              {assignment.points} marks
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleHideAssignment(assignment.id, assignment.is_hidden)}
+                            >
+                              {assignment.is_hidden ? 'Show' : 'Hide'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedAssignmentForDeadline(assignment);
+                                setDeadlineDialogOpen(true);
+                              }}
+                            >
+                              Set Deadline
+                            </Button>
+                          </div>
                         </div>
                         
                         {assignment.assessment_brief && (
@@ -1034,13 +1099,22 @@ export default function CourseDetail() {
                             <FileQuestion className="h-4 w-4 text-purple-600" />
                             <span className="font-medium">{quiz.title}</span>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteQuiz(quiz.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleHideQuiz(quiz.id, quiz.is_hidden)}
+                            >
+                              {quiz.is_hidden ? 'Show' : 'Hide'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteQuiz(quiz.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                         {quiz.description && (
                           <p className="text-sm text-muted-foreground mb-2">{quiz.description}</p>
