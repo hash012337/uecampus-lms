@@ -49,17 +49,6 @@ export default function CourseDetail() {
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   
-  // Auto-expand all sections for students
-  useEffect(() => {
-    if (!isAdmin && sections.length > 0) {
-      const allSectionsOpen = sections.reduce((acc, section) => {
-        acc[section.id] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
-      setOpenSections(allSectionsOpen);
-    }
-  }, [sections, isAdmin]);
-  
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [textLessonDialogOpen, setTextLessonDialogOpen] = useState(false);
@@ -806,7 +795,7 @@ export default function CourseDetail() {
                   return (
                     <Collapsible
                       key={section.id}
-                      open={openSections[section.id]}
+                      open={!isAdmin ? true : openSections[section.id]}
                       onOpenChange={() => toggleSection(section.id)}
                       className="border rounded-lg overflow-hidden bg-card"
                     >
