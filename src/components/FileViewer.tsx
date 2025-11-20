@@ -7,6 +7,7 @@ import { Download, FileText, File as FileIcon, Upload, Trash2 } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AssignmentSubmissionStatus } from "@/components/AssignmentSubmissionStatus";
 
 interface FileViewerProps {
   file: {
@@ -242,6 +243,27 @@ export function FileViewer({ file }: FileViewerProps) {
 
   // Assignment view
   if (file._isAssignment) {
+    const latestSubmission = userSubmissions.length > 0 ? userSubmissions[0] : null;
+
+    // Show submission status if student has submitted
+    if (latestSubmission) {
+      return (
+        <div className="h-full overflow-auto bg-background">
+          <div className="max-w-4xl mx-auto p-8">
+            <AssignmentSubmissionStatus
+              assignment={{
+                title: file.title,
+                due_date: file.due_date || null,
+                points: file.points || 100
+              }}
+              submission={latestSubmission}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Show submission form if no submission yet
     return (
       <div className="h-full overflow-auto bg-background">
         <div className="max-w-4xl mx-auto p-8">
@@ -264,89 +286,6 @@ export function FileViewer({ file }: FileViewerProps) {
               )}
             </div>
           </div>
-
-          {/* Submissions Section */}
-          {userSubmissions.length > 0 && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Your Submissions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {userSubmissions.map((submission) => {
-                  const submittedDate = new Date(submission.submitted_at);
-                  const dueDate = file.due_date ? new Date(file.due_date) : null;
-                  const timeBeforeDeadline = dueDate 
-                    ? Math.round((dueDate.getTime() - submittedDate.getTime()) / (1000 * 60 * 60 * 24))
-                    : null;
-                  
-                  return (
-                    <div key={submission.id} className="p-4 border-2 rounded-lg space-y-3 bg-accent/50">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-muted-foreground">Status:</span>
-                            <Badge variant={submission.status === 'submitted' ? 'default' : submission.marks_obtained !== null ? 'secondary' : 'outline'}>
-                              {submission.marks_obtained !== null ? 'Graded' : submission.status}
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-muted-foreground">Submission Time:</span>
-                              <span>{submittedDate.toLocaleString()}</span>
-                            </div>
-                            
-                            {dueDate && (
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-muted-foreground">Deadline:</span>
-                                <span>{dueDate.toLocaleString()}</span>
-                              </div>
-                            )}
-                            
-                            {timeBeforeDeadline !== null && (
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-muted-foreground">Submitted:</span>
-                                <span className={timeBeforeDeadline >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                                  {timeBeforeDeadline >= 0 
-                                    ? `${timeBeforeDeadline} days before deadline` 
-                                    : `${Math.abs(timeBeforeDeadline)} days late`}
-                                </span>
-                              </div>
-                            )}
-                            
-                            {submission.marks_obtained !== null && (
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-muted-foreground">Grade:</span>
-                                <span className="font-bold">{submission.marks_obtained}/{file.points}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {submission.feedback && (
-                            <div className="mt-2 p-3 bg-background rounded border">
-                              <span className="font-semibold text-sm text-muted-foreground">Feedback:</span>
-                              <p className="text-sm mt-1">{submission.feedback}</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {!submission.marks_obtained && timeBeforeDeadline && timeBeforeDeadline >= 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteSubmission(submission.id, submission.file_path)}
-                            className="text-destructive ml-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
 
           <Card>
             <CardHeader>
