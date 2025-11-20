@@ -45,7 +45,6 @@ export default function CourseDetail() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [enrolledStudents, setEnrolledStudents] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [quizUrl, setQuizUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   
@@ -53,7 +52,6 @@ export default function CourseDetail() {
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [textLessonDialogOpen, setTextLessonDialogOpen] = useState(false);
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -204,7 +202,6 @@ export default function CourseDetail() {
     
     if (courseData) {
       setCourse(courseData);
-      setQuizUrl(courseData.quiz_url || "");
     }
 
     const { data: sectionsData } = await supabase
@@ -493,7 +490,6 @@ export default function CourseDetail() {
 
       if (error) throw error;
       toast.success("Quiz added successfully");
-      setQuizDialogOpen(false);
       setNewQuiz({ title: "", quiz_url: "", description: "", duration: 30 });
       loadCourseData();
     } catch (error: any) {
@@ -518,23 +514,6 @@ export default function CourseDetail() {
     }
   };
 
-  const handleSaveQuiz = async () => {
-    if (!courseId) return;
-    
-    try {
-      const { error } = await supabase
-        .from("courses")
-        .update({ quiz_url: quizUrl })
-        .eq("id", courseId);
-
-      if (error) throw error;
-      toast.success("Quiz link saved");
-      setQuizDialogOpen(false);
-      loadCourseData();
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
 
   const getFileIcon = (fileType: string) => {
     if (fileType?.includes("video")) return <Video className="h-4 w-4" />;
@@ -1009,7 +988,6 @@ export default function CourseDetail() {
       <Tabs defaultValue="content" className="w-full">
         <TabsList>
           <TabsTrigger value="content">Course Content</TabsTrigger>
-          {course.quiz_url && <TabsTrigger value="quiz">Quiz</TabsTrigger>}
           <TabsTrigger value="students">Enrolled Students</TabsTrigger>
         </TabsList>
 
@@ -1454,42 +1432,26 @@ export default function CourseDetail() {
                                 ← Back
                               </Button>
                               <div>
-                                <Label>Quiz Title</Label>
+                                <Label>Quiz/Link Title</Label>
                                 <Input 
                                   value={newQuiz.title} 
                                   onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
-                                  placeholder="Enter quiz title" 
+                                  placeholder="Enter title (e.g., Unit 1 Quiz, Google Form)" 
                                 />
                               </div>
                               <div>
-                                <Label>Quiz URL</Label>
+                                <Label>Link URL</Label>
                                 <Input 
                                   value={newQuiz.quiz_url} 
                                   onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
-                                  placeholder="Enter quiz URL" 
-                                />
-                              </div>
-                              <div>
-                                <Label>Description (Optional)</Label>
-                                <Textarea 
-                                  value={newQuiz.description} 
-                                  onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
-                                  placeholder="Brief description of the quiz" 
-                                />
-                              </div>
-                              <div>
-                                <Label>Duration (minutes)</Label>
-                                <Input 
-                                  type="number"
-                                  value={newQuiz.duration} 
-                                  onChange={(e) => setNewQuiz({ ...newQuiz, duration: parseInt(e.target.value) || 30 })}
+                                  placeholder="Paste any link (Google Forms, Quiz site, etc.)" 
                                 />
                               </div>
                               <Button onClick={() => {
                                 handleAddQuiz();
                                 setActivityDialogOpen(false);
                                 setActivityType(null);
-                              }} className="w-full">Add Quiz</Button>
+                              }} className="w-full">Add Link</Button>
                             </div>
                           )}
                         </DialogContent>
@@ -1502,21 +1464,6 @@ export default function CourseDetail() {
           ))}
         </TabsContent>
 
-        {course.quiz_url && (
-          <TabsContent value="quiz">
-            <Card>
-              <CardHeader>
-                <CardTitle>Course Quiz</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Input value={quizUrl} onChange={(e) => setQuizUrl(e.target.value)} placeholder="Paste quiz link" />
-                  <Button onClick={handleSaveQuiz}>Save Quiz Link</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
 
         <TabsContent value="students">
           <Card>
@@ -1547,29 +1494,6 @@ export default function CourseDetail() {
         </TabsContent>
       </Tabs>
 
-      {!course.quiz_url && (
-        <Dialog open={quizDialogOpen} onOpenChange={setQuizDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Quiz Link
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Quiz Link</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                value={quizUrl}
-                onChange={(e) => setQuizUrl(e.target.value)}
-                placeholder="https://forms.google.com/..."
-              />
-              <Button onClick={handleSaveQuiz} className="w-full">Save</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* Submission Dialog */}
       <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
