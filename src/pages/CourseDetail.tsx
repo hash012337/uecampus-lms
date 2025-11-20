@@ -564,9 +564,16 @@ export default function CourseDetail() {
                                     onClick={async () => {
                                       try {
                                         const { error } = await supabase
-                                          .from('course_materials')
-                                          .update({ completed: true })
-                                          .eq('id', material.id);
+                                          .from('progress_tracking')
+                                          .upsert({
+                                            user_id: user?.id,
+                                            course_id: courseId,
+                                            item_type: 'material',
+                                            status: 'completed',
+                                            completed_at: new Date().toISOString()
+                                          }, {
+                                            onConflict: 'user_id,course_id,item_type'
+                                          });
                                         
                                         if (error) throw error;
                                         loadCourseData();
