@@ -71,6 +71,9 @@ export default function CourseDetail() {
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [completedMaterials, setCompletedMaterials] = useState<Set<string>>(new Set());
+  const [courseProgress, setCourseProgress] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -81,8 +84,40 @@ export default function CourseDetail() {
   useEffect(() => {
     if (user) {
       loadCourseData();
+      if (!isAdmin) {
+        setShowWelcome(true);
+      }
     }
   }, [user, courseId, isAdmin]);
+
+  useEffect(() => {
+    if (user && !isAdmin) {
+      loadUserProgress();
+    }
+  }, [user, courseId, isAdmin]);
+
+  const loadUserProgress = async () => {
+    if (!user || !courseId) return;
+    
+    const { data } = await supabase
+      .from('progress_tracking')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('course_id', courseId)
+      .eq('status', 'completed');
+    
+    if (data) {
+      const completed = new Set(data.map(item => item.id));
+      setCompletedMaterials(completed);
+      
+      // Calculate progress percentage
+      const totalItems = materials.length + assignments.length;
+      if (totalItems > 0) {
+        const completedCount = data.length;
+        setCourseProgress(Math.round((completedCount / totalItems) * 100));
+      }
+    }
+  };
 
   const checkAdminStatus = async () => {
     if (!user) return;
@@ -479,18 +514,18 @@ export default function CourseDetail() {
                 <h2 className="text-2xl font-bold mb-1">{course.title}</h2>
                 <p className="text-sm text-muted-foreground mb-4">{course.code}</p>
                 
-                <div className="space-y-2">
+                <div className="space-y-2 mb-6">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Course Progress</span>
-                    <span className="font-semibold">{progressPercentage}%</span>
+                    <span className="text-muted-foreground font-medium">Overall Progress</span>
+                    <span className="font-bold text-lg text-primary">{progressPercentage}%</span>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-3 bg-muted rounded-full overflow-hidden shadow-inner">
                     <div 
-                      className="h-full bg-primary transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-primary via-primary-glow to-primary transition-all duration-700 ease-out rounded-full"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground text-center font-medium">
                     {completedItems} of {totalItems} items completed
                   </p>
                 </div>
@@ -512,18 +547,26 @@ export default function CourseDetail() {
                       className="border rounded-lg overflow-hidden bg-card"
                     >
                       <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                         <div className="flex items-center gap-3 flex-1">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-glow text-primary-foreground font-bold text-base shadow-md">
                             {index + 1}
                           </div>
                           <div className="text-left flex-1">
-                            <h3 className="font-semibold">{section.title}</h3>
+                            <h3 className="font-bold text-base">{section.title}</h3>
                             {section.description && (
-                              <p className="text-xs text-muted-foreground mt-1">{section.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{section.description}</p>
                             )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {sectionCompleted}/{sectionTotal} completed
-                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <div className="h-1.5 bg-muted rounded-full flex-1 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
+                                  style={{ width: `${sectionTotal > 0 ? (sectionCompleted / sectionTotal) * 100 : 0}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                                {sectionCompleted}/{sectionTotal}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         {openSections[section.id] ? (
@@ -559,32 +602,30 @@ export default function CourseDetail() {
                                 <div className="px-3 py-2">
                                   <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant={completedMaterials.has(material.id) ? "default" : "outline"}
                                     className="w-full text-xs"
                                     onClick={async () => {
                                       try {
                                         const { error } = await supabase
                                           .from('progress_tracking')
-                                          .upsert({
+                                          .insert({
                                             user_id: user?.id,
                                             course_id: courseId,
                                             item_type: 'material',
                                             status: 'completed',
                                             completed_at: new Date().toISOString()
-                                          }, {
-                                            onConflict: 'user_id,course_id,item_type'
                                           });
                                         
                                         if (error) throw error;
-                                        loadCourseData();
-                                        toast.success('Lesson marked as read!');
+                                        loadUserProgress();
+                                        toast.success('Material completed!');
                                       } catch (error: any) {
-                                        toast.error('Failed to mark as read');
+                                        toast.error('Failed to mark as complete');
                                       }
                                     }}
                                   >
                                     <BookOpen className="h-3 w-3 mr-1" />
-                                    Mark as Read
+                                    {completedMaterials.has(material.id) ? 'Completed ✓' : 'Mark Complete'}
                                   </Button>
                                 </div>
                               )}
@@ -625,6 +666,30 @@ export default function CourseDetail() {
             </div>
           </div>
         </div>
+        
+        {/* Welcome Dialog */}
+        <Dialog open={showWelcome} onOpenChange={setShowWelcome}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl text-center bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                Welcome to UE Campus LMS!
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-6 text-center space-y-4">
+              <p className="text-lg font-semibold">Your Study Portal Awaits</p>
+              <p className="text-muted-foreground">
+                Explore your course materials, complete lessons, and track your progress as you advance through your learning journey.
+              </p>
+              <Button 
+                onClick={() => setShowWelcome(false)} 
+                className="mt-4 w-full"
+                size="lg"
+              >
+                Let's Start Learning! 🚀
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
