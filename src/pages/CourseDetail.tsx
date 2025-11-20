@@ -7,16 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import {
-  ArrowLeft,
+import { 
+  ArrowLeft, 
   Save,
   Plus,
   Trash2,
   GripVertical,
   Edit2,
   X,
-  UserPlus,
-  Zap
+  UserPlus
 } from "lucide-react";
 import { allCoursesData } from "@/data/coursesData";
 import { useState, useEffect } from "react";
@@ -26,30 +25,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface CourseSection {
+interface CurriculumSection {
   id: string;
-  course_id: string;
   title: string;
-  description: string | null;
-  duration: string | null;
-  order_index: number;
-  created_at: string;
-  updated_at: string;
+  description: string;
+  duration: string;
+  lessons: Lesson[];
 }
 
-interface Activity {
+interface Lesson {
   id: string;
-  section_id: string;
-  course_id: string;
   title: string;
-  description: string | null;
-  activity_type: 'assignment' | 'file_upload' | 'quiz' | 'book' | 'video' | 'discussion' | 'external_link';
-  due_date: string | null;
-  points: number;
-  metadata: Record<string, any>;
-  order_index: number;
-  created_at: string;
-  updated_at: string;
+  duration: string;
+  type: string;
 }
 
 export default function CourseDetail() {
@@ -60,18 +48,12 @@ export default function CourseDetail() {
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [users, setUsers] = useState<any[]>([]);
-  const [sections, setSections] = useState<CourseSection[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [addActivityOpen, setAddActivityOpen] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndEnroll();
     checkAdminStatus();
     fetchUsers();
-    fetchSections();
-    fetchActivities();
-  }, [user, courseId]);
+  }, [user]);
 
   const checkAdminAndEnroll = async () => {
     if (!user) return;
@@ -112,39 +94,9 @@ export default function CourseDetail() {
     if (data) setUsers(data);
   };
 
-  const fetchSections = async () => {
-    if (!courseId) return;
-    const { data, error } = await supabase
-      .from("course_sections")
-      .select("*")
-      .eq("course_id", courseId)
-      .order("order_index");
-
-    if (error) {
-      console.error("Error fetching sections:", error);
-      return;
-    }
-    if (data) setSections(data);
-  };
-
-  const fetchActivities = async () => {
-    if (!courseId) return;
-    const { data, error } = await supabase
-      .from("section_activities")
-      .select("*")
-      .eq("course_id", courseId)
-      .order("order_index");
-
-    if (error) {
-      console.error("Error fetching activities:", error);
-      return;
-    }
-    if (data) setActivities(data);
-  };
-
   const handleEnrollUser = async () => {
     if (!selectedUserId || !courseId) return;
-
+    
     try {
       const { error } = await supabase.from("enrollments").insert({
         user_id: selectedUserId,
@@ -185,6 +137,22 @@ export default function CourseDetail() {
     careerOpportunities: course?.careerOpportunities || []
   });
 
+  const [curriculumSections, setCurriculumSections] = useState<CurriculumSection[]>([
+    {
+      id: "1",
+      title: "Introduction to the Course",
+      description: "Get started with the fundamentals",
+      duration: "2 weeks",
+      lessons: [
+        { id: "1-1", title: "Welcome and Course Overview", duration: "15 min", type: "video" },
+        { id: "1-2", title: "Setting Up Your Environment", duration: "30 min", type: "video" },
+        { id: "1-3", title: "First Assignment", duration: "45 min", type: "assignment" }
+      ]
+    }
+  ]);
+
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editingLesson, setEditingLesson] = useState<string | null>(null);
 
   // Handler for updating basic course fields
   const handleCourseFieldUpdate = (field: keyof typeof courseData, value: any) => {
@@ -211,118 +179,96 @@ export default function CourseDetail() {
   }
 
   const handleSaveCourse = () => {
+    // Complete course data package ready for database
+    const completeCourseData = {
+      ...courseData,
+      curriculumSections: curriculumSections
+    };
+    
+    console.log("=== COURSE DATA FOR DATABASE ===");
+    console.log("Basic Info:", courseData);
+    console.log("Curriculum Sections:", curriculumSections);
+    console.log("Complete Package:", completeCourseData);
+    console.log("================================");
+    
+    // TODO: Add your database save logic here
+    // Example: await saveCourseToDatabase(completeCourseData);
+    
     toast.success("Course updated successfully!");
   };
 
-  const handleAddSection = async () => {
-    if (!courseId) return;
-
-    try {
-      const newSection: Partial<CourseSection> = {
-        course_id: courseId,
-        title: "New Section",
-        description: "Section description",
-        duration: "1 week",
-        order_index: sections.length
-      };
-
-      const { error } = await supabase
-        .from("course_sections")
-        .insert(newSection);
-
-      if (error) throw error;
-      await fetchSections();
-      toast.success("New section added");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add section");
-    }
+  const handleAddSection = () => {
+    const newSection: CurriculumSection = {
+      id: Date.now().toString(),
+      title: "New Section",
+      description: "Section description",
+      duration: "1 week",
+      lessons: []
+    };
+    const updatedSections = [...curriculumSections, newSection];
+    setCurriculumSections(updatedSections);
+    console.log("Section added - Save to DB:", newSection);
+    // TODO: await addSectionToDatabase(courseData.id, newSection);
+    toast.success("New section added");
   };
 
-  const handleDeleteSection = async (sectionId: string) => {
-    try {
-      const { error } = await supabase
-        .from("course_sections")
-        .delete()
-        .eq("id", sectionId);
-
-      if (error) throw error;
-      await fetchSections();
-      await fetchActivities();
-      toast.success("Section deleted");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete section");
-    }
+  const handleDeleteSection = (sectionId: string) => {
+    setCurriculumSections(curriculumSections.filter(s => s.id !== sectionId));
+    console.log("Section deleted - Remove from DB:", sectionId);
+    // TODO: await deleteSectionFromDatabase(courseData.id, sectionId);
+    toast.success("Section deleted");
   };
 
-  const handleUpdateSection = async (sectionId: string, field: string, value: any) => {
-    try {
-      const { error } = await supabase
-        .from("course_sections")
-        .update({ [field]: value })
-        .eq("id", sectionId);
-
-      if (error) throw error;
-      await fetchSections();
-      toast.success("Section updated");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update section");
-    }
+  const handleUpdateSection = (sectionId: string, field: keyof CurriculumSection, value: any) => {
+    const updatedSections = curriculumSections.map(section => 
+      section.id === sectionId ? { ...section, [field]: value } : section
+    );
+    setCurriculumSections(updatedSections);
+    console.log(`Section ${sectionId} updated - Save to DB:`, { field, value });
+    // TODO: await updateSectionInDatabase(courseData.id, sectionId, { [field]: value });
   };
 
-  const handleAddActivity = async (sectionId: string, activityType: string) => {
-    if (!courseId) return;
-
-    try {
-      const newActivity: Partial<Activity> = {
-        section_id: sectionId,
-        course_id: courseId,
-        title: "New Activity",
-        description: "Activity description",
-        activity_type: activityType as Activity["activity_type"],
-        points: 0,
-        order_index: activities.filter(a => a.section_id === sectionId).length
-      };
-
-      const { error } = await supabase
-        .from("section_activities")
-        .insert(newActivity);
-
-      if (error) throw error;
-      await fetchActivities();
-      setAddActivityOpen(null);
-      toast.success("Activity added");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add activity");
-    }
+  const handleAddLesson = (sectionId: string) => {
+    const newLesson: Lesson = {
+      id: Date.now().toString(),
+      title: "New Lesson",
+      duration: "15 min",
+      type: "video"
+    };
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId 
+        ? { ...section, lessons: [...section.lessons, newLesson] }
+        : section
+    ));
+    console.log("Lesson added - Save to DB:", { sectionId, lesson: newLesson });
+    // TODO: await addLessonToDatabase(courseData.id, sectionId, newLesson);
+    toast.success("Lesson added");
   };
 
-  const handleDeleteActivity = async (activityId: string) => {
-    try {
-      const { error } = await supabase
-        .from("section_activities")
-        .delete()
-        .eq("id", activityId);
-
-      if (error) throw error;
-      await fetchActivities();
-      toast.success("Activity deleted");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete activity");
-    }
+  const handleDeleteLesson = (sectionId: string, lessonId: string) => {
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId 
+        ? { ...section, lessons: section.lessons.filter(l => l.id !== lessonId) }
+        : section
+    ));
+    console.log("Lesson deleted - Remove from DB:", { sectionId, lessonId });
+    // TODO: await deleteLessonFromDatabase(courseData.id, sectionId, lessonId);
+    toast.success("Lesson deleted");
   };
 
-  const handleUpdateActivity = async (activityId: string, field: string, value: any) => {
-    try {
-      const { error } = await supabase
-        .from("section_activities")
-        .update({ [field]: value })
-        .eq("id", activityId);
-
-      if (error) throw error;
-      await fetchActivities();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update activity");
-    }
+  const handleUpdateLesson = (sectionId: string, lessonId: string, field: keyof Lesson, value: string) => {
+    setCurriculumSections(curriculumSections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            lessons: section.lessons.map(lesson => 
+              lesson.id === lessonId ? { ...lesson, [field]: value } : lesson
+            )
+          }
+        : section
+    ));
+    console.log(`Lesson ${lessonId} updated - Save to DB:`, { sectionId, field, value });
+    // TODO: await updateLessonInDatabase(courseData.id, sectionId, lessonId, { [field]: value });
   };
 
   const handleArrayFieldAdd = (field: keyof typeof courseData) => {
@@ -678,20 +624,18 @@ export default function CourseDetail() {
 
       <Separator className="my-8" />
 
-      {/* Course Sections */}
+      {/* Curriculum Sections */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">Course Sections</h2>
-          {isAdmin && (
-            <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
-              <Plus className="h-4 w-4" />
-              Add Section
-            </Button>
-          )}
+          <h2 className="text-3xl font-bold">Course Curriculum</h2>
+          <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
+            <Plus className="h-4 w-4" />
+            Add Section
+          </Button>
         </div>
 
         <div className="space-y-6">
-          {sections.map((section, sectionIndex) => (
+          {curriculumSections.map((section, sectionIndex) => (
             <Card key={section.id} className="p-6 bg-gradient-card border-primary/20">
               <div className="space-y-4">
                 {/* Section Header */}
@@ -702,7 +646,7 @@ export default function CourseDetail() {
                       Section {sectionIndex + 1}
                     </Badge>
                   </div>
-
+                  
                   <div className="flex-1 space-y-4">
                     {editingSection === section.id ? (
                       <>
@@ -713,14 +657,14 @@ export default function CourseDetail() {
                           className="text-lg font-semibold"
                         />
                         <Textarea
-                          value={section.description || ""}
+                          value={section.description}
                           onChange={(e) => handleUpdateSection(section.id, "description", e.target.value)}
                           placeholder="Section description"
                           rows={2}
                         />
                         <div className="flex gap-2">
                           <Input
-                            value={section.duration || ""}
+                            value={section.duration}
                             onChange={(e) => handleUpdateSection(section.id, "duration", e.target.value)}
                             placeholder="Duration"
                             className="w-40"
@@ -738,28 +682,26 @@ export default function CourseDetail() {
                       <>
                         <div className="flex items-center justify-between">
                           <h3 className="text-xl font-semibold">{section.title}</h3>
-                          {isAdmin && (
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setEditingSection(section.id)}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteSection(section.id)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingSection(section.id)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteSection(section.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         <p className="text-muted-foreground">{section.description}</p>
-                        {section.duration && <Badge variant="secondary">{section.duration}</Badge>}
+                        <Badge variant="secondary">{section.duration}</Badge>
                       </>
                     )}
                   </div>
@@ -767,125 +709,92 @@ export default function CourseDetail() {
 
                 <Separator />
 
-                {/* Activities */}
+                {/* Lessons */}
                 <div className="space-y-3 pl-12">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm text-muted-foreground">Activities</h4>
-                    {isAdmin && (
-                      <Dialog open={addActivityOpen === section.id} onOpenChange={(open) => setAddActivityOpen(open ? section.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="gap-2">
-                            <Zap className="h-3 w-3" />
-                            Add Activity
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add Activity</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-3">
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "assignment")}>
-                              <Plus className="h-4 w-4" />
-                              Assignment
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "quiz")}>
-                              <Plus className="h-4 w-4" />
-                              Quiz
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "file_upload")}>
-                              <Plus className="h-4 w-4" />
-                              File Upload
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "book")}>
-                              <Plus className="h-4 w-4" />
-                              Book / Reading
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "video")}>
-                              <Plus className="h-4 w-4" />
-                              Video
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "discussion")}>
-                              <Plus className="h-4 w-4" />
-                              Discussion
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => handleAddActivity(section.id, "external_link")}>
-                              <Plus className="h-4 w-4" />
-                              External Link
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                    <h4 className="font-semibold text-sm text-muted-foreground">Lessons</h4>
+                    <Button
+                      onClick={() => handleAddLesson(section.id)}
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add Lesson
+                    </Button>
                   </div>
 
-                  {activities
-                    .filter(a => a.section_id === section.id)
-                    .map((activity, activityIndex) => (
-                      <div
-                        key={activity.id}
-                        className="flex items-center gap-3 p-4 rounded-lg bg-background/50 border border-border/50"
-                      >
-                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                        <Badge variant="secondary" className="font-mono text-xs">
-                          {activityIndex + 1}
-                        </Badge>
-                        <div className="flex-1">
+                  {section.lessons.map((lesson, lessonIndex) => (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center gap-3 p-4 rounded-lg bg-background/50 border border-border/50"
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {lessonIndex + 1}
+                      </Badge>
+                      
+                      {editingLesson === lesson.id ? (
+                        <div className="flex-1 flex gap-2">
                           <Input
-                            value={activity.title}
-                            onChange={(e) => handleUpdateActivity(activity.id, "title", e.target.value)}
-                            placeholder="Activity title"
-                            className="font-medium text-sm mb-2"
+                            value={lesson.title}
+                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "title", e.target.value)}
+                            placeholder="Lesson title"
+                            className="flex-1"
                           />
-                          <div className="grid grid-cols-3 gap-2">
-                            <Select
-                              value={activity.activity_type}
-                              onValueChange={(value) => handleUpdateActivity(activity.id, "activity_type", value)}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="assignment">Assignment</SelectItem>
-                                <SelectItem value="quiz">Quiz</SelectItem>
-                                <SelectItem value="file_upload">File Upload</SelectItem>
-                                <SelectItem value="book">Book</SelectItem>
-                                <SelectItem value="video">Video</SelectItem>
-                                <SelectItem value="discussion">Discussion</SelectItem>
-                                <SelectItem value="external_link">External Link</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              value={activity.points}
-                              onChange={(e) => handleUpdateActivity(activity.id, "points", parseInt(e.target.value))}
-                              placeholder="Points"
-                              className="h-8 text-xs"
-                            />
-                            <Input
-                              type="date"
-                              value={activity.due_date ? activity.due_date.split('T')[0] : ""}
-                              onChange={(e) => handleUpdateActivity(activity.id, "due_date", e.target.value)}
-                              placeholder="Due date"
-                              className="h-8 text-xs"
-                            />
-                          </div>
-                        </div>
-                        {isAdmin && (
+                          <Input
+                            value={lesson.duration}
+                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "duration", e.target.value)}
+                            placeholder="Duration"
+                            className="w-24"
+                          />
+                          <Input
+                            value={lesson.type}
+                            onChange={(e) => handleUpdateLesson(section.id, lesson.id, "type", e.target.value)}
+                            placeholder="Type"
+                            className="w-32"
+                          />
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
-                            onClick={() => handleDeleteActivity(activity.id)}
-                            className="text-destructive"
+                            onClick={() => setEditingLesson(null)}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <X className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{lesson.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {lesson.duration} • {lesson.type}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingLesson(lesson.id)}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteLesson(section.id, lesson.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
 
-                  {activities.filter(a => a.section_id === section.id).length === 0 && (
+                  {section.lessons.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No activities yet.
+                      No lessons yet. Click &quot;Add Lesson&quot; to get started.
                     </p>
                   )}
                 </div>
@@ -893,15 +802,13 @@ export default function CourseDetail() {
             </Card>
           ))}
 
-          {sections.length === 0 && (
+          {curriculumSections.length === 0 && (
             <Card className="p-12 text-center bg-gradient-card">
-              <p className="text-muted-foreground mb-4">No sections yet.</p>
-              {isAdmin && (
-                <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
-                  <Plus className="h-4 w-4" />
-                  Add First Section
-                </Button>
-              )}
+              <p className="text-muted-foreground mb-4">No curriculum sections yet.</p>
+              <Button onClick={handleAddSection} className="gap-2 bg-gradient-primary">
+                <Plus className="h-4 w-4" />
+                Add First Section
+              </Button>
             </Card>
           )}
         </div>
