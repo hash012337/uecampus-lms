@@ -13,8 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Eye, Award, Download } from "lucide-react";
 import { format } from "date-fns";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-
 interface Assignment {
   id: string;
   title: string;
@@ -213,19 +211,15 @@ export default function Submissions() {
 
   if (!isAdmin) {
     return (
-      <DashboardLayout>
-        <div className="p-8">
-          <p>You do not have permission to view this page.</p>
-        </div>
-      </DashboardLayout>
+      <div className="p-8">
+        <p>You do not have permission to view this page.</p>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="p-8">Loading...</div>
-      </DashboardLayout>
+      <div className="p-8">Loading...</div>
     );
   }
 
@@ -385,6 +379,6 @@ export default function Submissions() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
