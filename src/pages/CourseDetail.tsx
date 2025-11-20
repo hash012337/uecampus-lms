@@ -16,7 +16,9 @@ import {
   Upload,
   Download,
   BookOpen,
-  FileQuestion
+  FileQuestion,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -27,6 +29,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { FileViewer } from "@/components/FileViewer";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function CourseDetail() {
   const { courseId } = useParams();
@@ -39,6 +43,8 @@ export default function CourseDetail() {
   const [enrolledStudents, setEnrolledStudents] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [quizUrl, setQuizUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
@@ -105,7 +111,12 @@ export default function CourseDetail() {
       .eq("course_id", courseId)
       .order("order_index");
     
-    if (sectionsData) setSections(sectionsData);
+    if (sectionsData) {
+      setSections(sectionsData);
+      const openState: Record<string, boolean> = {};
+      sectionsData.forEach(s => openState[s.id] = true);
+      setOpenSections(openState);
+    }
 
     const { data: materialsData } = await supabase
       .from("course_materials")
@@ -190,6 +201,29 @@ export default function CourseDetail() {
     }
   };
 
+  const handleAddTextLesson = async () => {
+    if (!newTextLesson.title || !newTextLesson.content || !currentSectionId) return;
+    
+    try {
+      const { error } = await supabase.from("course_materials").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: newTextLesson.title,
+        file_path: `text-lessons/${Date.now()}.html`,
+        file_type: "text/html",
+        description: newTextLesson.content
+      });
+
+      if (error) throw error;
+      toast.success("Text lesson added");
+      setTextLessonDialogOpen(false);
+      setNewTextLesson({ title: "", content: "" });
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const handleUploadMaterials = async (sectionId: string) => {
     if (uploadFiles.length === 0) return;
     
@@ -222,39 +256,15 @@ export default function CourseDetail() {
     }
   };
 
-  const handleAddTextLesson = async () => {
-    if (!newTextLesson.title || !currentSectionId || !courseId) return;
-    
-    try {
-      const { error } = await supabase.from("course_materials").insert({
-        course_id: courseId,
-        section_id: currentSectionId,
-        title: newTextLesson.title,
-        file_path: "text-lesson",
-        file_type: "text/html",
-        description: newTextLesson.content,
-        order_index: materials.filter(m => m.section_id === currentSectionId).length
-      });
-
-      if (error) throw error;
-      toast.success("Text lesson added");
-      setTextLessonDialogOpen(false);
-      setNewTextLesson({ title: "", content: "" });
-      loadCourseData();
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
   const handleAddAssignment = async () => {
-    if (!newAssignment.title || !courseId) return;
+    if (!newAssignment.title || !courseId || !currentSectionId) return;
     
     try {
       const { error } = await supabase.from("assignments").insert({
         course: courseId,
         course_code: course.code,
         title: newAssignment.title,
-        unit_name: newAssignment.unit_name,
+        unit_name: currentSectionId,
         description: newAssignment.description,
         points: newAssignment.points,
         due_date: newAssignment.due_date || null
@@ -317,9 +327,9 @@ export default function CourseDetail() {
   };
 
   const getFileIcon = (fileType: string) => {
-    if (fileType === "text/html") return <BookOpen className="h-4 w-4" />;
     if (fileType?.includes("video")) return <Video className="h-4 w-4" />;
     if (fileType?.includes("pdf")) return <FileText className="h-4 w-4" />;
+    if (fileType?.includes("text/html")) return <BookOpen className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
   };
 
@@ -342,8 +352,125 @@ export default function CourseDetail() {
     }
   };
 
+  const toggleSection = (sectionId: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
   if (!course) return <div className="flex justify-center items-center min-h-96">Loading...</div>;
 
+  // Student View
+  if (!isAdmin) {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="border-b p-4 bg-background">
+          <Link to="/courses">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Courses
+            </Button>
+          </Link>
+          <div className="mt-4">
+            <Badge className="mb-2">{course.category}</Badge>
+            <h1 className="text-3xl font-bold">{course.title}</h1>
+            <p className="text-muted-foreground">{course.code}</p>
+          </div>
+        </div>
+        
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 p-6 overflow-auto">
+            <FileViewer file={selectedFile} />
+          </div>
+          
+          <div className="w-80 border-l bg-muted/30 overflow-auto">
+            <div className="p-4">
+              <h3 className="font-semibold mb-4">Course Content</h3>
+              
+              <div className="space-y-2">
+                {sections.map((section) => (
+                  <Collapsible
+                    key={section.id}
+                    open={openSections[section.id]}
+                    onOpenChange={() => toggleSection(section.id)}
+                  >
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-accent rounded text-left">
+                      {openSections[section.id] ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      <span className="font-medium">{section.title}</span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-6 mt-2 space-y-1">
+                      {materials
+                        .filter(m => m.section_id === section.id)
+                        .map((material) => (
+                          <button
+                            key={material.id}
+                            onClick={() => setSelectedFile(material)}
+                            className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent ${
+                              selectedFile?.id === material.id ? 'bg-accent' : ''
+                            }`}
+                          >
+                            {getFileIcon(material.file_type)}
+                            <span className="truncate">{material.title}</span>
+                          </button>
+                        ))}
+                      
+                      {assignments
+                        .filter(a => a.unit_name === section.id)
+                        .map((assignment) => (
+                          <Dialog key={assignment.id}>
+                            <DialogTrigger asChild>
+                              <button
+                                onClick={() => setSelectedAssignment(assignment)}
+                                className="flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-accent"
+                              >
+                                <FileQuestion className="h-4 w-4" />
+                                <span className="truncate">{assignment.title}</span>
+                              </button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>{assignment.title}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <p>{assignment.description}</p>
+                                <div className="text-sm">
+                                  <span className="font-semibold">Marks:</span> {assignment.points}
+                                  {assignment.due_date && (
+                                    <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>
+                                  )}
+                                </div>
+                                <div>
+                                  <Label>Submit Assignment</Label>
+                                  <Input
+                                    type="file"
+                                    onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
+                                    className="mt-2"
+                                  />
+                                </div>
+                                <Button onClick={handleSubmitAssignment} className="w-full">
+                                  Submit
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin View
   return (
     <div className="space-y-6">
       <Link to="/courses">
@@ -360,42 +487,40 @@ export default function CourseDetail() {
             <h1 className="text-4xl font-bold text-white mb-2">{course.title}</h1>
             <p className="text-white/80">{course.code}</p>
           </div>
-          {isAdmin && (
-            <div className="flex gap-2">
-              <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="secondary">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Enroll User
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Enroll User</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select user" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.map(u => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.full_name || u.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={handleEnrollUser} className="w-full">Enroll</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <Button variant="destructive" onClick={handleDeleteCourse}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Enroll User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Enroll User</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name || u.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleEnrollUser} className="w-full">Enroll</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="destructive" onClick={handleDeleteCourse}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -403,143 +528,17 @@ export default function CourseDetail() {
         <TabsList>
           <TabsTrigger value="content">Course Content</TabsTrigger>
           {course.quiz_url && <TabsTrigger value="quiz">Quiz</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="students">Enrolled Students</TabsTrigger>}
+          <TabsTrigger value="students">Enrolled Students</TabsTrigger>
         </TabsList>
 
         <TabsContent value="content" className="space-y-4">
-          {isAdmin && (
-            <Button onClick={() => setSectionDialogOpen(true)} className="mb-4">
-              <Plus className="h-4 w-4 mr-2" />
-              New Section
-            </Button>
-          )}
-
-          {sections.map((section) => {
-            const sectionMaterials = materials.filter(m => m.section_id === section.id);
-            const sectionAssignments = assignments.filter(a => a.unit_name === section.id);
-            
-            return (
-              <Card key={section.id} className="overflow-hidden">
-                <div className="flex items-center justify-between p-4 bg-primary/5">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{section.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {sectionMaterials.length + sectionAssignments.length} items
-                      </p>
-                    </div>
-                  </div>
-                  {isAdmin && (
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Upload className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                
-                <CardContent className="p-0">
-                  {sectionMaterials.map((material) => (
-                    <div key={material.id} className="flex items-center justify-between p-4 border-b hover:bg-accent/50">
-                      <div className="flex items-center gap-3">
-                        {getFileIcon(material.file_type)}
-                        <div>
-                          <div className="text-sm font-medium">{material.title}</div>
-                          {material.file_type === "text/html" && material.description && (
-                            <div 
-                              className="text-xs text-muted-foreground mt-1 prose prose-sm max-w-none"
-                              dangerouslySetInnerHTML={{ __html: material.description.substring(0, 100) + "..." }}
-                            />
-                          )}
-                        </div>
-                        <Badge variant="outline" className="text-xs">Free</Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        {material.file_type !== "text/html" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => downloadMaterial(material.file_path, material.title)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {sectionAssignments.map((assignment) => (
-                    <div key={assignment.id} className="flex items-center justify-between p-4 border-b hover:bg-accent/50">
-                      <div className="flex items-center gap-3">
-                        <FileQuestion className="h-4 w-4 text-orange-500" />
-                        <div>
-                          <div className="text-sm font-medium">{assignment.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Due: {assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : "No deadline"}
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">Assignment • {assignment.points} pts</Badge>
-                      </div>
-                      {!isAdmin && (
-                        <Button size="sm" onClick={() => {
-                          setSelectedAssignment(assignment);
-                          setSubmissionDialogOpen(true);
-                        }}>
-                          Submit
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {isAdmin && (
-                    <div className="p-4 border-t bg-muted/30">
-                      <div className="flex flex-wrap gap-2">
-                        <Button 
-                          onClick={() => {
-                            setCurrentSectionId(section.id);
-                            setTextLessonDialogOpen(true);
-                          }} 
-                          size="sm"
-                          variant="outline"
-                        >
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Add Text Lesson
-                        </Button>
-                        <div className="flex gap-2 flex-1">
-                          <Input
-                            type="file"
-                            multiple
-                            onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                            className="text-sm flex-1"
-                          />
-                          <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload File
-                          </Button>
-                        </div>
-                        <Button 
-                          onClick={() => {
-                            setNewAssignment({ ...newAssignment, unit_name: section.id });
-                            setAssignmentDialogOpen(true);
-                          }} 
-                          size="sm" 
-                          variant="outline"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Assignment
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-
           <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Section
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Section</DialogTitle>
@@ -550,15 +549,13 @@ export default function CourseDetail() {
                   <Input
                     value={newSection.title}
                     onChange={(e) => setNewSection({ ...newSection, title: e.target.value })}
-                    placeholder="e.g., Unit 1: Introduction"
                   />
                 </div>
                 <div>
-                  <Label>Description (Optional)</Label>
+                  <Label>Description</Label>
                   <Textarea
                     value={newSection.description}
                     onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
-                    placeholder="Brief description of this section"
                   />
                 </div>
                 <Button onClick={handleAddSection} className="w-full">Add Section</Button>
@@ -566,33 +563,125 @@ export default function CourseDetail() {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={textLessonDialogOpen} onOpenChange={setTextLessonDialogOpen}>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Add Text Lesson</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Lesson Title</Label>
-                  <Input
-                    value={newTextLesson.title}
-                    onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
-                    placeholder="e.g., Introduction to Programming"
-                  />
-                </div>
-                <div>
-                  <Label>Content</Label>
-                  <RichTextEditor
-                    content={newTextLesson.content}
-                    onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
-                  />
-                </div>
-                <Button onClick={handleAddTextLesson} className="w-full">Add Lesson</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </TabsContent>
+          {sections.map((section) => (
+            <Card key={section.id}>
+              <CardHeader>
+                <CardTitle>{section.title}</CardTitle>
+                {section.description && <p className="text-sm text-muted-foreground">{section.description}</p>}
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {materials.filter(m => m.section_id === section.id).map((material) => (
+                  <div key={material.id} className="flex items-center justify-between p-3 bg-secondary rounded">
+                    <div className="flex items-center gap-2">
+                      {getFileIcon(material.file_type)}
+                      <span>{material.title}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadMaterial(material.file_path, material.title)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
+                  <div key={assignment.id} className="p-3 bg-accent rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileQuestion className="h-4 w-4" />
+                      <span className="font-medium">{assignment.title}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
+                    <div className="text-xs">
+                      <span className="font-semibold">Marks:</span> {assignment.points}
+                      {assignment.due_date && <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>}
+                    </div>
+                  </div>
+                ))}
 
+                <div className="flex gap-2 mt-4 pt-4 border-t">
+                  <Dialog open={textLessonDialogOpen && currentSectionId === section.id} onOpenChange={setTextLessonDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Add Text Lesson
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle>Add Text Lesson</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Lesson Title</Label>
+                          <Input
+                            value={newTextLesson.title}
+                            onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Content</Label>
+                          <RichTextEditor
+                            content={newTextLesson.content}
+                            onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
+                          />
+                        </div>
+                        <Button onClick={handleAddTextLesson} className="w-full">Add Lesson</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <div className="flex gap-2 flex-1">
+                    <Input
+                      type="file"
+                      multiple
+                      onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                      className="flex-1"
+                    />
+                    <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Files
+                    </Button>
+                  </div>
+
+                  <Dialog open={assignmentDialogOpen && currentSectionId === section.id} onOpenChange={setAssignmentDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentSectionId(section.id)}>
+                        <FileQuestion className="h-4 w-4 mr-2" />
+                        Add Assignment
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Assignment</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Title</Label>
+                          <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label>Marks</Label>
+                          <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
+                        </div>
+                        <div>
+                          <Label>Deadline</Label>
+                          <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
+                        </div>
+                        <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
 
         {course.quiz_url && (
           <TabsContent value="quiz">
@@ -601,95 +690,45 @@ export default function CourseDetail() {
                 <CardTitle>Course Quiz</CardTitle>
               </CardHeader>
               <CardContent>
-                {isAdmin ? (
-                  <div className="space-y-4">
-                    <Input value={quizUrl} onChange={(e) => setQuizUrl(e.target.value)} placeholder="Paste quiz link" />
-                    <Button onClick={handleSaveQuiz}>Save Quiz Link</Button>
-                  </div>
-                ) : (
-                  <a href={course.quiz_url} target="_blank" rel="noopener noreferrer">
-                    <Button className="w-full">Take Quiz</Button>
-                  </a>
-                )}
+                <div className="space-y-4">
+                  <Input value={quizUrl} onChange={(e) => setQuizUrl(e.target.value)} placeholder="Paste quiz link" />
+                  <Button onClick={handleSaveQuiz}>Save Quiz Link</Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
         )}
 
-        <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Submit Assignment</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Upload File</Label>
-                <Input type="file" onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)} />
-              </div>
-              <Button onClick={handleSubmitAssignment} className="w-full">Submit Assignment</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Assignment</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
-              </div>
-              <div>
-                <Label>Marks</Label>
-                <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
-              </div>
-              <div>
-                <Label>Deadline</Label>
-                <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
-              </div>
-              <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {isAdmin && (
-          <TabsContent value="students">
-            <Card>
-              <CardHeader>
-                <CardTitle>Enrolled Students</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Enrolled Date</TableHead>
+        <TabsContent value="students">
+          <Card>
+            <CardHeader>
+              <CardTitle>Enrolled Students</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Enrolled Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {enrolledStudents.map((enrollment) => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell>{enrollment.profiles?.full_name}</TableCell>
+                      <TableCell>{enrollment.profiles?.email}</TableCell>
+                      <TableCell>{new Date(enrollment.enrolled_at).toLocaleDateString()}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {enrolledStudents.map((enrollment) => (
-                      <TableRow key={enrollment.id}>
-                        <TableCell>{enrollment.profiles?.full_name}</TableCell>
-                        <TableCell>{enrollment.profiles?.email}</TableCell>
-                        <TableCell>{new Date(enrollment.enrolled_at).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      {isAdmin && !course.quiz_url && (
+      {!course.quiz_url && (
         <Dialog open={quizDialogOpen} onOpenChange={setQuizDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" className="w-full">
