@@ -398,11 +398,18 @@ export function FileViewer({ file }: FileViewerProps) {
           </div>
         )}
         {(isWord || isPowerpoint) && fileUrl && (
-          <iframe
-            src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
-            className="w-full h-full border-0"
-            title={file.title}
-          />
+          <div className="flex items-center justify-center h-full p-8">
+            <div className="text-center space-y-4">
+              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Preview not available for PowerPoint files
+              </p>
+              <Button onClick={downloadFile} size="lg">
+                <Download className="h-4 w-4 mr-2" />
+                Download to view
+              </Button>
+            </div>
+          </div>
         )}
         {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && (
           <div className="flex items-center justify-center h-full">
