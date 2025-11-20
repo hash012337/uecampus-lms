@@ -57,9 +57,16 @@ export default function CourseDetail() {
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
 
   useEffect(() => {
-    checkAdminStatus();
-    loadCourseData();
-  }, [user, courseId]);
+    if (user) {
+      checkAdminStatus();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadCourseData();
+    }
+  }, [user, courseId, isAdmin]);
 
   const checkAdminStatus = async () => {
     if (!user) return;
@@ -371,121 +378,137 @@ export default function CourseDetail() {
 
         <TabsContent value="content" className="space-y-4">
           {isAdmin && (
-            <div className="flex gap-2">
-              <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Section
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Section</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Section Title</Label>
-                      <Input
-                        value={newSection.title}
-                        onChange={(e) => setNewSection({ ...newSection, title: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Description</Label>
-                      <Textarea
-                        value={newSection.description}
-                        onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
-                      />
-                    </div>
-                    <Button onClick={handleAddSection} className="w-full">Add Section</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Button onClick={() => setSectionDialogOpen(true)} className="mb-4">
+              <Plus className="h-4 w-4 mr-2" />
+              New Section
+            </Button>
           )}
 
-          {sections.map((section) => (
-            <Card key={section.id}>
-              <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
-                {section.description && <p className="text-sm text-muted-foreground">{section.description}</p>}
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {materials.filter(m => m.section_id === section.id).map((material) => (
-                  <div key={material.id} className="flex items-center justify-between p-3 bg-secondary rounded">
-                    <div className="flex items-center gap-2">
-                      {getFileIcon(material.file_type)}
-                      <span>{material.title}</span>
+          {sections.map((section) => {
+            const sectionMaterials = materials.filter(m => m.section_id === section.id);
+            const sectionAssignments = assignments.filter(a => a.unit_name === section.id);
+            
+            return (
+              <Card key={section.id} className="overflow-hidden">
+                <div className="flex items-center justify-between p-4 bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-primary" />
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => downloadMaterial(material.file_path, material.title)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+                    <div>
+                      <h3 className="font-semibold">{section.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {sectionMaterials.length + sectionAssignments.length} items
+                      </p>
+                    </div>
                   </div>
-                ))}
-                {isAdmin && (
-                  <div className="flex gap-2 mt-4">
-                    <Input
-                      type="file"
-                      multiple
-                      onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                    />
-                    <Button onClick={() => handleUploadMaterials(section.id)}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm">
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                <CardContent className="p-0">
+                  {sectionMaterials.map((material) => (
+                    <div key={material.id} className="flex items-center justify-between p-4 border-b hover:bg-accent/50">
+                      <div className="flex items-center gap-3">
+                        {getFileIcon(material.file_type)}
+                        <span className="text-sm">{material.title}</span>
+                        <Badge variant="outline" className="text-xs">Free</Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadMaterial(material.file_path, material.title)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {sectionAssignments.map((assignment) => (
+                    <div key={assignment.id} className="flex items-center justify-between p-4 border-b hover:bg-accent/50">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-sm">{assignment.title}</span>
+                        <Badge variant="outline" className="text-xs">Assignment</Badge>
+                      </div>
+                      {!isAdmin && (
+                        <Button size="sm" onClick={() => {
+                          setSelectedAssignment(assignment);
+                          setSubmissionDialogOpen(true);
+                        }}>
+                          Submit
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {isAdmin && (
+                    <div className="p-4 border-t bg-muted/30">
+                      <div className="flex gap-2">
+                        <Input
+                          type="file"
+                          multiple
+                          onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                          className="text-sm"
+                        />
+                        <Button onClick={() => handleUploadMaterials(section.id)} size="sm">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload File
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setNewAssignment({ ...newAssignment, unit_name: section.id });
+                            setAssignmentDialogOpen(true);
+                          }} 
+                          size="sm" 
+                          variant="outline"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Assignment
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Section</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Section Title</Label>
+                  <Input
+                    value={newSection.title}
+                    onChange={(e) => setNewSection({ ...newSection, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea
+                    value={newSection.description}
+                    onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
+                  />
+                </div>
+                <Button onClick={handleAddSection} className="w-full">Add Section</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="assignments" className="space-y-4">
-          {isAdmin && (
-            <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Assignment
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Assignment</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Title</Label>
-                    <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Unit Name</Label>
-                    <Input value={newAssignment.unit_name} onChange={(e) => setNewAssignment({ ...newAssignment, unit_name: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Description</Label>
-                    <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Marks</Label>
-                    <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
-                  </div>
-                  <div>
-                    <Label>Deadline</Label>
-                    <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
-                  </div>
-                  <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          {assignments.map((assignment) => (
+          {assignments.filter(a => !a.unit_name || !sections.find(s => s.id === a.unit_name)).map((assignment) => (
             <Card key={assignment.id}>
               <CardHeader>
                 <CardTitle>{assignment.title}</CardTitle>
@@ -499,25 +522,58 @@ export default function CourseDetail() {
                     {assignment.due_date && <> | <span className="font-semibold">Due:</span> {new Date(assignment.due_date).toLocaleDateString()}</>}
                   </div>
                   {!isAdmin && (
-                    <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button onClick={() => setSelectedAssignment(assignment)}>Submit</Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Submit Assignment</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <Input type="file" onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)} />
-                          <Button onClick={handleSubmitAssignment} className="w-full">Submit</Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button onClick={() => {
+                      setSelectedAssignment(assignment);
+                      setSubmissionDialogOpen(true);
+                    }}>Submit</Button>
                   )}
                 </div>
               </CardContent>
             </Card>
           ))}
+
+          <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Assignment</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input value={newAssignment.title} onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Unit Name</Label>
+                  <Input value={newAssignment.unit_name} onChange={(e) => setNewAssignment({ ...newAssignment, unit_name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea value={newAssignment.description} onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Marks</Label>
+                  <Input type="number" value={newAssignment.points} onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })} />
+                </div>
+                <div>
+                  <Label>Deadline</Label>
+                  <Input type="date" value={newAssignment.due_date} onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} />
+                </div>
+                <Button onClick={handleAddAssignment} className="w-full">Add Assignment</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Submit Assignment</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input type="file" onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)} />
+                <Button onClick={handleSubmitAssignment} className="w-full">Submit</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {course.quiz_url && (
