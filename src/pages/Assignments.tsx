@@ -34,6 +34,7 @@ export default function Assignments() {
   const { isEditMode } = useEditMode();
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState("");
@@ -44,6 +45,7 @@ export default function Assignments() {
   useEffect(() => {
     if (user) {
       fetchAssignments();
+      fetchSubmissions();
       fetchUsers();
       checkAdminStatus();
     }
@@ -63,6 +65,25 @@ export default function Assignments() {
   const fetchUsers = async () => {
     const { data } = await supabase.from("profiles").select("*");
     if (data) setUsers(data);
+  };
+
+  const fetchSubmissions = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("assignment_submissions")
+        .select("*")
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      if (data) setSubmissions(data);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+    }
+  };
+
+  const getSubmissionForAssignment = (assignmentId: string) => {
+    return submissions.find(s => s.assignment_id === assignmentId);
   };
 
   const handlePdfUpload = async () => {
@@ -169,8 +190,17 @@ export default function Assignments() {
     }
   };
 
-  const pendingAssignments = assignments.filter(a => a.status === "pending");
-  const completedAssignments = assignments.filter(a => a.status === "completed");
+  const pendingAssignments = assignments.filter(a => {
+    const submission = getSubmissionForAssignment(a.id);
+    // Pending if: not submitted OR submitted but not graded
+    return !submission || submission.marks_obtained === null;
+  });
+  
+  const completedAssignments = assignments.filter(a => {
+    const submission = getSubmissionForAssignment(a.id);
+    // Completed only if graded
+    return submission && submission.marks_obtained !== null;
+  });
 
   if (loading) return <div className="animate-fade-in">Loading...</div>;
 
@@ -332,10 +362,28 @@ export default function Assignments() {
                         {a.hours_left}h left
                       </Badge>
                     </div>
-                    <Button className="w-full bg-gradient-primary mt-2">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Submit
-                    </Button>
+                    {(() => {
+                      const submission = getSubmissionForAssignment(a.id);
+                      if (submission) {
+                        return (
+                          <div className="mt-2 p-3 bg-muted rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium">Submitted</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Awaiting grading
+                            </p>
+                          </div>
+                        );
+                      }
+                      return (
+                        <Button className="w-full bg-gradient-primary mt-2">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Submit
+                        </Button>
+                      );
+                    })()}
                   </>
                 )}
               </div>
@@ -394,16 +442,36 @@ export default function Assignments() {
                   </>
                 ) : (
                   <>
-                    <div className="flex justify-between">
-                      <h3 className="text-xl font-semibold">{a.title}</h3>
-                      <Badge className="bg-success/20 text-success">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {a.grade}
-                      </Badge>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-semibold">{a.title}</h3>
+                        <p className="text-sm text-muted-foreground">{a.course} ({a.course_code})</p>
+                      </div>
+                      {(() => {
+                        const submission = getSubmissionForAssignment(a.id);
+                        if (submission?.marks_obtained !== null) {
+                          return (
+                            <Badge className="bg-success/20 text-success">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              {submission.marks_obtained} / {a.points}
+                            </Badge>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
-                    <div className="bg-muted/30 p-3 rounded">
-                      <p className="text-sm">{a.feedback}</p>
-                    </div>
+                    {(() => {
+                      const submission = getSubmissionForAssignment(a.id);
+                      if (submission?.feedback) {
+                        return (
+                          <div className="bg-muted/30 p-3 rounded">
+                            <p className="text-sm font-medium mb-1">Feedback:</p>
+                            <p className="text-sm">{submission.feedback}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </>
                 )}
               </div>
