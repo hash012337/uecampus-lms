@@ -16,9 +16,13 @@ export function useBirthdayMode() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (data?.birthday_mode) {
-        setBirthdayMode(true);
+      const isEnabled = data?.birthday_mode || false;
+      setBirthdayMode(isEnabled);
+      
+      if (isEnabled) {
         document.documentElement.classList.add("birthday-mode");
+      } else {
+        document.documentElement.classList.remove("birthday-mode");
       }
     };
 
