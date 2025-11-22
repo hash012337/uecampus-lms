@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ExternalLink, Youtube, FileText, Clock, Eye, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface YouTubeVideo {
   id: string;
@@ -36,6 +38,37 @@ export default function GuideDetail() {
   const video = location.state?.video as YouTubeVideo | undefined;
   const article = location.state?.article as DevToArticle | undefined;
 
+  const [articleHtml, setArticleHtml] = useState<string>("");
+  const [articleLoading, setArticleLoading] = useState(false);
+  const [articleError, setArticleError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      if (!article) return;
+
+      try {
+        setArticleLoading(true);
+        setArticleError(null);
+
+        const { data, error } = await supabase.functions.invoke("fetch-devto-article", {
+          body: { id: article.id },
+        });
+
+        if (error) throw error;
+
+        if (data?.body_html) {
+          setArticleHtml(data.body_html as string);
+        }
+      } catch (err) {
+        console.error("Error loading Dev.to article:", err);
+        setArticleError("Unable to load article preview. Please open it on Dev.to.");
+      } finally {
+        setArticleLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [article?.id]);
   if (!video && !article) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -311,17 +344,45 @@ export default function GuideDetail() {
                     Open in New Tab
                   </Button>
                 </div>
-                <div className="w-full h-[800px] border-2 border-border rounded-lg overflow-hidden bg-background">
-                  <iframe
-                    src={article.url}
-                    className="w-full h-full"
-                    title={article.title}
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                  />
+
+                <div className="w-full max-h-[800px] border-2 border-border rounded-lg overflow-auto bg-background">
+                  {articleLoading && (
+                    <div className="flex items-center justify-center h-64 text-muted-foreground">
+                      Loading article preview...
+                    </div>
+                  )}
+
+                  {!articleLoading && articleError && (
+                    <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {articleError}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(article.url, "_blank")}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open on Dev.to
+                      </Button>
+                    </div>
+                  )}
+
+                  {!articleLoading && !articleError && articleHtml && (
+                    <article className="p-6 text-sm leading-relaxed space-y-4">
+                      <div
+                        className="space-y-4"
+                        dangerouslySetInnerHTML={{ __html: articleHtml }}
+                      />
+                    </article>
+                  )}
+
+                  {!articleLoading && !articleError && !articleHtml && (
+                    <div className="flex items-center justify-center h-64 text-muted-foreground text-sm px-4 text-center">
+                      Preview not available for this article. Please open it on Dev.to.
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Note: Some articles may not display due to security restrictions. If the preview doesn't load, click "Open in New Tab" above.
-                </p>
               </div>
             </div>
           </div>
