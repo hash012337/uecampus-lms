@@ -66,12 +66,93 @@ export default function Library() {
   const [bookSearchQuery, setBookSearchQuery] = useState("");
   const [books, setBooks] = useState<BookResult[]>([]);
   const [searchingBooks, setSearchingBooks] = useState(false);
+  
+  // Recommended books state
+  const [recommendedBooks, setRecommendedBooks] = useState<BookResult[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadLibraryItems();
+      loadRecommendedBooks();
     }
   }, [user]);
+
+  const loadRecommendedBooks = async () => {
+    try {
+      setLoadingRecommendations(true);
+      
+      // Fetch user's enrolled courses
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('course_id')
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
+
+      if (enrollError) throw enrollError;
+
+      if (!enrollments || enrollments.length === 0) {
+        setRecommendedBooks([]);
+        return;
+      }
+
+      // Fetch course details
+      const courseIds = enrollments.map(e => e.course_id);
+      const { data: courses, error: coursesError } = await supabase
+        .from('courses')
+        .select('title, category, subcategory')
+        .in('id', courseIds);
+
+      if (coursesError) throw coursesError;
+
+      if (!courses || courses.length === 0) {
+        setRecommendedBooks([]);
+        return;
+      }
+
+      // Extract unique search terms from course titles and categories
+      const searchTerms = new Set<string>();
+      courses.forEach(course => {
+        if (course.category) searchTerms.add(course.category);
+        if (course.subcategory) searchTerms.add(course.subcategory);
+        // Add main topic from title (first few words)
+        const titleWords = course.title.split(' ').slice(0, 3).join(' ');
+        searchTerms.add(titleWords);
+      });
+
+      // Search for books based on course topics (limit to 3 terms for performance)
+      const termsArray = Array.from(searchTerms).slice(0, 3);
+      const bookPromises = termsArray.map(term => 
+        supabase.functions.invoke('search-books', {
+          body: { query: term, maxResults: 5 }
+        })
+      );
+
+      const results = await Promise.all(bookPromises);
+      
+      // Combine and deduplicate books
+      const allBooks: BookResult[] = [];
+      const seenIds = new Set<string>();
+
+      results.forEach(result => {
+        if (result.data?.books) {
+          result.data.books.forEach((book: BookResult) => {
+            if (!seenIds.has(book.id)) {
+              seenIds.add(book.id);
+              allBooks.push(book);
+            }
+          });
+        }
+      });
+
+      // Limit to 12 recommendations
+      setRecommendedBooks(allBooks.slice(0, 12));
+    } catch (error) {
+      console.error('Error loading recommended books:', error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
 
   const loadLibraryItems = async () => {
     try {
@@ -334,6 +415,81 @@ export default function Library() {
           </Dialog>
         )}
       </div>
+
+      {/* Recommended Books Section */}
+      {recommendedBooks.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Recommended for You</h2>
+              <p className="text-sm text-muted-foreground">Based on your enrolled courses</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadRecommendedBooks}
+              disabled={loadingRecommendations}
+            >
+              {loadingRecommendations ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
+
+          {loadingRecommendations ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recommendedBooks.map((book) => (
+                <Card key={book.id} className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden">
+                  <CardContent className="p-0">
+                    {book.thumbnail && (
+                      <div className="w-full h-40 bg-muted flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={book.thumbnail} 
+                          alt={book.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="p-3 space-y-1.5">
+                      <h3 className="font-semibold text-sm line-clamp-2">{book.title}</h3>
+                      
+                      {book.authors.length > 0 && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {book.authors[0]}
+                        </p>
+                      )}
+
+                      {book.categories && book.categories.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {book.categories[0]}
+                        </Badge>
+                      )}
+
+                      {book.previewLink && (
+                        <a 
+                          href={book.previewLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs text-primary hover:underline pt-1"
+                        >
+                          <BookOpen className="h-3 w-3" />
+                          <span>Preview</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs for Library Items and Book Search */}
       <Tabs defaultValue="files" className="w-full">
