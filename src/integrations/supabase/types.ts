@@ -49,6 +49,47 @@ export type Database = {
           },
         ]
       }
+      assignment_extra_attempts: {
+        Row: {
+          assignment_id: string
+          created_at: string | null
+          extra_attempts: number
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string | null
+          extra_attempts?: number
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string | null
+          extra_attempts?: number
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_extra_attempts_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignment_submissions: {
         Row: {
           assignment_id: string
@@ -99,6 +140,7 @@ export type Database = {
       assignments: {
         Row: {
           assessment_brief: string | null
+          attempts: number
           course: string
           course_code: string
           created_at: string | null
@@ -120,6 +162,7 @@ export type Database = {
         }
         Insert: {
           assessment_brief?: string | null
+          attempts?: number
           course: string
           course_code: string
           created_at?: string | null
@@ -141,6 +184,7 @@ export type Database = {
         }
         Update: {
           assessment_brief?: string | null
+          attempts?: number
           course?: string
           course_code?: string
           created_at?: string | null
