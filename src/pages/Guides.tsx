@@ -323,9 +323,27 @@ export default function Guides() {
           )}
         </TabsContent>
 
-        {/* Search Results - YouTube Tab */}
-        {guides && (
-          <>
+      {guides && (
+        <div className="mt-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">Search Results</h2>
+            <p className="text-sm text-muted-foreground">
+              Found {guides.total} resources for "{query}"
+            </p>
+          </div>
+          
+          <Tabs defaultValue="youtube" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="youtube" className="flex items-center gap-2">
+                <Youtube className="h-4 w-4" />
+                Videos ({guides.youtube.length})
+              </TabsTrigger>
+              <TabsTrigger value="devto" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Articles ({guides.devto.length})
+              </TabsTrigger>
+            </TabsList>
+
             <TabsContent value="youtube" className="mt-6">
                {guides.youtube.length === 0 ? (
                 <div className="text-center py-12">
@@ -433,8 +451,9 @@ export default function Guides() {
                 </div>
               )}
             </TabsContent>
-          </>
-        )}
+          </Tabs>
+        </div>
+      )}
       </Tabs>
 
       {isLoading && (
