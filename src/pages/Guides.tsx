@@ -465,6 +465,134 @@ export default function Guides() {
             </div>
           )}
         </TabsContent>
+
+        {/* Videos Tab */}
+        <TabsContent value="youtube" className="mt-6">
+          {loadingRecommended ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : recommendedGuides && recommendedGuides.youtube.length > 0 ? (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Popular video tutorials to help you learn
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {recommendedGuides.youtube.map((video) => (
+                  <Card 
+                    key={video.id} 
+                    className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden cursor-pointer"
+                    onClick={() => handleVideoClick(video)}
+                  >
+                    <CardContent className="p-0">
+                      <div className="relative w-full h-48 bg-muted">
+                        <img
+                          src={video.thumbnail}
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                        />
+                        {video.duration && (
+                          <Badge className="absolute bottom-2 right-2 bg-black/80 text-white">
+                            {formatDuration(video.duration)}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <h3 className="font-semibold text-sm line-clamp-2">{video.title}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {video.channelTitle}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {formatViewCount(video.viewCount || "0")}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-primary pt-1">
+                          <BookOpen className="h-3 w-3" />
+                          <span>View Details</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Youtube className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No videos available</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Articles Tab */}
+        <TabsContent value="devto" className="mt-6">
+          {loadingRecommended ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : recommendedGuides && recommendedGuides.devto.length > 0 ? (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Programming articles and tutorials from Dev.to
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {recommendedGuides.devto.map((article) => (
+                  <Card 
+                    key={article.id} 
+                    className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden cursor-pointer"
+                    onClick={() => handleArticleClick(article)}
+                  >
+                    <CardContent className="p-0">
+                      {article.coverImage ? (
+                        <div className="w-full h-48 bg-muted">
+                          <img
+                            src={article.coverImage}
+                            alt={article.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 bg-muted flex items-center justify-center">
+                          <FileText className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="p-4 space-y-2">
+                        <h3 className="font-semibold text-sm line-clamp-2">{article.title}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          by {article.user.name}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {article.readingTimeMinutes} min read
+                        </div>
+                        {article.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {article.tags.slice(0, 2).map((tag, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1 text-xs text-primary pt-1">
+                          <BookOpen className="h-3 w-3" />
+                          <span>View Details</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No articles available</p>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Search Results - Separate Section */}
