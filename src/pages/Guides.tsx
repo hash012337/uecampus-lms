@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,33 @@ export default function Guides() {
   const [query, setQuery] = useState("");
   const [guides, setGuides] = useState<GuidesData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [recommendedGuides, setRecommendedGuides] = useState<GuidesData | null>(null);
+  const [loadingRecommended, setLoadingRecommended] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadRecommendedGuides();
+  }, []);
+
+  const loadRecommendedGuides = async () => {
+    try {
+      setLoadingRecommended(true);
+      // Load popular programming topics
+      const topics = ['React', 'JavaScript', 'Python', 'Web Development'];
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+      
+      const { data, error } = await supabase.functions.invoke("fetch-guides", {
+        body: { query: randomTopic, maxResults: 8 },
+      });
+
+      if (error) throw error;
+      setRecommendedGuides(data);
+    } catch (error) {
+      console.error("Error loading recommended guides:", error);
+    } finally {
+      setLoadingRecommended(false);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,21 +173,161 @@ export default function Guides() {
         </div>
       </form>
 
-        {guides && (
-          <Tabs defaultValue="youtube" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
-              <TabsTrigger value="youtube" className="flex items-center gap-2">
-                <Youtube className="h-4 w-4" />
-                Videos ({guides.youtube.length})
-              </TabsTrigger>
-              <TabsTrigger value="devto" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Articles ({guides.devto.length})
-              </TabsTrigger>
-            </TabsList>
+      <Tabs defaultValue="recommended" className="w-full">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsTrigger value="recommended">Recommended</TabsTrigger>
+          <TabsTrigger value="youtube" className="flex items-center gap-2">
+            <Youtube className="h-4 w-4" />
+            Videos
+          </TabsTrigger>
+          <TabsTrigger value="devto" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Articles
+          </TabsTrigger>
+        </TabsList>
 
+        {/* Recommended Guides Tab */}
+        <TabsContent value="recommended" className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Popular Learning Resources</h2>
+              <p className="text-sm text-muted-foreground">Curated guides to get you started</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadRecommendedGuides}
+              disabled={loadingRecommended}
+            >
+              {loadingRecommended ? 'Loading...' : 'Refresh'}
+            </Button>
+          </div>
+
+          {loadingRecommended ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : recommendedGuides ? (
+            <>
+              {recommendedGuides.youtube.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Youtube className="h-5 w-5 text-red-500" />
+                    Video Tutorials
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {recommendedGuides.youtube.slice(0, 4).map((video) => (
+                      <Card 
+                        key={video.id} 
+                        className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden cursor-pointer"
+                        onClick={() => handleVideoClick(video)}
+                      >
+                        <CardContent className="p-0">
+                          <div className="relative w-full h-48 bg-muted">
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              className="w-full h-full object-cover"
+                            />
+                            {video.duration && (
+                              <Badge className="absolute bottom-2 right-2 bg-black/80 text-white">
+                                {formatDuration(video.duration)}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="p-4 space-y-2">
+                            <h3 className="font-semibold text-sm line-clamp-2">{video.title}</h3>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {video.channelTitle}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {formatViewCount(video.viewCount || "0")}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-primary pt-1">
+                              <BookOpen className="h-3 w-3" />
+                              <span>View Details</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {recommendedGuides.devto.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Programming Articles
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {recommendedGuides.devto.slice(0, 4).map((article) => (
+                      <Card 
+                        key={article.id} 
+                        className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden cursor-pointer"
+                        onClick={() => handleArticleClick(article)}
+                      >
+                        <CardContent className="p-0">
+                          {article.coverImage ? (
+                            <div className="w-full h-48 bg-muted">
+                              <img
+                                src={article.coverImage}
+                                alt={article.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-full h-48 bg-muted flex items-center justify-center">
+                              <FileText className="h-12 w-12 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="p-4 space-y-2">
+                            <h3 className="font-semibold text-sm line-clamp-2">{article.title}</h3>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              by {article.user.name}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {article.readingTimeMinutes} min read
+                            </div>
+                            {article.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {article.tags.slice(0, 2).map((tag, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 text-xs text-primary pt-1">
+                              <BookOpen className="h-3 w-3" />
+                              <span>View Details</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No recommendations available</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Search Results - YouTube Tab */}
+        {guides && (
+          <>
             <TabsContent value="youtube" className="mt-6">
-              {guides.youtube.length === 0 ? (
+               {guides.youtube.length === 0 ? (
                 <div className="text-center py-12">
                   <Youtube className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No videos found for this topic</p>
@@ -267,19 +433,22 @@ export default function Guides() {
                 </div>
               )}
             </TabsContent>
-          </Tabs>
+          </>
         )}
+      </Tabs>
 
-        {!guides && !isLoading && (
-          <div className="text-center py-16">
-            <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Start Learning</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Search for any topic to discover educational videos from YouTube and programming
-              tutorials from Dev.to
-            </p>
-          </div>
-        )}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      )}
+
+      {guides && guides.total === 0 && (
+        <div className="text-center py-12 mt-6">
+          <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No results found. Try a different search term.</p>
+        </div>
+      )}
     </div>
   );
 }
