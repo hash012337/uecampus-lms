@@ -58,6 +58,10 @@ export default function Library() {
   const [recommendedBooks, setRecommendedBooks] = useState<BookResult[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
+  // Book preview state
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<BookResult | null>(null);
+
   useEffect(() => {
     if (user) {
       loadRecommendedBooks();
@@ -142,6 +146,11 @@ export default function Library() {
     }
   };
 
+
+  const handleBookPreview = (book: BookResult) => {
+    setSelectedBook(book);
+    setPreviewDialogOpen(true);
+  };
 
   const handleSearchBooks = async (query: string) => {
     if (!query.trim()) {
@@ -249,16 +258,15 @@ export default function Library() {
                       )}
 
                       {book.previewLink && (
-                        <a 
-                          href={book.previewLink} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-primary hover:underline pt-1"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleBookPreview(book)}
+                          className="flex items-center gap-1 text-xs text-primary hover:underline pt-1 h-auto p-0"
                         >
                           <BookOpen className="h-3 w-3" />
                           <span>Preview Book</span>
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
+                        </Button>
                       )}
                     </div>
                   </CardContent>
@@ -353,16 +361,15 @@ export default function Library() {
                           {book.pageCount && <span>{book.pageCount} pages</span>}
                         </div>
                         {book.previewLink && (
-                          <a 
-                            href={book.previewLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-primary hover:underline"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleBookPreview(book)}
+                            className="flex items-center gap-1 text-primary hover:underline h-auto p-0"
                           >
                             <BookOpen className="h-3 w-3" />
                             <span>View</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -388,6 +395,30 @@ export default function Library() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Book Preview Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-5xl h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="pr-8">{selectedBook?.title}</DialogTitle>
+            {selectedBook?.authors && selectedBook.authors.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                by {selectedBook.authors.join(', ')}
+              </p>
+            )}
+          </DialogHeader>
+          <div className="flex-1 min-h-0">
+            {selectedBook?.previewLink && (
+              <iframe
+                src={selectedBook.previewLink}
+                className="w-full h-full border-0 rounded-md"
+                title={`Preview of ${selectedBook.title}`}
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
