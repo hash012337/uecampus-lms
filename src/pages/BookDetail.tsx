@@ -1,15 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-
-// Declare Google Books Viewer
-declare global {
-  interface Window {
-    google: any;
-  }
-}
 
 interface BookResult {
   id: string;
@@ -30,58 +22,6 @@ export default function BookDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const book = location.state?.book as BookResult | undefined;
-  const viewerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!book || !book.previewLink || book.source !== "google") return;
-
-    // Derive Google Books volume ID from preview link or id field
-    let volumeId: string | null = null;
-
-    try {
-      const url = new URL(book.previewLink.replace("http:", "https:"));
-      volumeId = url.searchParams.get("id");
-    } catch {
-      // ignore URL parsing issues
-    }
-
-    if (!volumeId && book.id.startsWith("google-")) {
-      volumeId = book.id.replace("google-", "");
-    }
-
-    if (!volumeId) return;
-
-    const script = document.createElement("script");
-    script.src = "https://www.google.com/books/jsapi.js";
-    script.async = true;
-
-    script.onload = () => {
-      if (window.google && window.google.books) {
-        window.google.books.load();
-
-        const initialize = () => {
-          if (viewerRef.current) {
-            const viewer = new window.google.books.DefaultViewer(viewerRef.current);
-            viewer.load(volumeId!);
-          }
-        };
-
-        if (window.google.books.setOnLoadCallback) {
-          window.google.books.setOnLoadCallback(initialize);
-        } else {
-          initialize();
-        }
-      }
-    };
-
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [book]);
 
   if (!book) {
     return (
@@ -95,6 +35,25 @@ export default function BookDetail() {
         </div>
       </div>
     );
+  }
+
+  // Ensure we always use HTTPS when embedding
+  const securePreviewLink = book.previewLink
+    ? book.previewLink.replace("http:", "https:")
+    : undefined;
+
+  // For Google books, build a dedicated embed URL which is allowed in iframes
+  let googleEmbedUrl: string | undefined;
+  if (book.source === "google" && securePreviewLink) {
+    try {
+      const url = new URL(securePreviewLink);
+      const id = url.searchParams.get("id");
+      if (id) {
+        googleEmbedUrl = `https://books.google.com/books?id=${id}&printsec=frontcover&output=embed`;
+      }
+    } catch {
+      // ignore URL parsing errors and fall back to securePreviewLink
+    }
   }
 
   return (
@@ -207,8 +166,8 @@ export default function BookDetail() {
               </div>
             )}
 
-            {/* Google Book Preview */}
-            {book.source === "google" && book.previewLink && (
+            {/* Book Preview */}
+            {securePreviewLink && (
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold">Book Preview</h2>
@@ -217,7 +176,7 @@ export default function BookDetail() {
                     size="sm"
                     onClick={() =>
                       window.open(
-                        book.previewLink.replace("http:", "https:"),
+                        securePreviewLink,
                         "_blank",
                         "noopener,noreferrer",
                       )
@@ -228,14 +187,17 @@ export default function BookDetail() {
                   </Button>
                 </div>
                 <div className="w-full h-[800px] border-2 border-border rounded-lg overflow-hidden bg-background">
-                  <div
-                    ref={viewerRef}
+                  <iframe
+                    src={googleEmbedUrl ?? securePreviewLink}
                     className="w-full h-full"
-                    id="viewerCanvas"
+                    title={`Preview of ${book.title}`}
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Preview powered by Google Books
+                  {book.source === "google"
+                    ? "Preview powered by Google Books"
+                    : 'If the preview does not load, click "Open in New Tab" above'}
                 </p>
               </div>
             )}
