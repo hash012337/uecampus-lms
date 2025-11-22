@@ -40,12 +40,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { birthdayMode } = useBirthdayMode();
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [currentUserBirthdayMode, setCurrentUserBirthdayMode] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (user) {
+      checkCurrentUserBirthdayMode();
+    }
+  }, [user]);
+
+  const checkCurrentUserBirthdayMode = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("user_preferences")
+      .select("birthday_mode")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    setCurrentUserBirthdayMode(data?.birthday_mode || false);
+  };
 
   const fetchUsers = async () => {
     const { data } = await supabase
@@ -71,6 +90,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       toast.error("Failed to update birthday mode");
     } else {
       toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
+    }
+  };
+
+  const toggleMyBirthdayMode = async (enabled: boolean) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("user_preferences")
+      .upsert({
+        user_id: user.id,
+        birthday_mode: enabled,
+      }, {
+        onConflict: "user_id",
+      });
+
+    if (error) {
+      toast.error("Failed to update birthday mode");
+    } else {
+      setCurrentUserBirthdayMode(enabled);
+      toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"}`);
     }
   };
 
@@ -235,6 +274,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile: {user?.email}</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                
+                {/* User's own birthday mode toggle */}
+                <div className="px-2 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="my-birthday-mode" className="text-sm cursor-pointer flex items-center gap-2">
+                      <Cake className="h-4 w-4" />
+                      Birthday Mode
+                    </Label>
+                    <Switch
+                      id="my-birthday-mode"
+                      checked={currentUserBirthdayMode}
+                      onCheckedChange={toggleMyBirthdayMode}
+                    />
+                  </div>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
