@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.search-books]
 verify_jwt = false
+
+[functions.generate-study-guide]
+verify_jwt = false
