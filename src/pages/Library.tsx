@@ -468,13 +468,22 @@ export default function Library() {
             {selectedBook?.previewLink && (
               <div>
                 <h3 className="text-lg font-semibold mb-3">Book Preview</h3>
-                <div className="w-full h-[600px] border border-border rounded-lg overflow-hidden">
-                  <iframe
-                    src={selectedBook.previewLink.replace('http:', 'https:')}
-                    className="w-full h-full"
-                    title={`Preview of ${selectedBook.title}`}
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                  />
+                <div className="w-full border border-border rounded-lg p-8 bg-muted/30 flex flex-col items-center justify-center gap-4">
+                  <BookOpen className="h-16 w-16 text-primary/60" />
+                  <div className="text-center space-y-2">
+                    <p className="text-lg font-medium">Preview this book on Google Books</p>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Due to security restrictions, book previews open in a new window where you can read sample pages, search inside the book, and get more details.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => window.open(selectedBook.previewLink.replace('http:', 'https:'), '_blank', 'noopener,noreferrer')}
+                    size="lg"
+                    className="mt-2"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Book Preview
+                  </Button>
                 </div>
               </div>
             )}
