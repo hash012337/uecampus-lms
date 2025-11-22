@@ -41,6 +41,7 @@ export default function Assignments() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [filterUserId, setFilterUserId] = useState<string>("all");
 
   useEffect(() => {
     if (user) {
@@ -59,7 +60,12 @@ export default function Assignments() {
       .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle();
-    setIsAdmin(!!data);
+    const adminStatus = !!data;
+    setIsAdmin(adminStatus);
+    // Refetch submissions after admin status is determined
+    if (adminStatus) {
+      fetchSubmissions();
+    }
   };
 
   const fetchUsers = async () => {
@@ -70,10 +76,16 @@ export default function Assignments() {
   const fetchSubmissions = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
+      // Admins fetch all submissions, regular users only their own
+      let query = supabase
         .from("assignment_submissions")
-        .select("*")
-        .eq("user_id", user.id);
+        .select("*, profiles(full_name, email)");
+      
+      if (!isAdmin) {
+        query = query.eq("user_id", user.id);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       if (data) setSubmissions(data);
@@ -82,8 +94,33 @@ export default function Assignments() {
     }
   };
 
-  const getSubmissionForAssignment = (assignmentId: string) => {
-    return submissions.find(s => s.assignment_id === assignmentId);
+  const getSubmissionForAssignment = (assignmentId: string, userId?: string) => {
+    if (userId) {
+      return submissions.find(s => s.assignment_id === assignmentId && s.user_id === userId);
+    }
+    return submissions.find(s => s.assignment_id === assignmentId && s.user_id === user?.id);
+  };
+
+  const deleteSubmission = async (submissionId: string) => {
+    try {
+      const { error } = await supabase
+        .from("assignment_submissions")
+        .delete()
+        .eq("id", submissionId);
+
+      if (error) throw error;
+
+      setSubmissions(submissions.filter(s => s.id !== submissionId));
+      toast.success("Submission deleted");
+    } catch (error: any) {
+      toast.error("Failed to delete submission");
+    }
+  };
+
+  const getFilteredSubmissions = () => {
+    if (!isAdmin) return submissions;
+    if (filterUserId === "all") return submissions;
+    return submissions.filter(s => s.user_id === filterUserId);
   };
 
   const handlePdfUpload = async () => {
@@ -209,10 +246,10 @@ export default function Assignments() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Assignments
+            {isAdmin ? "All Submissions" : "Assignments"}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Track and manage your assignments
+            {isAdmin ? "View and manage all student submissions" : "Track and manage your assignments"}
           </p>
         </div>
         {isAdmin && (
@@ -266,7 +303,86 @@ export default function Assignments() {
         )}
       </div>
 
-      <Tabs defaultValue="pending">
+      {isAdmin && (
+        <div className="flex items-center gap-4">
+          <Label className="text-sm font-medium">Filter by User:</Label>
+          <Select value={filterUserId} onValueChange={setFilterUserId}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.full_name || u.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {isAdmin ? (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Submitted Assignments</h2>
+          {assignments.map((assignment) => {
+            const assignmentSubmissions = getFilteredSubmissions().filter(
+              s => s.assignment_id === assignment.id
+            );
+            
+            if (assignmentSubmissions.length === 0) return null;
+            
+            return (
+              <Card key={assignment.id} className="p-6">
+                <h3 className="text-lg font-semibold mb-4">{assignment.title}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {assignment.course} ({assignment.course_code})
+                </p>
+                <div className="space-y-3">
+                  {assignmentSubmissions.map((submission) => (
+                    <div
+                      key={submission.id}
+                      className="flex items-center justify-between p-4 bg-muted rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium">
+                          {submission.profiles?.full_name || submission.profiles?.email || "Unknown User"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                        </p>
+                        {submission.marks_obtained !== null && (
+                          <Badge className="mt-2 bg-success/20 text-success">
+                            {submission.marks_obtained} / {assignment.points}
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteSubmission(submission.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })}
+          {getFilteredSubmissions().length === 0 && (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">
+                {filterUserId === "all" 
+                  ? "No submissions yet" 
+                  : "No submissions from this user"}
+              </p>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <Tabs defaultValue="pending">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="pending">Pending ({pendingAssignments.length})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({completedAssignments.length})</TabsTrigger>
@@ -479,6 +595,7 @@ export default function Assignments() {
           ))}
         </TabsContent>
       </Tabs>
+      )}
     </div>
   );
 }
