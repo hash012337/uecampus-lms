@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Upload, Download, FileText, Search, Trash2, File } from "lucide-react";
+import { Upload, Download, FileText, Search, Trash2, File, BookOpen, ExternalLink } from "lucide-react";
 import { useEditMode } from "@/contexts/EditModeContext";
 
 interface LibraryItem {
@@ -24,6 +25,21 @@ interface LibraryItem {
   tags: string[];
   downloads: number;
   created_at: string;
+}
+
+interface BookResult {
+  id: string;
+  title: string;
+  authors: string[];
+  publisher?: string;
+  publishedDate?: string;
+  description?: string;
+  thumbnail?: string;
+  categories?: string[];
+  pageCount?: number;
+  language?: string;
+  previewLink?: string;
+  source: 'google' | 'openlibrary';
 }
 
 const CATEGORIES = ["General", "Course Materials", "Assignments", "References", "Templates", "Other"];
@@ -45,6 +61,11 @@ export default function Library() {
     is_public: false,
     file: null as File | null,
   });
+
+  // Book search state
+  const [bookSearchQuery, setBookSearchQuery] = useState("");
+  const [books, setBooks] = useState<BookResult[]>([]);
+  const [searchingBooks, setSearchingBooks] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -184,6 +205,31 @@ export default function Library() {
     }
   };
 
+  const handleSearchBooks = async (query: string) => {
+    if (!query.trim()) {
+      setBooks([]);
+      return;
+    }
+
+    try {
+      setSearchingBooks(true);
+      const { data, error } = await supabase.functions.invoke('search-books', {
+        body: { query, maxResults: 20 }
+      });
+
+      if (error) throw error;
+
+      setBooks(data.books || []);
+      toast.success(`Found ${data.books?.length || 0} books`);
+    } catch (error: any) {
+      console.error('Error searching books:', error);
+      toast.error('Failed to search books');
+      setBooks([]);
+    } finally {
+      setSearchingBooks(false);
+    }
+  };
+
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -208,7 +254,7 @@ export default function Library() {
             eLibrary
           </h1>
           <p className="text-muted-foreground mt-1">
-            Access course materials and resources
+            Access course materials, resources, and educational books
           </p>
         </div>
         {isAdmin && (
@@ -289,87 +335,210 @@ export default function Library() {
         )}
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search files..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Categories</SelectItem>
-            {CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Tabs for Library Items and Book Search */}
+      <Tabs defaultValue="files" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="files">Course Materials</TabsTrigger>
+          <TabsTrigger value="books">Search Educational Books</TabsTrigger>
+        </TabsList>
 
-      {/* Library Items */}
-      <div className="grid gap-4">
-        {filteredItems.map((item) => (
-          <Card key={item.id} className="border-border/50 hover:shadow-lg transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div className="flex items-start gap-4 flex-1">
-                <div className="p-3 rounded-lg bg-primary/10">
-                  {item.file_type.includes("pdf") ? (
-                    <FileText className="h-6 w-6 text-primary" />
-                  ) : (
-                    <File className="h-6 w-6 text-primary" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    <Badge variant="outline">{item.category}</Badge>
-                    {item.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
+        {/* Course Materials Tab */}
+        <TabsContent value="files" className="space-y-4">
+          <div className="flex gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search files..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Categories</SelectItem>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-4">
+            {filteredItems.map((item) => (
+              <Card key={item.id} className="border-border/50 hover:shadow-lg transition-shadow">
+                <CardContent className="p-6 flex items-center justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      {item.file_type.includes("pdf") ? (
+                        <FileText className="h-6 w-6 text-primary" />
+                      ) : (
+                        <File className="h-6 w-6 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <Badge variant="outline">{item.category}</Badge>
+                        {item.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {item.downloads} downloads • {(item.file_size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {item.downloads} downloads • {(item.file_size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" onClick={() => handleDownload(item)}>
-                  <Download className="h-4 w-4" />
-                </Button>
-                {isAdmin && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(item)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleDownload(item)}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(item)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {filteredItems.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No files found</p>
-        </div>
-      )}
+          {filteredItems.length === 0 && (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No files found</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Educational Books Search Tab */}
+        <TabsContent value="books" className="space-y-4">
+          <div className="flex gap-4">
+            <div className="relative flex-1 max-w-2xl">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search for educational books (e.g., 'Python programming', 'Mathematics', 'History')..."
+                value={bookSearchQuery}
+                onChange={(e) => setBookSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchBooks(bookSearchQuery)}
+                className="pl-10"
+              />
+            </div>
+            <Button 
+              onClick={() => handleSearchBooks(bookSearchQuery)}
+              disabled={searchingBooks || !bookSearchQuery.trim()}
+            >
+              {searchingBooks ? 'Searching...' : 'Search'}
+            </Button>
+          </div>
+
+          {searchingBooks && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          )}
+
+          {!searchingBooks && books.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {books.map((book) => (
+                <Card key={book.id} className="border-border/50 hover:shadow-lg transition-shadow overflow-hidden">
+                  <CardContent className="p-0">
+                    {book.thumbnail && (
+                      <div className="w-full h-48 bg-muted flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={book.thumbnail} 
+                          alt={book.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-sm line-clamp-2">{book.title}</h3>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {book.source === 'google' ? 'Google' : 'OpenLib'}
+                        </Badge>
+                      </div>
+                      
+                      {book.authors.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          by {book.authors.slice(0, 2).join(', ')}
+                          {book.authors.length > 2 && ' et al.'}
+                        </p>
+                      )}
+
+                      {book.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-3">
+                          {book.description}
+                        </p>
+                      )}
+
+                      <div className="flex gap-2 flex-wrap">
+                        {book.categories?.slice(0, 2).map((cat, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {cat}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+                        <div className="flex gap-3">
+                          {book.publishedDate && <span>{book.publishedDate}</span>}
+                          {book.pageCount && <span>{book.pageCount} pages</span>}
+                        </div>
+                        {book.previewLink && (
+                          <a 
+                            href={book.previewLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
+                            <BookOpen className="h-3 w-3" />
+                            <span>View</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {!searchingBooks && books.length === 0 && bookSearchQuery && (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No books found. Try a different search term.</p>
+            </div>
+          )}
+
+          {!searchingBooks && books.length === 0 && !bookSearchQuery && (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Search for educational books using Google Books and Open Library</p>
+              <p className="text-sm text-muted-foreground mt-2">Try searching for topics like "Programming", "Mathematics", "Science", etc.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
