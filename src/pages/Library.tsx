@@ -1,17 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Upload, Download, FileText, Search, Trash2, File, BookOpen, ExternalLink } from "lucide-react";
+import { Search, BookOpen } from "lucide-react";
 import { useEditMode } from "@/contexts/EditModeContext";
 
 interface LibraryItem {
@@ -47,6 +44,7 @@ const CATEGORIES = ["General", "Course Materials", "Assignments", "References", 
 export default function Library() {
   const { user } = useAuth();
   const { isAdmin } = useEditMode();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   // Book search state
@@ -57,10 +55,6 @@ export default function Library() {
   // Recommended books state
   const [recommendedBooks, setRecommendedBooks] = useState<BookResult[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
-
-  // Book preview state
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<BookResult | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -162,9 +156,8 @@ export default function Library() {
   };
 
 
-  const handleBookPreview = (book: BookResult) => {
-    setSelectedBook(book);
-    setPreviewDialogOpen(true);
+  const handleBookClick = (book: BookResult) => {
+    navigate(`/library/${book.id}`, { state: { book } });
   };
 
   const handleSearchBooks = async (query: string) => {
@@ -240,7 +233,7 @@ export default function Library() {
                 <Card 
                   key={book.id} 
                   className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden cursor-pointer"
-                  onClick={() => handleBookPreview(book)}
+                  onClick={() => handleBookClick(book)}
                 >
                   <CardContent className="p-0">
                     {book.thumbnail && (
@@ -321,7 +314,7 @@ export default function Library() {
                 <Card 
                   key={book.id} 
                   className="border-border/50 hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
-                  onClick={() => handleBookPreview(book)}
+                  onClick={() => handleBookClick(book)}
                 >
                   <CardContent className="p-0">
                     {book.thumbnail && (
@@ -386,110 +379,6 @@ export default function Library() {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Book Detail Dialog */}
-      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-2xl pr-8">{selectedBook?.title}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto space-y-6">
-            {/* Book Information Section */}
-            <div className="grid md:grid-cols-[200px,1fr] gap-6">
-              {selectedBook?.thumbnail && (
-                <div className="flex justify-center md:justify-start">
-                  <img 
-                    src={selectedBook.thumbnail} 
-                    alt={selectedBook.title}
-                    className="w-48 h-64 object-cover rounded-lg shadow-lg"
-                  />
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                {/* Authors */}
-                {selectedBook?.authors && selectedBook.authors.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Authors</h3>
-                    <p className="text-base">{selectedBook.authors.join(', ')}</p>
-                  </div>
-                )}
-
-                {/* Publisher & Date */}
-                <div className="flex gap-6 flex-wrap">
-                  {selectedBook?.publisher && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">Publisher</h3>
-                      <p className="text-base">{selectedBook.publisher}</p>
-                    </div>
-                  )}
-                  {selectedBook?.publishedDate && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">Published</h3>
-                      <p className="text-base">{selectedBook.publishedDate}</p>
-                    </div>
-                  )}
-                  {selectedBook?.pageCount && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">Pages</h3>
-                      <p className="text-base">{selectedBook.pageCount}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Categories */}
-                {selectedBook?.categories && selectedBook.categories.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Categories</h3>
-                    <div className="flex gap-2 flex-wrap">
-                      {selectedBook.categories.map((cat, idx) => (
-                        <Badge key={idx} variant="secondary">
-                          {cat}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            {selectedBook?.description && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">About this book</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {selectedBook.description}
-                </p>
-              </div>
-            )}
-
-            {/* Google Books Preview */}
-            {selectedBook?.previewLink && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Book Preview</h3>
-                <div className="w-full border border-border rounded-lg p-8 bg-muted/30 flex flex-col items-center justify-center gap-4">
-                  <BookOpen className="h-16 w-16 text-primary/60" />
-                  <div className="text-center space-y-2">
-                    <p className="text-lg font-medium">Preview this book on Google Books</p>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Due to security restrictions, book previews open in a new window where you can read sample pages, search inside the book, and get more details.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => window.open(selectedBook.previewLink.replace('http:', 'https:'), '_blank', 'noopener,noreferrer')}
-                    size="lg"
-                    className="mt-2"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open Book Preview
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
