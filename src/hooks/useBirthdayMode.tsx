@@ -9,23 +9,39 @@ export function useBirthdayMode() {
   const setBirthdayModeForCurrentUser = async (enabled: boolean) => {
     if (!user) return;
 
+    // Update local state and theme immediately for snappy UI
     setBirthdayMode(enabled);
-
     if (enabled) {
       document.documentElement.classList.add("birthday-mode");
     } else {
       document.documentElement.classList.remove("birthday-mode");
     }
 
-    const { error } = await supabase
+    // Persist preference without relying on ON CONFLICT
+    const { data, error: fetchError } = await supabase
       .from("user_preferences")
-      .upsert(
-        {
-          user_id: user.id,
-          birthday_mode: enabled,
-        },
-        { onConflict: "user_id" }
-      );
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Failed to fetch birthday preference for current user", fetchError);
+    }
+
+    let error = null as any;
+
+    if (data?.id) {
+      const { error: updateError } = await supabase
+        .from("user_preferences")
+        .update({ birthday_mode: enabled })
+        .eq("id", data.id);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from("user_preferences")
+        .insert({ user_id: user.id, birthday_mode: enabled });
+      error = insertError;
+    }
 
     if (error) {
       console.error("Failed to update birthday mode for current user", error);
