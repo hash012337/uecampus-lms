@@ -104,9 +104,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         } else {
           document.documentElement.classList.remove("birthday-mode");
         }
-        toast.success(`Your birthday mode ${enabled ? "enabled" : "disabled"}`);
+        toast.success("Your birthday mode updated");
       } else {
-        toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
+        toast.success("User birthday mode updated");
       }
     }
   };
