@@ -465,7 +465,9 @@ export default function Guides() {
             </div>
           )}
         </TabsContent>
+      </Tabs>
 
+      {/* Search Results - Separate Section */}
       {guides && (
         <div className="mt-6">
           <div className="mb-4">
@@ -597,7 +599,6 @@ export default function Guides() {
           </Tabs>
         </div>
       )}
-      </Tabs>
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">

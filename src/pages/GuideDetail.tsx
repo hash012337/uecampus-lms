@@ -298,30 +298,35 @@ export default function GuideDetail() {
                 </div>
               )}
 
-              {/* Article Preview */}
+              {/* Article Content Card */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold">Article Preview</h2>
+                  <h2 className="text-2xl font-bold">Read Full Article</h2>
+                </div>
+                <div className="border-2 border-border rounded-lg p-6 bg-card space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="font-semibold">Full article available on Dev.to</p>
+                        <p className="text-sm text-muted-foreground">
+                          Click below to read the complete article with code examples and interactive features
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <Button
-                    variant="outline"
-                    size="sm"
+                    className="w-full"
+                    size="lg"
                     onClick={() => window.open(article.url, "_blank")}
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open in Dev.to
+                    <ExternalLink className="h-5 w-5 mr-2" />
+                    Read Full Article on Dev.to
                   </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Opens in a new tab for the best reading experience
+                  </p>
                 </div>
-                <div className="w-full h-[800px] border-2 border-border rounded-lg overflow-hidden bg-background">
-                  <iframe
-                    src={article.url}
-                    className="w-full h-full"
-                    title={article.title}
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  If the preview does not load, click "Open in Dev.to" above
-                </p>
               </div>
             </div>
           </div>
