@@ -77,38 +77,40 @@ export default function Library() {
 
       if (enrollError) throw enrollError;
 
+      let searchTerms: string[] = [];
+
       if (!enrollments || enrollments.length === 0) {
-        setRecommendedBooks([]);
-        return;
+        // No enrollments - show default educational topics
+        searchTerms = ['Computer Science', 'Mathematics', 'Business', 'Engineering'];
+      } else {
+        // Fetch course details
+        const courseIds = enrollments.map(e => e.course_id);
+        const { data: courses, error: coursesError } = await supabase
+          .from('courses')
+          .select('title, category, subcategory')
+          .in('id', courseIds);
+
+        if (coursesError) throw coursesError;
+
+        if (!courses || courses.length === 0) {
+          // Fallback to default topics
+          searchTerms = ['Computer Science', 'Mathematics', 'Business', 'Engineering'];
+        } else {
+          // Extract unique search terms from course titles and categories
+          const termsSet = new Set<string>();
+          courses.forEach(course => {
+            if (course.category) termsSet.add(course.category);
+            if (course.subcategory) termsSet.add(course.subcategory);
+            // Add main topic from title (first few words)
+            const titleWords = course.title.split(' ').slice(0, 3).join(' ');
+            termsSet.add(titleWords);
+          });
+          searchTerms = Array.from(termsSet).slice(0, 3);
+        }
       }
 
-      // Fetch course details
-      const courseIds = enrollments.map(e => e.course_id);
-      const { data: courses, error: coursesError } = await supabase
-        .from('courses')
-        .select('title, category, subcategory')
-        .in('id', courseIds);
-
-      if (coursesError) throw coursesError;
-
-      if (!courses || courses.length === 0) {
-        setRecommendedBooks([]);
-        return;
-      }
-
-      // Extract unique search terms from course titles and categories
-      const searchTerms = new Set<string>();
-      courses.forEach(course => {
-        if (course.category) searchTerms.add(course.category);
-        if (course.subcategory) searchTerms.add(course.subcategory);
-        // Add main topic from title (first few words)
-        const titleWords = course.title.split(' ').slice(0, 3).join(' ');
-        searchTerms.add(titleWords);
-      });
-
-      // Search for books based on course topics (limit to 3 terms for performance)
-      const termsArray = Array.from(searchTerms).slice(0, 3);
-      const bookPromises = termsArray.map(term => 
+      // Search for books based on topics (limit to 4 terms for performance)
+      const bookPromises = searchTerms.slice(0, 4).map(term => 
         supabase.functions.invoke('search-books', {
           body: { query: term, maxResults: 5 }
         })
