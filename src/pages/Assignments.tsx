@@ -28,6 +28,7 @@ interface Assignment {
   submitted_date: string | null;
   grade: string | null;
   feedback: string | null;
+  attempts: number;
 }
 
 export default function Assignments() {
@@ -42,6 +43,10 @@ export default function Assignments() {
   const [users, setUsers] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [filterUserId, setFilterUserId] = useState<string>("all");
+  const [extraAttemptsDialogOpen, setExtraAttemptsDialogOpen] = useState(false);
+  const [selectedAssignmentForAttempts, setSelectedAssignmentForAttempts] = useState<string>("");
+  const [selectedUserForAttempts, setSelectedUserForAttempts] = useState<string>("");
+  const [extraAttemptsCount, setExtraAttemptsCount] = useState<number>(1);
 
   useEffect(() => {
     if (user) {
@@ -142,6 +147,38 @@ export default function Assignments() {
     return submissions.filter(s => s.user_id === filterUserId);
   };
 
+  const getUserSubmissionCount = (assignmentId: string, userId: string) => {
+    return submissions.filter(s => s.assignment_id === assignmentId && s.user_id === userId).length;
+  };
+
+  const grantExtraAttempts = async () => {
+    if (!selectedAssignmentForAttempts || !selectedUserForAttempts) {
+      toast.error("Please select both assignment and user");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("assignment_extra_attempts")
+        .upsert({
+          assignment_id: selectedAssignmentForAttempts,
+          user_id: selectedUserForAttempts,
+          extra_attempts: extraAttemptsCount,
+          granted_by: user?.id
+        });
+
+      if (error) throw error;
+
+      toast.success(`Granted ${extraAttemptsCount} extra attempt(s)`);
+      setExtraAttemptsDialogOpen(false);
+      setSelectedAssignmentForAttempts("");
+      setSelectedUserForAttempts("");
+      setExtraAttemptsCount(1);
+    } catch (error: any) {
+      toast.error("Failed to grant extra attempts");
+    }
+  };
+
   const handlePdfUpload = async () => {
     if (!pdfFile || !selectedUser) {
       toast.error("Please select a user and upload a PDF");
@@ -207,7 +244,8 @@ export default function Assignments() {
           course_code: "CODE",
           status: status,
           points: 100,
-          priority: "medium"
+          priority: "medium",
+          attempts: 2
         })
         .select()
         .single();
@@ -343,7 +381,67 @@ export default function Assignments() {
 
       {isAdmin ? (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Submitted Assignments</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Submitted Assignments</h2>
+            <Dialog open={extraAttemptsDialogOpen} onOpenChange={setExtraAttemptsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Grant Extra Attempts
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Grant Extra Submission Attempts</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label>Select Assignment</Label>
+                    <Select value={selectedAssignmentForAttempts} onValueChange={setSelectedAssignmentForAttempts}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose assignment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assignments.map((assignment) => (
+                          <SelectItem key={assignment.id} value={assignment.id}>
+                            {assignment.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Select User</Label>
+                    <Select value={selectedUserForAttempts} onValueChange={setSelectedUserForAttempts}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Extra Attempts</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={extraAttemptsCount}
+                      onChange={(e) => setExtraAttemptsCount(parseInt(e.target.value) || 1)}
+                      placeholder="Number of extra attempts"
+                    />
+                  </div>
+                  <Button onClick={grantExtraAttempts} className="w-full">
+                    Grant Attempts
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           {assignments.map((assignment) => {
             const assignmentSubmissions = getFilteredSubmissions().filter(
               s => s.assignment_id === assignment.id
@@ -369,6 +467,9 @@ export default function Assignments() {
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Attempts used: {getUserSubmissionCount(assignment.id, submission.user_id)} / {assignment.attempts}
                         </p>
                         {submission.marks_obtained !== null && (
                           <Badge className="mt-2 bg-success/20 text-success">
@@ -481,6 +582,18 @@ export default function Assignments() {
                         placeholder="Points"
                       />
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Attempts Allowed</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={a.attempts || 2}
+                          onChange={(e) => updateAssignment(a.id, "attempts", parseInt(e.target.value))}
+                          placeholder="Attempts"
+                        />
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -495,6 +608,9 @@ export default function Assignments() {
                       <Badge variant="outline">
                         <Clock className="h-3 w-3 mr-1" />
                         {a.hours_left}h left
+                      </Badge>
+                      <Badge variant="outline">
+                        {a.attempts} attempt(s) allowed
                       </Badge>
                     </div>
                     {(() => {
