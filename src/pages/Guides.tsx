@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Youtube, FileText, Clock, Eye, Loader2, BookOpen } from "lucide-react";
+import { Search, Youtube, FileText, Clock, Eye, Loader2, BookOpen, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface YouTubeVideo {
   id: string;
@@ -50,6 +52,13 @@ export default function Guides() {
   const [recommendedGuides, setRecommendedGuides] = useState<GuidesData | null>(null);
   const [loadingRecommended, setLoadingRecommended] = useState(false);
   const { toast } = useToast();
+
+  // Study Guide Generation State
+  const [studyGuideTopic, setStudyGuideTopic] = useState("");
+  const [studyGuideDifficulty, setStudyGuideDifficulty] = useState("intermediate");
+  const [includeExamples, setIncludeExamples] = useState(true);
+  const [generatedGuide, setGeneratedGuide] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     loadRecommendedGuides();
@@ -119,6 +128,46 @@ export default function Guides() {
     navigate(`/guides/article/${article.id}`, { state: { article } });
   };
 
+  const handleGenerateStudyGuide = async () => {
+    if (!studyGuideTopic.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a topic for the study guide",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setGeneratedGuide(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-study-guide", {
+        body: {
+          topic: studyGuideTopic.trim(),
+          difficulty: studyGuideDifficulty,
+          includeExamples,
+        },
+      });
+
+      if (error) throw error;
+
+      setGeneratedGuide(data.studyGuide);
+      toast({
+        title: "Success",
+        description: "Study guide generated successfully!",
+      });
+    } catch (error) {
+      console.error("Error generating study guide:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate study guide. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const formatDuration = (duration: string) => {
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
     if (!match) return "";
@@ -174,8 +223,12 @@ export default function Guides() {
       </form>
 
       <Tabs defaultValue="recommended" className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsList className="grid w-full max-w-3xl grid-cols-4">
           <TabsTrigger value="recommended">Recommended</TabsTrigger>
+          <TabsTrigger value="study-guide" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Study Guide
+          </TabsTrigger>
           <TabsTrigger value="youtube" className="flex items-center gap-2">
             <Youtube className="h-4 w-4" />
             Videos
@@ -185,6 +238,96 @@ export default function Guides() {
             Articles
           </TabsTrigger>
         </TabsList>
+
+        {/* AI Study Guide Generator Tab */}
+        <TabsContent value="study-guide" className="mt-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                    AI-Powered Study Guide Generator
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Generate custom study guides tailored to your learning needs using AI
+                  </p>
+                </div>
+
+                <div className="grid gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Topic</label>
+                    <Input
+                      placeholder="e.g., React Hooks, Python Data Structures, Machine Learning..."
+                      value={studyGuideTopic}
+                      onChange={(e) => setStudyGuideTopic(e.target.value)}
+                      disabled={isGenerating}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Difficulty Level</label>
+                      <Select
+                        value={studyGuideDifficulty}
+                        onValueChange={setStudyGuideDifficulty}
+                        disabled={isGenerating}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="beginner">Beginner</SelectItem>
+                          <SelectItem value="intermediate">Intermediate</SelectItem>
+                          <SelectItem value="advanced">Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center space-x-2 mt-8">
+                      <Checkbox
+                        id="examples"
+                        checked={includeExamples}
+                        onCheckedChange={(checked) => setIncludeExamples(checked as boolean)}
+                        disabled={isGenerating}
+                      />
+                      <label htmlFor="examples" className="text-sm font-medium">
+                        Include practical examples & exercises
+                      </label>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleGenerateStudyGuide}
+                    disabled={isGenerating || !studyGuideTopic.trim()}
+                    className="w-full"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating Study Guide...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Study Guide
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {generatedGuide && (
+                  <div className="mt-6 p-6 border border-border rounded-lg bg-muted/50">
+                    <h3 className="text-xl font-bold mb-4">Your Study Guide</h3>
+                    <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">
+                      {generatedGuide}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Recommended Guides Tab */}
         <TabsContent value="recommended" className="mt-6">
