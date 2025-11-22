@@ -41,12 +41,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedUserBirthdayMode, setSelectedUserBirthdayMode] = useState(false);
-  const [adminBirthdayMode, setAdminBirthdayMode] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
-      checkAdminBirthdayMode();
     }
   }, [isAdmin, user]);
 
@@ -55,18 +53,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       checkSelectedUserBirthdayMode();
     }
   }, [selectedUserId]);
-
-  const checkAdminBirthdayMode = async () => {
-    if (!user) return;
-    
-    const { data } = await supabase
-      .from("user_preferences")
-      .select("birthday_mode")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    
-    setAdminBirthdayMode(data?.birthday_mode || false);
-  };
 
   const checkSelectedUserBirthdayMode = async () => {
     if (!selectedUserId) return;
@@ -86,45 +72,34 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       .select("id, email, full_name");
     
     if (data) {
-      setUsers(data);
+      setUsers(user ? data.filter((u) => u.id !== user.id) : data);
     }
   };
 
   const toggleBirthdayMode = async (userId: string, enabled: boolean) => {
     const { error } = await supabase
       .from("user_preferences")
-      .upsert({
-        user_id: userId,
-        birthday_mode: enabled,
-      }, {
-        onConflict: "user_id",
-      });
+      .upsert(
+        {
+          user_id: userId,
+          birthday_mode: enabled,
+        },
+        {
+          onConflict: "user_id",
+        }
+      );
 
     if (error) {
       toast.error("Failed to update birthday mode");
     } else {
-      setSelectedUserBirthdayMode(enabled);
-      toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
-    }
-  };
-
-  const toggleAdminBirthdayMode = async (enabled: boolean) => {
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("user_preferences")
-      .upsert({
-        user_id: user.id,
-        birthday_mode: enabled,
-      }, {
-        onConflict: "user_id",
-      });
-
-    if (error) {
-      toast.error("Failed to update birthday mode");
-    } else {
-      setAdminBirthdayMode(enabled);
-      toast.success(`Your birthday mode ${enabled ? "enabled" : "disabled"}`);
+      if (userId === selectedUserId) {
+        setSelectedUserBirthdayMode(enabled);
+      }
+      if (user && userId === user.id) {
+        toast.success(`Your birthday mode ${enabled ? "enabled" : "disabled"}`);
+      } else {
+        toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
+      }
     }
   };
 
@@ -268,8 +243,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </Label>
                         <Switch
                           id="admin-birthday-mode"
-                          checked={adminBirthdayMode}
-                          onCheckedChange={toggleAdminBirthdayMode}
+                          checked={birthdayMode}
+                          onCheckedChange={(checked) => user && toggleBirthdayMode(user.id, checked)}
                         />
                       </div>
                     </div>
