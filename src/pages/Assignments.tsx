@@ -79,18 +79,37 @@ export default function Assignments() {
       // Admins fetch all submissions, regular users only their own
       let query = supabase
         .from("assignment_submissions")
-        .select("*, profiles(full_name, email)");
+        .select("*");
       
       if (!isAdmin) {
         query = query.eq("user_id", user.id);
       }
       
-      const { data, error } = await query;
+      const { data: submissionsData, error: submissionsError } = await query;
       
-      if (error) throw error;
-      if (data) setSubmissions(data);
+      if (submissionsError) throw submissionsError;
+      
+      if (submissionsData && submissionsData.length > 0) {
+        // Fetch user profiles for the submissions
+        const userIds = [...new Set(submissionsData.map(s => s.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", userIds);
+        
+        // Merge profile data with submissions
+        const submissionsWithProfiles = submissionsData.map(submission => ({
+          ...submission,
+          profiles: profilesData?.find(p => p.id === submission.user_id)
+        }));
+        
+        setSubmissions(submissionsWithProfiles);
+      } else {
+        setSubmissions([]);
+      }
     } catch (error) {
       console.error("Error fetching submissions:", error);
+      setSubmissions([]);
     }
   };
 
