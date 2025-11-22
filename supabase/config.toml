@@ -2,3 +2,9 @@ project_id = "dzgffouacmskkasnhkol"
 
 [functions.grade-assignment]
 verify_jwt = true
+
+[functions.fetch-guides]
+verify_jwt = false
+
+[functions.search-books]
+verify_jwt = false
