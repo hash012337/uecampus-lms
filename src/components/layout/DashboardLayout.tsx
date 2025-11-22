@@ -40,12 +40,45 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { birthdayMode } = useBirthdayMode();
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedUserBirthdayMode, setSelectedUserBirthdayMode] = useState(false);
+  const [adminBirthdayMode, setAdminBirthdayMode] = useState(false);
 
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
+      checkAdminBirthdayMode();
     }
-  }, [isAdmin]);
+  }, [isAdmin, user]);
+
+  useEffect(() => {
+    if (selectedUserId) {
+      checkSelectedUserBirthdayMode();
+    }
+  }, [selectedUserId]);
+
+  const checkAdminBirthdayMode = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("user_preferences")
+      .select("birthday_mode")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    setAdminBirthdayMode(data?.birthday_mode || false);
+  };
+
+  const checkSelectedUserBirthdayMode = async () => {
+    if (!selectedUserId) return;
+    
+    const { data } = await supabase
+      .from("user_preferences")
+      .select("birthday_mode")
+      .eq("user_id", selectedUserId)
+      .maybeSingle();
+    
+    setSelectedUserBirthdayMode(data?.birthday_mode || false);
+  };
 
   const fetchUsers = async () => {
     const { data } = await supabase
@@ -70,7 +103,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (error) {
       toast.error("Failed to update birthday mode");
     } else {
+      setSelectedUserBirthdayMode(enabled);
       toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
+    }
+  };
+
+  const toggleAdminBirthdayMode = async (enabled: boolean) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("user_preferences")
+      .upsert({
+        user_id: user.id,
+        birthday_mode: enabled,
+      }, {
+        onConflict: "user_id",
+      });
+
+    if (error) {
+      toast.error("Failed to update birthday mode");
+    } else {
+      setAdminBirthdayMode(enabled);
+      toast.success(`Your birthday mode ${enabled ? "enabled" : "disabled"}`);
     }
   };
 
@@ -202,9 +256,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     
-                    {/* Birthday Mode Control for Admin */}
+                    {/* Admin's own Birthday Mode */}
                     <div className="px-2 py-2">
-                      <Label className="text-sm font-medium mb-2 block">Birthday Mode</Label>
+                      <Label className="text-sm font-medium mb-2 block flex items-center gap-2">
+                        <Cake className="h-4 w-4" />
+                        My Birthday Mode
+                      </Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label htmlFor="admin-birthday-mode" className="text-xs cursor-pointer">
+                          Enable for yourself
+                        </Label>
+                        <Switch
+                          id="admin-birthday-mode"
+                          checked={adminBirthdayMode}
+                          onCheckedChange={toggleAdminBirthdayMode}
+                        />
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    
+                    {/* Birthday Mode Control for Users */}
+                    <div className="px-2 py-2">
+                      <Label className="text-sm font-medium mb-2 block">Manage User Birthday Mode</Label>
                       <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                         <SelectTrigger className="w-full mb-2">
                           <SelectValue placeholder="Select user" />
@@ -218,14 +291,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </SelectContent>
                       </Select>
                       {selectedUserId && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label htmlFor="user-birthday-mode" className="text-xs cursor-pointer">
+                            {selectedUserBirthdayMode ? "Disable" : "Enable"} Birthday Mode
+                          </Label>
                           <Switch
-                            id="birthday-mode"
+                            id="user-birthday-mode"
+                            checked={selectedUserBirthdayMode}
                             onCheckedChange={(checked) => toggleBirthdayMode(selectedUserId, checked)}
                           />
-                          <Label htmlFor="birthday-mode" className="text-xs cursor-pointer">
-                            Enable Birthday Mode
-                          </Label>
                         </div>
                       )}
                     </div>
