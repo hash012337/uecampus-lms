@@ -37,7 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isEditMode, toggleEditMode, isAdmin } = useEditMode();
   const { user, loading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { birthdayMode } = useBirthdayMode();
+  const { birthdayMode, setBirthdayModeForCurrentUser } = useBirthdayMode();
   const [users, setUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedUserBirthdayMode, setSelectedUserBirthdayMode] = useState(false);
@@ -252,7 +252,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         <Switch
                           id="admin-birthday-mode"
                           checked={birthdayMode}
-                          onCheckedChange={(checked) => user && toggleBirthdayMode(user.id, checked)}
+                          onCheckedChange={setBirthdayModeForCurrentUser}
                         />
                       </div>
                     </div>

@@ -6,6 +6,32 @@ export function useBirthdayMode() {
   const [birthdayMode, setBirthdayMode] = useState(false);
   const { user } = useAuth();
 
+  const setBirthdayModeForCurrentUser = async (enabled: boolean) => {
+    if (!user) return;
+
+    setBirthdayMode(enabled);
+
+    if (enabled) {
+      document.documentElement.classList.add("birthday-mode");
+    } else {
+      document.documentElement.classList.remove("birthday-mode");
+    }
+
+    const { error } = await supabase
+      .from("user_preferences")
+      .upsert(
+        {
+          user_id: user.id,
+          birthday_mode: enabled,
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (error) {
+      console.error("Failed to update birthday mode for current user", error);
+    }
+  };
+ 
   useEffect(() => {
     if (!user) return;
 
@@ -57,5 +83,5 @@ export function useBirthdayMode() {
     };
   }, [user]);
 
-  return { birthdayMode };
+  return { birthdayMode, setBirthdayModeForCurrentUser };
 }
