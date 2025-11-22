@@ -109,36 +109,51 @@ export default function Library() {
             const titleWords = course.title.split(' ').slice(0, 3).join(' ');
             termsSet.add(titleWords);
           });
-          searchTerms = Array.from(termsSet).slice(0, 3);
+          searchTerms = Array.from(termsSet).slice(0, 4);
         }
       }
 
-      // Search for books based on topics (limit to 4 terms for performance)
-      const bookPromises = searchTerms.slice(0, 4).map(term => 
+      // Search for books based on topics - limit to 3 books per topic for better variety
+      const bookPromises = searchTerms.map(term => 
         supabase.functions.invoke('search-books', {
-          body: { query: term, maxResults: 5 }
+          body: { query: term, maxResults: 3 }
         })
       );
 
       const results = await Promise.all(bookPromises);
       
-      // Combine and deduplicate books
-      const allBooks: BookResult[] = [];
+      // Combine books with round-robin to ensure variety
+      const booksByTopic: BookResult[][] = [];
       const seenIds = new Set<string>();
 
       results.forEach(result => {
         if (result.data?.books) {
+          const topicBooks: BookResult[] = [];
           result.data.books.forEach((book: BookResult) => {
             if (!seenIds.has(book.id)) {
               seenIds.add(book.id);
-              allBooks.push(book);
+              topicBooks.push(book);
             }
           });
+          if (topicBooks.length > 0) {
+            booksByTopic.push(topicBooks);
+          }
         }
       });
 
-      // Limit to 12 recommendations
-      setRecommendedBooks(allBooks.slice(0, 12));
+      // Round-robin distribution to ensure variety
+      const mixedBooks: BookResult[] = [];
+      let maxLength = Math.max(...booksByTopic.map(arr => arr.length));
+      
+      for (let i = 0; i < maxLength && mixedBooks.length < 12; i++) {
+        for (let j = 0; j < booksByTopic.length && mixedBooks.length < 12; j++) {
+          if (i < booksByTopic[j].length) {
+            mixedBooks.push(booksByTopic[j][i]);
+          }
+        }
+      }
+
+      setRecommendedBooks(mixedBooks);
     } catch (error) {
       console.error('Error loading recommended books:', error);
     } finally {
@@ -222,7 +237,11 @@ export default function Library() {
           ) : recommendedBooks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {recommendedBooks.map((book) => (
-                <Card key={book.id} className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden">
+                <Card 
+                  key={book.id} 
+                  className="border-border/50 hover:shadow-lg transition-all hover:scale-105 duration-300 overflow-hidden cursor-pointer"
+                  onClick={() => handleBookPreview(book)}
+                >
                   <CardContent className="p-0">
                     {book.thumbnail && (
                       <div className="w-full h-48 bg-muted flex items-center justify-center overflow-hidden">
@@ -245,29 +264,16 @@ export default function Library() {
                         </p>
                       )}
 
-                      {book.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {book.description}
-                        </p>
-                      )}
-
                       {book.categories && book.categories.length > 0 && (
                         <Badge variant="secondary" className="text-xs">
                           {book.categories[0]}
                         </Badge>
                       )}
 
-                      {book.previewLink && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleBookPreview(book)}
-                          className="flex items-center gap-1 text-xs text-primary hover:underline pt-1 h-auto p-0"
-                        >
-                          <BookOpen className="h-3 w-3" />
-                          <span>Preview Book</span>
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-1 text-xs text-primary pt-1">
+                        <BookOpen className="h-3 w-3" />
+                        <span>View Details</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -312,7 +318,11 @@ export default function Library() {
           {!searchingBooks && books.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {books.map((book) => (
-                <Card key={book.id} className="border-border/50 hover:shadow-lg transition-shadow overflow-hidden">
+                <Card 
+                  key={book.id} 
+                  className="border-border/50 hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
+                  onClick={() => handleBookPreview(book)}
+                >
                   <CardContent className="p-0">
                     {book.thumbnail && (
                       <div className="w-full h-48 bg-muted flex items-center justify-center overflow-hidden">
@@ -341,12 +351,6 @@ export default function Library() {
                         </p>
                       )}
 
-                      {book.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-3">
-                          {book.description}
-                        </p>
-                      )}
-
                       <div className="flex gap-2 flex-wrap">
                         {book.categories?.slice(0, 2).map((cat, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
@@ -355,22 +359,9 @@ export default function Library() {
                         ))}
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-                        <div className="flex gap-3">
-                          {book.publishedDate && <span>{book.publishedDate}</span>}
-                          {book.pageCount && <span>{book.pageCount} pages</span>}
-                        </div>
-                        {book.previewLink && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleBookPreview(book)}
-                            className="flex items-center gap-1 text-primary hover:underline h-auto p-0"
-                          >
-                            <BookOpen className="h-3 w-3" />
-                            <span>View</span>
-                          </Button>
-                        )}
+                      <div className="flex items-center gap-1 text-xs text-primary pt-2">
+                        <BookOpen className="h-3 w-3" />
+                        <span>View Details</span>
                       </div>
                     </div>
                   </CardContent>
@@ -396,25 +387,96 @@ export default function Library() {
         </TabsContent>
       </Tabs>
 
-      {/* Book Preview Dialog */}
+      {/* Book Detail Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-5xl h-[90vh]">
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="pr-8">{selectedBook?.title}</DialogTitle>
-            {selectedBook?.authors && selectedBook.authors.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                by {selectedBook.authors.join(', ')}
-              </p>
-            )}
+            <DialogTitle className="text-2xl pr-8">{selectedBook?.title}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 min-h-0">
+          
+          <div className="flex-1 overflow-y-auto space-y-6">
+            {/* Book Information Section */}
+            <div className="grid md:grid-cols-[200px,1fr] gap-6">
+              {selectedBook?.thumbnail && (
+                <div className="flex justify-center md:justify-start">
+                  <img 
+                    src={selectedBook.thumbnail} 
+                    alt={selectedBook.title}
+                    className="w-48 h-64 object-cover rounded-lg shadow-lg"
+                  />
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                {/* Authors */}
+                {selectedBook?.authors && selectedBook.authors.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-1">Authors</h3>
+                    <p className="text-base">{selectedBook.authors.join(', ')}</p>
+                  </div>
+                )}
+
+                {/* Publisher & Date */}
+                <div className="flex gap-6 flex-wrap">
+                  {selectedBook?.publisher && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">Publisher</h3>
+                      <p className="text-base">{selectedBook.publisher}</p>
+                    </div>
+                  )}
+                  {selectedBook?.publishedDate && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">Published</h3>
+                      <p className="text-base">{selectedBook.publishedDate}</p>
+                    </div>
+                  )}
+                  {selectedBook?.pageCount && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">Pages</h3>
+                      <p className="text-base">{selectedBook.pageCount}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Categories */}
+                {selectedBook?.categories && selectedBook.categories.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Categories</h3>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedBook.categories.map((cat, idx) => (
+                        <Badge key={idx} variant="secondary">
+                          {cat}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            {selectedBook?.description && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">About this book</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {selectedBook.description}
+                </p>
+              </div>
+            )}
+
+            {/* Google Books Preview */}
             {selectedBook?.previewLink && (
-              <iframe
-                src={selectedBook.previewLink}
-                className="w-full h-full border-0 rounded-md"
-                title={`Preview of ${selectedBook.title}`}
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-              />
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Book Preview</h3>
+                <div className="w-full h-[600px] border border-border rounded-lg overflow-hidden">
+                  <iframe
+                    src={selectedBook.previewLink.replace('http:', 'https:')}
+                    className="w-full h-full"
+                    title={`Preview of ${selectedBook.title}`}
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                  />
+                </div>
+              </div>
             )}
           </div>
         </DialogContent>
