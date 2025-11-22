@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, X, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save, LogOut } from "lucide-react";
+import { Menu, X, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save, LogOut, Moon, Sun, Cake } from "lucide-react";
+import { useTheme } from "next-themes";
 import { NotificationBell } from "./NotificationBell";
+import { useBirthdayMode } from "@/hooks/useBirthdayMode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,11 +15,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LeftSidebar } from "./LeftSidebar";
 import { RightSidebar } from "./RightSidebar";
 import { useEditMode } from "@/contexts/EditModeContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -29,6 +35,43 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const { isEditMode, toggleEditMode, isAdmin } = useEditMode();
   const { user, loading, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { birthdayMode } = useBirthdayMode();
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchUsers();
+    }
+  }, [isAdmin]);
+
+  const fetchUsers = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, email, full_name");
+    
+    if (data) {
+      setUsers(data);
+    }
+  };
+
+  const toggleBirthdayMode = async (userId: string, enabled: boolean) => {
+    const { error } = await supabase
+      .from("user_preferences")
+      .upsert({
+        user_id: userId,
+        birthday_mode: enabled,
+      }, {
+        onConflict: "user_id",
+      });
+
+    if (error) {
+      toast.error("Failed to update birthday mode");
+    } else {
+      toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -100,6 +143,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="hover:bg-primary/20 hover:text-primary transition-all duration-300"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             <NotificationBell />
             
             {/* Settings Dropdown with Edit Mode */}
@@ -141,6 +195,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </>
                       )}
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    
+                    {/* Birthday Mode Control for Admin */}
+                    <div className="px-2 py-2">
+                      <Label className="text-sm font-medium mb-2 block">Birthday Mode</Label>
+                      <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                        <SelectTrigger className="w-full mb-2">
+                          <SelectValue placeholder="Select user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.full_name || u.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedUserId && (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="birthday-mode"
+                            onCheckedChange={(checked) => toggleBirthdayMode(selectedUserId, checked)}
+                          />
+                          <Label htmlFor="birthday-mode" className="text-xs cursor-pointer">
+                            Enable Birthday Mode
+                          </Label>
+                        </div>
+                      )}
+                    </div>
                     <DropdownMenuSeparator />
                   </>
                 )}
