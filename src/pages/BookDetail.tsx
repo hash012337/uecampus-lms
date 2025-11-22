@@ -1,7 +1,15 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+
+// Declare Google Books Viewer
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 interface BookResult {
   id: string;
@@ -22,6 +30,50 @@ export default function BookDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const book = location.state?.book as BookResult;
+  const viewerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!book?.previewLink) return;
+
+    // Extract book ID from preview link or use the book.id
+    let bookId = book.id;
+    if (book.source === 'google') {
+      // Extract the actual Google Books ID from our custom ID format (google-XXXXX)
+      bookId = book.id.replace('google-', '');
+    }
+
+    // Load Google Books API
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/books/jsapi.js';
+    script.async = true;
+    
+    script.onload = () => {
+      if (window.google && window.google.books) {
+        window.google.books.load();
+        
+        const initialize = () => {
+          if (viewerRef.current && window.google.books) {
+            const viewer = new window.google.books.DefaultViewer(viewerRef.current);
+            viewer.load(bookId);
+          }
+        };
+
+        if (window.google.books.setOnLoadCallback) {
+          window.google.books.setOnLoadCallback(initialize);
+        } else {
+          initialize();
+        }
+      }
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, [book]);
 
   if (!book) {
     return (
@@ -151,16 +203,13 @@ export default function BookDetail() {
                     Open in New Tab
                   </Button>
                 </div>
-                <div className="w-full h-[800px] border-2 border-border rounded-lg overflow-hidden bg-muted/30">
-                  <iframe
-                    src={book.previewLink.replace('http:', 'https:')}
-                    className="w-full h-full"
-                    title={`Preview of ${book.title}`}
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                  />
-                </div>
+                <div 
+                  ref={viewerRef}
+                  className="w-full h-[800px] border-2 border-border rounded-lg overflow-hidden bg-background"
+                  id="viewerCanvas"
+                />
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  If the preview doesn't load, click "Open in New Tab" above
+                  Preview powered by Google Books
                 </p>
               </div>
             )}
