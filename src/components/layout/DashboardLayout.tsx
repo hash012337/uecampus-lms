@@ -4,6 +4,7 @@ import { Menu, X, Search, Settings, User, ChevronLeft, ChevronRight, Edit2, Save
 import { useTheme } from "next-themes";
 import { NotificationBell } from "./NotificationBell";
 import { useBirthdayMode } from "@/hooks/useBirthdayMode";
+import { BirthdayCelebration } from "@/components/BirthdayCelebration";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -112,6 +113,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Birthday Celebration Component */}
+      <BirthdayCelebration />
+      
       {/* Top Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 shadow-lg">
         <div className="flex h-16 items-center gap-4 px-4">
