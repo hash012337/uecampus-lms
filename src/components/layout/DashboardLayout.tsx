@@ -92,10 +92,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (error) {
       toast.error("Failed to update birthday mode");
     } else {
+      // Update local UI state for selected user
       if (userId === selectedUserId) {
         setSelectedUserBirthdayMode(enabled);
       }
+
+      // If this is the current logged-in user, immediately update the theme class
       if (user && userId === user.id) {
+        if (enabled) {
+          document.documentElement.classList.add("birthday-mode");
+        } else {
+          document.documentElement.classList.remove("birthday-mode");
+        }
         toast.success(`Your birthday mode ${enabled ? "enabled" : "disabled"}`);
       } else {
         toast.success(`Birthday mode ${enabled ? "enabled" : "disabled"} for user`);
