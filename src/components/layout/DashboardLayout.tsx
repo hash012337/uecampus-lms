@@ -77,37 +77,53 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const toggleBirthdayMode = async (userId: string, enabled: boolean) => {
-    const { error } = await supabase
+    // Look up existing preference for this user
+    const { data, error: fetchError } = await supabase
       .from("user_preferences")
-      .upsert(
-        {
-          user_id: userId,
-          birthday_mode: enabled,
-        },
-        {
-          onConflict: "user_id",
-        }
-      );
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Failed to fetch birthday preference for user", fetchError);
+    }
+
+    let error = null as any;
+
+    if (data?.id) {
+      const { error: updateError } = await supabase
+        .from("user_preferences")
+        .update({ birthday_mode: enabled })
+        .eq("id", data.id);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from("user_preferences")
+        .insert({ user_id: userId, birthday_mode: enabled });
+      error = insertError;
+    }
 
     if (error) {
+      console.error("Failed to update birthday mode", error);
       toast.error("Failed to update birthday mode");
-    } else {
-      // Update local UI state for selected user
-      if (userId === selectedUserId) {
-        setSelectedUserBirthdayMode(enabled);
-      }
+      return;
+    }
 
-      // If this is the current logged-in user, immediately update the theme class
-      if (user && userId === user.id) {
-        if (enabled) {
-          document.documentElement.classList.add("birthday-mode");
-        } else {
-          document.documentElement.classList.remove("birthday-mode");
-        }
-        toast.success("Your birthday mode updated");
+    // Update local UI state for selected user
+    if (userId === selectedUserId) {
+      setSelectedUserBirthdayMode(enabled);
+    }
+
+    // If this is the current logged-in user, immediately update the theme class
+    if (user && userId === user.id) {
+      if (enabled) {
+        document.documentElement.classList.add("birthday-mode");
       } else {
-        toast.success("User birthday mode updated");
+        document.documentElement.classList.remove("birthday-mode");
       }
+      toast.success("Your birthday mode updated");
+    } else {
+      toast.success("User birthday mode updated");
     }
   };
 
