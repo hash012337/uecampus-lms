@@ -736,8 +736,9 @@ export default function CourseDetail() {
       <div className="h-screen flex flex-col bg-background">
         <div className="absolute top-4 left-4 z-50">
           <Link to="/courses">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="outline" className="gap-2 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Courses
             </Button>
           </Link>
         </div>
@@ -821,44 +822,36 @@ export default function CourseDetail() {
                       <CollapsibleContent className="border-t">
                         <div className="p-2 space-y-1">
                           {sectionMaterials.map((material) => (
-                            <div key={material.id} className="group">
+                            <button
+                              key={material.id}
+                              onClick={() => setSelectedFile(material.file_type === "application/brief" ? {
+                                ...material,
+                                _isBrief: true,
+                                assessment_brief: material.description,
+                                file_path: material.file_path
+                              } : material)}
+                              className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
+                                selectedFile?.id === material.id ? 'bg-accent' : ''
+                              }`}
+                            >
                               <button
-                                onClick={() => setSelectedFile(material.file_type === "application/brief" ? {
-                                  ...material,
-                                  _isBrief: true,
-                                  assessment_brief: material.description,
-                                  file_path: material.file_path
-                                } : material)}
-                                className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
-                                  selectedFile?.id === material.id ? 'bg-accent' : ''
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkComplete(material.id);
+                                }}
+                                className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer hover:border-primary transition-colors ${
+                                  material.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
                                 }`}
                               >
-                                <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                  material.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
-                                }`}>
-                                  {material.completed && (
-                                    <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </div>
-                                {getFileIcon(material.file_type)}
-                                <span className="truncate text-left flex-1">{material.title}</span>
+                                {material.completed && (
+                                  <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
                               </button>
-                              {!isAdmin && (
-                                <div className="px-3 pb-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full text-xs"
-                                    onClick={() => handleMarkComplete(material.id)}
-                                  >
-                                    <BookOpen className="h-3 w-3 mr-1" />
-                                    {completedMaterials.has(material.id) ? 'Completed ✓' : 'Mark Complete'}
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
+                              {getFileIcon(material.file_type)}
+                              <span className="truncate text-left flex-1">{material.title}</span>
+                            </button>
                           ))}
                           
                           {sectionAssignments.map((assignment) => (
