@@ -390,6 +390,7 @@ export function FileViewer({ file }: FileViewerProps) {
   const isTextLesson = file.file_type?.includes("text/html");
   const isWord = file.file_type?.includes("word") || file.file_type?.includes("document");
   const isPowerpoint = file.file_type?.includes("presentation") || file.file_type?.includes("powerpoint");
+  const isGoogleDrive = file.file_type === "google_drive";
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -437,6 +438,16 @@ export function FileViewer({ file }: FileViewerProps) {
             />
           </div>
         )}
+        {isGoogleDrive && file.file_path && (
+          <div className="h-full">
+            <iframe
+              src={file.file_path}
+              className="w-full h-full border-0"
+              title={file.title}
+              allow="autoplay"
+            />
+          </div>
+        )}
         {(isWord || isPowerpoint) && fileUrl && (
           <iframe
             src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
@@ -444,7 +455,7 @@ export function FileViewer({ file }: FileViewerProps) {
             title={file.title}
           />
         )}
-        {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && (
+        {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && !isGoogleDrive && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center p-12">
               <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
