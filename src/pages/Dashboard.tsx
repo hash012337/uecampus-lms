@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Clock, Video, PlayCircle, CheckCircle2, AlertCircle, Plus, Trash2, Copy, Edit2, Calendar } from "lucide-react";
 import { WelcomeDialog } from "@/components/WelcomeDialog";
+import LMSGuides from "@/components/LMSGuides";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEditMode } from "@/contexts/EditModeContext";
@@ -23,7 +24,7 @@ interface Course {
 }
 
 export default function Dashboard() {
-  const { isEditMode } = useEditMode();
+  const { isEditMode, isAdmin } = useEditMode();
   const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [stats, setStats] = useState({
@@ -296,6 +297,17 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
+      </div>
+
+      {/* LMS Guides Section */}
+      <div className="space-y-4 mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">LMS Learning Guides</h2>
+          <Button variant="outline" onClick={() => window.location.href = '/guides'}>
+            View All
+          </Button>
+        </div>
+        <LMSGuides isAdmin={isAdmin} maxDisplay={3} showUploadButton={false} />
       </div>
     </div>
   );

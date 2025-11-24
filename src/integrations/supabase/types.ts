@@ -764,6 +764,48 @@ export type Database = {
           },
         ]
       }
+      lms_guides: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          file_path: string | null
+          guide_type: string
+          id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          uploaded_by: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          file_path?: string | null
+          guide_type: string
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          file_path?: string | null
+          guide_type?: string
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       meta_courses: {
         Row: {
           child_course_id: string
