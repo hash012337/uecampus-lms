@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import CourseGuides from "@/components/CourseGuides";
+import LMSGuides from "@/components/LMSGuides";
 import { useEditMode } from "@/contexts/EditModeContext";
 
 interface YouTubeVideo {
@@ -228,7 +229,7 @@ export default function Guides() {
       <Tabs defaultValue="recommended" className="w-full">
         <TabsList className="grid w-full max-w-4xl grid-cols-5">
           <TabsTrigger value="recommended">Recommended</TabsTrigger>
-          <TabsTrigger value="course-guides">Course Guides</TabsTrigger>
+          <TabsTrigger value="lms-guides">LMS Guides</TabsTrigger>
           <TabsTrigger value="study-guide" className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             AI Study Guide
@@ -333,9 +334,9 @@ export default function Guides() {
           </Card>
         </TabsContent>
 
-        {/* Course Guides Tab */}
-        <TabsContent value="course-guides" className="mt-6">
-          <CourseGuides isAdmin={isAdmin} />
+        {/* LMS Guides Tab */}
+        <TabsContent value="lms-guides" className="mt-6">
+          <LMSGuides isAdmin={isAdmin} />
         </TabsContent>
 
         {/* Recommended Guides Tab */}
