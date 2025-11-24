@@ -35,7 +35,13 @@ export default function Profile() {
 
       if (data) {
         setFullName(data.full_name || "");
-        setAvatarUrl(data.avatar_url || "");
+        const url = data.avatar_url || "";
+        setAvatarUrl(url);
+        try {
+          if (url) localStorage.setItem("avatar_url", url);
+        } catch {
+          // ignore
+        }
         setUserId(data.user_id || "Not assigned");
       }
     } catch (error) {
@@ -66,6 +72,11 @@ export default function Profile() {
         .getPublicUrl(filePath);
 
       setAvatarUrl(publicUrl);
+      try {
+        localStorage.setItem("avatar_url", publicUrl);
+      } catch {
+        // ignore
+      }
 
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
