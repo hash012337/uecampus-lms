@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Award, Calendar, Hash } from "lucide-react";
+import { Download, Award, Calendar, Hash, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -170,6 +170,54 @@ export default function Certificates() {
     }
   };
 
+  const printCertificate = (certificate: any) => {
+    const element = document.getElementById(`certificate-${certificate.id}`);
+    if (!element) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow popups to print certificates");
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Certificate - ${certificate.certificate_number}</title>
+          <style>
+            @media print {
+              @page {
+                size: A4 landscape;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+              }
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: system-ui, -apple-system, sans-serif;
+            }
+          </style>
+        </head>
+        <body>
+          ${element.outerHTML}
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -326,14 +374,24 @@ export default function Certificates() {
               </div>
               
               <CardContent className="p-4 bg-muted/30">
-                <Button 
-                  onClick={() => downloadCertificate(cert)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Certificate
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => downloadCertificate(cert)}
+                    className="flex-1"
+                    variant="outline"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </Button>
+                  <Button 
+                    onClick={() => printCertificate(cert)}
+                    className="flex-1"
+                    variant="outline"
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print Certificate
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
