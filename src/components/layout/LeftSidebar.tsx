@@ -39,7 +39,14 @@ export function LeftSidebar() {
   const { user } = useAuth();
   const [userName, setUserName] = useState("Student");
   const [userRole, setUserRole] = useState("Student");
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return localStorage.getItem("avatar_url") || "";
+    } catch {
+      return "";
+    }
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -55,6 +62,11 @@ export function LeftSidebar() {
         }
         if (profileData?.avatar_url) {
           setAvatarUrl(profileData.avatar_url);
+          try {
+            localStorage.setItem("avatar_url", profileData.avatar_url);
+          } catch {
+            // ignore
+          }
         }
 
         const { data: roleData } = await supabase
@@ -84,7 +96,13 @@ export function LeftSidebar() {
         },
         (payload) => {
           if (payload.new.avatar_url) {
-            setAvatarUrl(payload.new.avatar_url as string);
+            const newUrl = payload.new.avatar_url as string;
+            setAvatarUrl(newUrl);
+            try {
+              localStorage.setItem("avatar_url", newUrl);
+            } catch {
+              // ignore
+            }
           }
           if (payload.new.full_name) {
             setUserName(payload.new.full_name as string);
