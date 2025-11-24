@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       assignment_deadlines: {
         Row: {
           assignment_id: string
@@ -677,6 +704,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_blocked: boolean | null
           updated_at: string | null
           user_id: string | null
         }
@@ -686,6 +714,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_blocked?: boolean | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -695,6 +724,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_blocked?: boolean | null
           updated_at?: string | null
           user_id?: string | null
         }

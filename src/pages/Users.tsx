@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Users as UsersIcon, UserPlus } from "lucide-react";
+import { Plus, Trash2, Edit2, Users as UsersIcon, UserPlus, Lock, Ban, LogIn, Shield } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
+import { Switch } from "@/components/ui/switch";
 
 const userSchema = z.object({
   email: z.string().email("Invalid email address").trim(),
@@ -24,6 +25,8 @@ interface User {
   email: string;
   full_name: string;
   roles: string[];
+  is_blocked: boolean;
+  user_id: string | null;
 }
 
 interface Cohort {
@@ -38,6 +41,10 @@ export default function Users() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [courses, setCourses] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     user_id: "",
@@ -46,6 +53,11 @@ export default function Users() {
     full_name: "",
     role: "student",
     course_id: "",
+  });
+  const [editFormData, setEditFormData] = useState({
+    full_name: "",
+    email: "",
+    role: "student",
   });
 
   useEffect(() => {
@@ -79,6 +91,8 @@ export default function Users() {
         email: profile.email,
         full_name: profile.full_name || "",
         roles: roles?.filter((r) => r.user_id === profile.id).map((r) => r.role) || [],
+        is_blocked: profile.is_blocked || false,
+        user_id: profile.user_id,
       })) || [];
 
       setUsers(usersWithRoles);
@@ -190,6 +204,155 @@ export default function Users() {
     }
   };
 
+  const handleToggleBlock = async (user: User) => {
+    const newBlockedState = !user.is_blocked;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_blocked: newBlockedState })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success(`User ${newBlockedState ? "blocked" : "unblocked"} successfully`);
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error.message || `Failed to ${newBlockedState ? "block" : "unblock"} user`);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser || !newPassword) {
+      toast.error("Please enter a new password");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            userId: selectedUser.id,
+            newPassword,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to reset password");
+      }
+
+      toast.success("Password reset successfully");
+      setPasswordDialogOpen(false);
+      setNewPassword("");
+      setSelectedUser(null);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to reset password");
+    }
+  };
+
+  const handleImpersonate = async (user: User) => {
+    if (!confirm(`Login as ${user.full_name}? This action will be logged.`)) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-impersonate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            userId: user.id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to impersonate user");
+      }
+
+      const data = await response.json();
+      
+      // Open impersonation link in new tab
+      window.open(data.impersonationUrl, "_blank");
+      toast.success("Impersonation link opened in new tab");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to impersonate user");
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditFormData({
+      full_name: user.full_name,
+      email: user.email,
+      role: user.roles[0] || "student",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ 
+          full_name: editFormData.full_name,
+        })
+        .eq("id", selectedUser.id);
+
+      if (profileError) throw profileError;
+
+      // Update role if changed
+      if (editFormData.role !== selectedUser.roles[0]) {
+        // Delete old role
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", selectedUser.id);
+
+        // Insert new role
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert([{
+            user_id: selectedUser.id,
+            role: editFormData.role as "admin" | "teacher" | "non_editing_teacher" | "student" | "user",
+          }]);
+
+        if (roleError) throw roleError;
+      }
+
+      toast.success("User updated successfully");
+      setEditDialogOpen(false);
+      setSelectedUser(null);
+      loadUsers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update user");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -298,6 +461,78 @@ export default function Users() {
         </Dialog>
       </div>
 
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_full_name">Full Name</Label>
+              <Input
+                id="edit_full_name"
+                value={editFormData.full_name}
+                onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_email">Email (Read-only)</Label>
+              <Input
+                id="edit_email"
+                value={editFormData.email}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_role">Role</Label>
+              <Select value={editFormData.role} onValueChange={(value) => setEditFormData({ ...editFormData, role: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="non_editing_teacher">Non-editing Teacher</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleUpdateUser} className="w-full">
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Reset password for: <strong>{selectedUser?.full_name}</strong>
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="new_password">New Password</Label>
+              <Input
+                id="new_password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+              />
+            </div>
+            <Button onClick={handleResetPassword} className="w-full">
+              Reset Password
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="users" className="space-y-4">
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
@@ -308,31 +543,85 @@ export default function Users() {
           <div className="grid gap-4">
             {users.map((user) => (
               <Card key={user.id} className="border-border/50">
-                <CardContent className="flex items-center justify-between p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <UsersIcon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{user.full_name}</h3>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <div className="flex gap-2 mt-2">
-                        {user.roles.map((role) => (
-                          <Badge key={role} variant="secondary">
-                            {role}
-                          </Badge>
-                        ))}
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <UsersIcon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{user.full_name}</h3>
+                          {user.is_blocked && (
+                            <Badge variant="destructive" className="text-xs">
+                              Blocked
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        {user.user_id && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ID: {user.user_id}
+                          </p>
+                        )}
+                        <div className="flex gap-2 mt-2">
+                          {user.roles.map((role) => (
+                            <Badge key={role} variant="secondary">
+                              {role}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditUser(user)}
+                        title="Edit user"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setPasswordDialogOpen(true);
+                        }}
+                        title="Reset password"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggleBlock(user)}
+                        title={user.is_blocked ? "Unblock user" : "Block user"}
+                        className={user.is_blocked ? "text-green-600" : "text-orange-600"}
+                      >
+                        <Ban className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleImpersonate(user)}
+                        title="Login as this user"
+                        className="text-blue-600"
+                      >
+                        <LogIn className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="text-destructive hover:text-destructive"
+                        title="Delete user"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteUser(user.id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </CardContent>
               </Card>
             ))}

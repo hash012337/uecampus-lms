@@ -17,10 +17,11 @@ export function useAuth() {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check admin status when session changes
+        // Check admin status and blocked status when session changes
         if (session?.user) {
           setTimeout(() => {
             checkAdminStatus(session.user.id);
+            checkBlockedStatus(session.user.id);
           }, 0);
         } else {
           setIsAdmin(false);
@@ -35,6 +36,7 @@ export function useAuth() {
       
       if (session?.user) {
         checkAdminStatus(session.user.id);
+        checkBlockedStatus(session.user.id);
       }
       
       setLoading(false);
@@ -42,6 +44,30 @@ export function useAuth() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkBlockedStatus = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("is_blocked")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.is_blocked) {
+        await supabase.auth.signOut();
+        navigate("/auth");
+        throw new Error("Your account has been blocked. Please contact administrator.");
+      }
+    } catch (error: any) {
+      if (error.message.includes("blocked")) {
+        // Already handled
+      } else {
+        console.error("Error checking blocked status:", error);
+      }
+    }
+  };
 
   const checkAdminStatus = async (userId: string) => {
     try {
