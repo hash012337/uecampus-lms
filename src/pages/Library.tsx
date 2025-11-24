@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, BookOpen } from "lucide-react";
 import { useEditMode } from "@/contexts/EditModeContext";
+import CourseBooks from "@/components/CourseBooks";
 
 interface LibraryItem {
   id: string;
@@ -201,9 +202,10 @@ export default function Library() {
 
       {/* Tabs for Recommended Books and Book Search */}
       <Tabs defaultValue="recommended" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-3xl grid-cols-3">
           <TabsTrigger value="recommended">Recommended Books</TabsTrigger>
           <TabsTrigger value="search">Search Educational Books</TabsTrigger>
+          <TabsTrigger value="course-books">Course Books</TabsTrigger>
         </TabsList>
 
         {/* Recommended Books Tab */}
@@ -377,6 +379,11 @@ export default function Library() {
               <p className="text-sm text-muted-foreground mt-2">Try searching for topics like "Programming", "Mathematics", "Science", etc.</p>
             </div>
           )}
+        </TabsContent>
+
+        {/* Course Books Tab */}
+        <TabsContent value="course-books">
+          <CourseBooks isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
     </div>

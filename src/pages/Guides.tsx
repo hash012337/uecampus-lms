@@ -10,6 +10,8 @@ import { Search, Youtube, FileText, Clock, Eye, Loader2, BookOpen, Sparkles } fr
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import CourseGuides from "@/components/CourseGuides";
+import { useEditMode } from "@/contexts/EditModeContext";
 
 interface YouTubeVideo {
   id: string;
@@ -46,6 +48,7 @@ interface GuidesData {
 
 export default function Guides() {
   const navigate = useNavigate();
+  const { isAdmin } = useEditMode();
   const [query, setQuery] = useState("");
   const [guides, setGuides] = useState<GuidesData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -223,8 +226,9 @@ export default function Guides() {
       </form>
 
       <Tabs defaultValue="recommended" className="w-full">
-        <TabsList className="grid w-full max-w-3xl grid-cols-4">
+        <TabsList className="grid w-full max-w-4xl grid-cols-5">
           <TabsTrigger value="recommended">Recommended</TabsTrigger>
+          <TabsTrigger value="course-guides">Course Guides</TabsTrigger>
           <TabsTrigger value="study-guide" className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             AI Study Guide
@@ -327,6 +331,11 @@ export default function Guides() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Course Guides Tab */}
+        <TabsContent value="course-guides" className="mt-6">
+          <CourseGuides isAdmin={isAdmin} />
         </TabsContent>
 
         {/* Recommended Guides Tab */}
