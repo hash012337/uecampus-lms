@@ -83,8 +83,10 @@ export default function CourseDetail() {
     duration: 30
   });
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
-  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | null>(null);
+  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | "google_drive" | null>(null);
   const [fileDisplayName, setFileDisplayName] = useState("");
+  const [googleDriveUrl, setGoogleDriveUrl] = useState("");
+  const [googleDriveTitle, setGoogleDriveTitle] = useState("");
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
   const [deadlineDialogOpen, setDeadlineDialogOpen] = useState(false);
   const [selectedAssignmentForDeadline, setSelectedAssignmentForDeadline] = useState<any>(null);
@@ -582,6 +584,7 @@ export default function CourseDetail() {
     if (fileType?.includes("video")) return <Video className="h-4 w-4" />;
     if (fileType?.includes("pdf")) return <FileText className="h-4 w-4" />;
     if (fileType?.includes("text/html")) return <BookOpen className="h-4 w-4" />;
+    if (fileType === "google_drive") return <File className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
   };
 
@@ -735,6 +738,52 @@ export default function CourseDetail() {
       loadCourseData();
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete assignment');
+    }
+  };
+
+  const handleAddGoogleDrive = async () => {
+    if (!googleDriveUrl || !googleDriveTitle || !currentSectionId) {
+      toast.error("Please provide both title and URL");
+      return;
+    }
+    
+    try {
+      // Convert Google Drive link to embed format if needed
+      let embedUrl = googleDriveUrl;
+      
+      // Handle different Google Drive URL formats
+      if (googleDriveUrl.includes('/file/d/')) {
+        const fileId = googleDriveUrl.match(/\/file\/d\/([^/]+)/)?.[1];
+        if (fileId) {
+          embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+        }
+      } else if (googleDriveUrl.includes('/open?id=')) {
+        const fileId = googleDriveUrl.match(/[?&]id=([^&]+)/)?.[1];
+        if (fileId) {
+          embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+        }
+      }
+
+      const { error } = await supabase.from("course_materials").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: googleDriveTitle,
+        file_path: embedUrl,
+        file_type: "google_drive",
+        description: embedUrl,
+        is_hidden: false
+      });
+
+      if (error) throw error;
+      
+      toast.success("Google Drive content added");
+      setGoogleDriveUrl("");
+      setGoogleDriveTitle("");
+      setActivityDialogOpen(false);
+      setActivityType(null);
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add Google Drive content");
     }
   };
 
@@ -1274,6 +1323,7 @@ export default function CourseDetail() {
                                 activityType === "file" ? "Upload Files" :
                                 activityType === "assignment" ? "Add Assignment" :
                                 activityType === "brief" ? "Add Assignment Brief" :
+                                activityType === "google_drive" ? "Add Google Drive Content" :
                                 "Add Quiz"}
                             </DialogTitle>
                           </DialogHeader>
@@ -1319,6 +1369,14 @@ export default function CourseDetail() {
                               >
                                 <FileQuestion className="h-8 w-8 text-purple-600" />
                                 <span>Quiz</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("google_drive")}
+                              >
+                                <File className="h-8 w-8 text-green-600" />
+                                <span>Google Drive</span>
                               </Button>
                             </div>
                           ) : activityType === "text" ? (
@@ -1502,7 +1560,7 @@ export default function CourseDetail() {
                                 loadCourseData();
                               }} className="w-full">Add Brief</Button>
                             </div>
-                          ) : (
+                          ) : activityType === "quiz" ? (
                             <div className="space-y-4">
                               <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
                                 ← Back
@@ -1529,7 +1587,35 @@ export default function CourseDetail() {
                                 setActivityType(null);
                               }} className="w-full">Add Link</Button>
                             </div>
-                          )}
+                          ) : activityType === "google_drive" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>Display Title</Label>
+                                <Input 
+                                  value={googleDriveTitle} 
+                                  onChange={(e) => setGoogleDriveTitle(e.target.value)}
+                                  placeholder="Enter a title for this content" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Google Drive Link</Label>
+                                <Input 
+                                  value={googleDriveUrl} 
+                                  onChange={(e) => setGoogleDriveUrl(e.target.value)}
+                                  placeholder="Paste Google Drive share link" 
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Make sure the file is set to "Anyone with the link can view"
+                                </p>
+                              </div>
+                              <Button onClick={handleAddGoogleDrive} className="w-full">
+                                Add Google Drive Content
+                              </Button>
+                            </div>
+                          ) : null}
                         </DialogContent>
                       </Dialog>
                     </div>
