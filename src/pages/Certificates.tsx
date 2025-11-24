@@ -251,15 +251,15 @@ export default function Certificates() {
                 className="relative p-12 border-8 border-double"
                 style={{ 
                   minHeight: "500px",
-                  background: 'linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--background)) 50%, hsl(var(--accent) / 0.05) 100%)',
-                  borderColor: 'hsl(var(--primary) / 0.2)'
+                  background: 'linear-gradient(135deg, hsl(var(--primary) / 0.02) 0%, hsl(var(--background)) 50%, hsl(var(--accent) / 0.02) 100%)',
+                  borderColor: 'hsl(var(--primary) / 0.15)'
                 }}
               >
                 {/* Decorative corner elements */}
-                <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
-                <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
-                <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
-                <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
+                <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4" style={{ borderColor: 'hsl(var(--primary) / 0.2)' }} />
+                <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4" style={{ borderColor: 'hsl(var(--primary) / 0.2)' }} />
+                <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4" style={{ borderColor: 'hsl(var(--primary) / 0.2)' }} />
+                <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4" style={{ borderColor: 'hsl(var(--primary) / 0.2)' }} />
                 
                 {/* Certificate content */}
                 <div className="text-center space-y-6 relative z-10">
