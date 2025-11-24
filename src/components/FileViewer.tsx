@@ -174,7 +174,7 @@ export function FileViewer({ file }: FileViewerProps) {
   };
 
   useEffect(() => {
-    if (file && !file._isAssignment && !file._isQuiz && !file._isBrief) {
+    if (file && !file._isAssignment && !file._isQuiz && !file._isBrief && file.file_type !== "google_drive") {
       loadFile();
     }
     if (file && file._isAssignment) {
