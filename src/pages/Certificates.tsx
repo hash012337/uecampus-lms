@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import ueCampusLogo from "@/assets/ue-campus-logo.png";
 
 export default function Certificates() {
   const { user } = useAuth();
@@ -227,7 +228,11 @@ export default function Certificates() {
                 {/* Certificate content */}
                 <div className="text-center space-y-6 relative z-10">
                   <div className="inline-block">
-                    <Award className="h-20 w-20 text-primary mx-auto mb-4" />
+                    <img 
+                      src={ueCampusLogo} 
+                      alt="UE Campus Logo" 
+                      className="h-24 w-auto mx-auto mb-4"
+                    />
                   </div>
                   
                   <div className="space-y-2">
