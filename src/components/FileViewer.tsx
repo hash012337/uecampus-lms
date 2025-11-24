@@ -429,7 +429,10 @@ export function FileViewer({ file }: FileViewerProps) {
         {isTextLesson && file.description && (
           <div className="max-w-4xl mx-auto p-8">
             <div 
-              className="prose prose-lg dark:prose-invert max-w-none [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-lg [&_video]:w-full [&_video]:aspect-video [&_video]:rounded-lg"
+              className="prose prose-lg dark:prose-invert max-w-none 
+                [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-lg [&_iframe]:border-0
+                [&_video]:w-full [&_video]:max-w-full [&_video]:h-auto [&_video]:rounded-lg [&_video]:shadow-lg
+                [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg"
               dangerouslySetInnerHTML={{ __html: file.description }}
             />
           </div>
