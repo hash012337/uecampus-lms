@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useEditMode } from "@/contexts/EditModeContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Quiz {
   id: string;
@@ -19,16 +20,18 @@ interface Quiz {
   status: string | null;
   difficulty: string | null;
   best_score: number | null;
+  user_best_score?: number | null;
 }
 
 export default function Quizzes() {
   const { isEditMode } = useEditMode();
+  const { user } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchQuizzes();
-  }, []);
+  }, [user]);
 
   const fetchQuizzes = async () => {
     try {
@@ -38,7 +41,28 @@ export default function Quizzes() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      if (data) setQuizzes(data);
+      
+      if (data && user) {
+        // Fetch user's quiz progress
+        const { data: progressData } = await supabase
+          .from("progress_tracking")
+          .select("quiz_id, percentage, score, max_score")
+          .eq("user_id", user.id)
+          .eq("item_type", "quiz");
+
+        // Map user scores to quizzes
+        const quizzesWithUserScores = data.map(quiz => {
+          const userProgress = progressData?.find(p => p.quiz_id === quiz.id);
+          return {
+            ...quiz,
+            user_best_score: userProgress?.percentage || null
+          };
+        });
+        
+        setQuizzes(quizzesWithUserScores);
+      } else if (data) {
+        setQuizzes(data);
+      }
     } catch (error) {
       console.error("Error fetching quizzes:", error);
     } finally {
@@ -121,8 +145,8 @@ export default function Quizzes() {
 
   if (loading) return <div className="animate-fade-in">Loading...</div>;
 
-  const completed = quizzes.filter(q => q.status === "completed").length;
-  const avgScore = quizzes.filter(q => q.best_score).reduce((sum, q) => sum + (q.best_score || 0), 0) / (completed || 1);
+  const completed = quizzes.filter(q => q.user_best_score !== null && q.user_best_score !== undefined).length;
+  const avgScore = quizzes.filter(q => q.user_best_score).reduce((sum, q) => sum + (q.user_best_score || 0), 0) / (completed || 1);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -235,10 +259,10 @@ export default function Quizzes() {
                       <p className="font-semibold">{q.duration} min</p>
                     </div>
                   </div>
-                  {q.best_score && (
+                  {q.user_best_score !== null && q.user_best_score !== undefined && (
                     <div>
-                      <Progress value={q.best_score} className="h-2" />
-                      <p className="text-sm mt-1">Best: {q.best_score}%</p>
+                      <Progress value={q.user_best_score} className="h-2" />
+                      <p className="text-sm mt-1">Your Best: {q.user_best_score}%</p>
                     </div>
                   )}
                   <Button className="w-full bg-gradient-primary">
