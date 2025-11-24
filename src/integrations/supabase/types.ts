@@ -233,6 +233,50 @@ export type Database = {
         }
         Relationships: []
       }
+      certificates: {
+        Row: {
+          certificate_number: string
+          completion_date: string
+          course_id: string
+          created_at: string | null
+          generated_by: string | null
+          id: string
+          issued_date: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          certificate_number: string
+          completion_date: string
+          course_id: string
+          created_at?: string | null
+          generated_by?: string | null
+          id?: string
+          issued_date?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          certificate_number?: string
+          completion_date?: string
+          course_id?: string
+          created_at?: string | null
+          generated_by?: string | null
+          id?: string
+          issued_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cohort_enrollments: {
         Row: {
           auto_sync: boolean | null

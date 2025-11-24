@@ -630,6 +630,22 @@ export default function CourseDetail() {
     }
   };
 
+  const handleUpdateMaterial = async (materialId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('course_materials')
+        .update(updates)
+        .eq('id', materialId);
+
+      if (error) throw error;
+
+      toast.success('Material updated');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update material');
+    }
+  };
+
   const handleSetUserDeadline = async () => {
     if (!selectedAssignmentForDeadline || !selectedUserForDeadline || !customDeadline) {
       toast.error("Please fill all fields");
@@ -1104,6 +1120,7 @@ export default function CourseDetail() {
                       materials={materials.filter(m => m.section_id === section.id)}
                       onReorder={(reordered) => handleReorderMaterials(section.id, reordered)}
                       onDelete={handleDeleteMaterial}
+                      onUpdate={handleUpdateMaterial}
                       getFileIcon={getFileIcon}
                     />
                     {materials.filter(m => m.section_id === section.id).map((material) => (
