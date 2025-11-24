@@ -148,8 +148,15 @@ export default function CourseDetail() {
       .eq('status', 'completed');
     
     if (data) {
-      const completed = new Set(data.map(item => item.id));
-      setCompletedMaterials(completed);
+      // Create a set of completed material IDs, assignment IDs, and quiz IDs
+      const completedItemIds = new Set<string>();
+      data.forEach(item => {
+        if (item.assignment_id) completedItemIds.add(item.assignment_id);
+        // For materials, we need to track by a different mechanism
+        // Since progress_tracking doesn't have material_id, we'll handle materials separately
+      });
+      
+      setCompletedMaterials(completedItemIds);
       
       // Calculate progress percentage
       const totalItems = materials.length + assignments.length;
@@ -846,8 +853,20 @@ export default function CourseDetail() {
 
   // Student View - No layout, just back arrow and content
   if (!isAdmin) {
-    const totalItems = materials.length + assignments.length;
-    const completedItems = materials.filter(m => m.completed).length + assignments.filter(a => a.status === 'completed').length;
+    const totalItems = materials.length + assignments.length + sectionQuizzes.length;
+    
+    // Count completed items from all sources
+    const completedMaterialsCount = materials.filter(m => completedMaterials.has(m.id)).length;
+    
+    // Count completed assignments (from submissions)
+    const completedAssignmentsCount = assignments.filter(a => {
+      return userSubmissions.some(sub => sub.assignment_id === a.id);
+    }).length;
+    
+    // Count completed quizzes (from progress tracking)
+    const completedQuizzesCount = sectionQuizzes.filter(q => completedMaterials.has(q.id)).length;
+    
+    const completedItems = completedMaterialsCount + completedAssignmentsCount + completedQuizzesCount;
     const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
     return (
@@ -896,14 +915,22 @@ export default function CourseDetail() {
                 {sections.map((section, index) => {
                   const sectionMaterials = materials.filter(m => m.section_id === section.id);
                   const sectionAssignments = assignments.filter(a => a.unit_name === section.id);
-                  const sectionTotal = sectionMaterials.length + sectionAssignments.length;
-                  const sectionCompleted = sectionMaterials.filter(m => m.completed).length + 
-                                          sectionAssignments.filter(a => a.status === 'completed').length;
+                  const sectionQuizzesInSection = sectionQuizzes.filter(q => q.section_id === section.id);
+                  const sectionTotal = sectionMaterials.length + sectionAssignments.length + sectionQuizzesInSection.length;
+                  
+                  // Count completed items in section
+                  const completedMaterialsInSection = sectionMaterials.filter(m => completedMaterials.has(m.id)).length;
+                  const completedAssignmentsInSection = sectionAssignments.filter(a => 
+                    userSubmissions.some(sub => sub.assignment_id === a.id)
+                  ).length;
+                  const completedQuizzesInSection = sectionQuizzesInSection.filter(q => completedMaterials.has(q.id)).length;
+                  
+                  const sectionCompleted = completedMaterialsInSection + completedAssignmentsInSection + completedQuizzesInSection;
                   
                   return (
                     <Collapsible
                       key={section.id}
-                      open={!isAdmin ? true : openSections[section.id]}
+                      open={openSections[section.id]}
                       onOpenChange={() => toggleSection(section.id)}
                       className="border rounded-lg overflow-hidden bg-card"
                     >
@@ -980,7 +1007,8 @@ export default function CourseDetail() {
                                 onClick={() => setSelectedFile({
                                   ...assignment,
                                   file_type: 'assignment',
-                                  _isAssignment: true
+                                  _isAssignment: true,
+                                  course_id: courseId
                                 })}
                                 className={`flex items-center gap-3 w-full p-3 rounded-md text-sm hover:bg-accent transition-colors ${
                                   selectedFile?._isAssignment && selectedFile?.id === assignment.id ? 'bg-accent' : ''
