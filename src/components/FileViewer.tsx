@@ -133,6 +133,9 @@ export function FileViewer({ file }: FileViewerProps) {
       toast.success("Assignment submitted successfully!");
       setSubmissionFile(null);
       loadUserSubmissions(); // Reload submissions
+      
+      // Trigger a page reload to update the circle in navigation
+      window.location.reload();
     } catch (error: any) {
       console.error("Error submitting assignment:", error);
       toast.error(error.message || "Failed to submit assignment");
