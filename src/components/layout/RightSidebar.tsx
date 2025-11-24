@@ -35,34 +35,48 @@ export function RightSidebar() {
 
   const fetchDeadlines = async () => {
     try {
-      const { data } = await supabase
+      if (!user) return;
+
+      // Get all assignments
+      const { data: assignments } = await supabase
         .from("assignments")
         .select("*")
-        .eq("status", "pending")
-        .order("due_date", { ascending: true })
-        .limit(3);
+        .order("due_date", { ascending: true });
 
-      if (data) {
-        const deadlinesWithHours = data.map((assignment) => {
-          const dueDate = new Date(assignment.due_date || new Date());
-          const now = new Date();
-          const hoursLeft = Math.max(
-            0,
-            Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60))
-          );
+      if (!assignments) return;
 
-          return {
-            id: assignment.id,
-            title: assignment.title,
-            course: assignment.course_code,
-            due_date: assignment.due_date || "",
-            priority: assignment.priority || "medium",
-            hours_left: hoursLeft,
-          };
-        });
+      // Get user's submissions
+      const { data: submissions } = await supabase
+        .from("assignment_submissions")
+        .select("assignment_id")
+        .eq("user_id", user.id);
 
-        setDeadlines(deadlinesWithHours);
-      }
+      const submittedIds = new Set(submissions?.map(s => s.assignment_id) || []);
+
+      // Filter out submitted assignments
+      const unsubmittedAssignments = assignments
+        .filter(a => !submittedIds.has(a.id))
+        .slice(0, 3);
+
+      const deadlinesWithHours = unsubmittedAssignments.map((assignment) => {
+        const dueDate = new Date(assignment.due_date || new Date());
+        const now = new Date();
+        const hoursLeft = Math.max(
+          0,
+          Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60))
+        );
+
+        return {
+          id: assignment.id,
+          title: assignment.title,
+          course: assignment.course_code,
+          due_date: assignment.due_date || "",
+          priority: assignment.priority || "medium",
+          hours_left: hoursLeft,
+        };
+      });
+
+      setDeadlines(deadlinesWithHours);
     } catch (error) {
       console.error("Error fetching deadlines:", error);
     }
@@ -72,20 +86,29 @@ export function RightSidebar() {
     try {
       if (!user) return;
 
-      // Fetch completed assignments
-      const { data: completedAssignments } = await supabase
-        .from("assignments")
-        .select("*")
-        .eq("status", "completed");
+      // Get today's date range
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      // Fetch progress tracking for study time estimation
-      const { data: progressData } = await supabase
+      // Fetch today's completed items
+      const { data: todayProgress } = await supabase
+        .from("progress_tracking")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .gte("completed_at", today.toISOString())
+        .lt("completed_at", tomorrow.toISOString());
+
+      // Fetch all completed progress for study time
+      const { data: allProgress } = await supabase
         .from("progress_tracking")
         .select("*")
         .eq("user_id", user.id)
         .eq("status", "completed");
 
-      // Calculate streak (days with activity)
+      // Calculate streak (consecutive days with activity)
       const { data: recentProgress } = await supabase
         .from("progress_tracking")
         .select("completed_at")
@@ -95,31 +118,44 @@ export function RightSidebar() {
 
       let streak = 0;
       if (recentProgress && recentProgress.length > 0) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Group by date
+        const dateSet = new Set<string>();
+        recentProgress.forEach(item => {
+          const date = new Date(item.completed_at!);
+          const dateStr = date.toISOString().split('T')[0];
+          dateSet.add(dateStr);
+        });
         
-        let currentDate = new Date(today);
-        for (const item of recentProgress) {
-          const itemDate = new Date(item.completed_at!);
-          itemDate.setHours(0, 0, 0, 0);
-          
-          if (itemDate.getTime() === currentDate.getTime()) {
+        const sortedDates = Array.from(dateSet).sort().reverse();
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        // Check if there's activity today or yesterday to start counting
+        let currentDate = new Date(todayStr);
+        if (!sortedDates.includes(todayStr)) {
+          // If no activity today, check yesterday
+          currentDate.setDate(currentDate.getDate() - 1);
+        }
+        
+        // Count consecutive days
+        for (const dateStr of sortedDates) {
+          const checkDateStr = currentDate.toISOString().split('T')[0];
+          if (dateStr === checkDateStr) {
             streak++;
             currentDate.setDate(currentDate.getDate() - 1);
-          } else {
+          } else if (new Date(dateStr) < currentDate) {
             break;
           }
         }
       }
 
-      // Estimate study time (rough calculation)
-      const studyHours = (progressData?.length || 0) * 2;
-      const hours = Math.floor(studyHours);
-      const minutes = Math.floor((studyHours % 1) * 60);
+      // Estimate study time based on completed items (assume 30 min per item)
+      const totalMinutes = (allProgress?.length || 0) * 30;
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
 
       setStats({
         studyTime: `${hours}h ${minutes}m`,
-        completedTasks: completedAssignments?.length || 0,
+        completedTasks: todayProgress?.length || 0,
         streak,
       });
     } catch (error) {
