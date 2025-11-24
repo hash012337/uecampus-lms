@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useEditMode } from "@/contexts/EditModeContext";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const navigationItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -38,18 +39,22 @@ export function LeftSidebar() {
   const { user } = useAuth();
   const [userName, setUserName] = useState("Student");
   const [userRole, setUserRole] = useState("Student");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, avatar_url")
           .eq("id", user.id)
           .single();
 
         if (profileData?.full_name) {
           setUserName(profileData.full_name);
+        }
+        if (profileData?.avatar_url) {
+          setAvatarUrl(profileData.avatar_url);
         }
 
         const { data: roleData } = await supabase
@@ -65,6 +70,32 @@ export function LeftSidebar() {
     };
 
     fetchUserData();
+
+    // Set up realtime subscription to update avatar when changed
+    const channel = supabase
+      .channel('profile_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user?.id}`
+        },
+        (payload) => {
+          if (payload.new.avatar_url) {
+            setAvatarUrl(payload.new.avatar_url as string);
+          }
+          if (payload.new.full_name) {
+            setUserName(payload.new.full_name as string);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
   
   return (
@@ -73,9 +104,12 @@ export function LeftSidebar() {
       <div className="mb-4 pb-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow">
-              <User className="h-5 w-5 text-white" />
-            </div>
+            <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-glow">
+              <AvatarImage src={avatarUrl} alt={userName} />
+              <AvatarFallback className="bg-gradient-primary text-white">
+                {userName ? userName.charAt(0).toUpperCase() : <User className="h-5 w-5" />}
+              </AvatarFallback>
+            </Avatar>
             <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-accent animate-pulse" />
           </div>
           <div>
