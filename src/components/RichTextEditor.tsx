@@ -1,6 +1,7 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Youtube from '@tiptap/extension-youtube';
+import Link from '@tiptap/extension-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bold, Italic, List, ListOrdered, Heading2, Youtube as YoutubeIcon, Video, Link as LinkIcon, Upload } from 'lucide-react';
@@ -18,6 +19,9 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [showDriveInput, setShowDriveInput] = useState(false);
   const [driveUrl, setDriveUrl] = useState("");
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkText, setLinkText] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const editor = useEditor({
@@ -26,6 +30,13 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       Youtube.configure({
         width: 640,
         height: 360,
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
       }),
     ],
     content,
@@ -62,6 +73,19 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       }
       setDriveUrl("");
       setShowDriveInput(false);
+    }
+  };
+
+  const addLink = () => {
+    if (linkUrl && linkText && editor) {
+      editor
+        .chain()
+        .focus()
+        .insertContent(`<a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`)
+        .run();
+      setLinkUrl("");
+      setLinkText("");
+      setShowLinkInput(false);
     }
   };
 
@@ -176,6 +200,15 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           variant="ghost"
           size="sm"
           onClick={() => setShowDriveInput(!showDriveInput)}
+          title="Embed Google Drive"
+        >
+          <LinkIcon className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowLinkInput(!showLinkInput)}
+          title="Add Link"
         >
           <LinkIcon className="h-4 w-4" />
         </Button>
@@ -203,7 +236,25 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         </div>
       )}
       
-      <EditorContent 
+      {showLinkInput && (
+        <div className="p-2 border-b flex flex-col gap-2">
+          <Input
+            placeholder="Link Text (what users will see)"
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Input
+              placeholder="Paste URL (Google Drive link or any URL)"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+            />
+            <Button size="sm" onClick={addLink}>Add Link</Button>
+          </div>
+        </div>
+      )}
+      
+      <EditorContent
         editor={editor} 
         className="min-h-[200px] max-h-[400px] overflow-y-auto focus:outline-none [&_.ProseMirror]:p-4 [&_.ProseMirror]:min-h-[200px] [&_.ProseMirror]:outline-none [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:mt-4 [&_.ProseMirror_h2]:mb-2 [&_.ProseMirror_p]:mb-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:ml-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:ml-6 [&_.ProseMirror_iframe]:max-w-full [&_.ProseMirror_iframe]:aspect-video [&_.ProseMirror_video]:max-w-full [&_.ProseMirror_video]:aspect-video"
       />
