@@ -27,12 +27,27 @@ export default function Auth() {
     try {
       const validated = loginSchema.parse({ email, password });
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: validated.email,
         password: validated.password,
       });
 
       if (error) throw error;
+
+      // Check if user is blocked
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_blocked")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profile?.is_blocked) {
+          await supabase.auth.signOut();
+          navigate("/blocked");
+          return;
+        }
+      }
 
       toast.success("Welcome back!");
       navigate("/dashboard");
