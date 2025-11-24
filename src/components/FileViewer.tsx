@@ -36,6 +36,7 @@ export function FileViewer({ file }: FileViewerProps) {
   const [submitting, setSubmitting] = useState(false);
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [totalAttempts, setTotalAttempts] = useState(file?.attempts || 2);
 
   const loadFile = async () => {
     if (!file || !file.file_path) return;
@@ -178,6 +179,26 @@ export function FileViewer({ file }: FileViewerProps) {
     }
     if (file && file._isAssignment) {
       loadUserSubmissions();
+      
+      // Load total attempts for assignments
+      const getTotalAttempts = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setTotalAttempts(file.attempts || 2);
+          return;
+        }
+        
+        const { data: extraAttempts } = await supabase
+          .from('assignment_extra_attempts')
+          .select('extra_attempts')
+          .eq('assignment_id', file.id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setTotalAttempts((file.attempts || 2) + (extraAttempts?.extra_attempts || 0));
+      };
+      
+      getTotalAttempts();
     }
   }, [file]);
 
@@ -251,28 +272,6 @@ export function FileViewer({ file }: FileViewerProps) {
   // Assignment view
   if (file._isAssignment) {
     const latestSubmission = userSubmissions.length > 0 ? userSubmissions[0] : null;
-    
-    // Get total attempts (default assignment attempts + any extra attempts granted to user)
-    const getTotalAttempts = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return file.attempts || 2;
-      
-      const { data: extraAttempts } = await supabase
-        .from('assignment_extra_attempts')
-        .select('extra_attempts')
-        .eq('assignment_id', file.id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      return (file.attempts || 2) + (extraAttempts?.extra_attempts || 0);
-    };
-
-    const [totalAttempts, setTotalAttempts] = React.useState(file.attempts || 2);
-    
-    React.useEffect(() => {
-      getTotalAttempts().then(setTotalAttempts);
-    }, [file.id]);
-
     const attemptNumber = userSubmissions.length;
     const hasAttemptsRemaining = attemptNumber < totalAttempts;
 
