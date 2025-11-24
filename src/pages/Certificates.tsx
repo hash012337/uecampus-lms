@@ -17,6 +17,7 @@ export default function Certificates() {
   const [certificates, setCertificates] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [certificateUsers, setCertificateUsers] = useState<Record<string, any>>({});
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
@@ -75,7 +76,24 @@ export default function Certificates() {
     }
 
     const { data } = await query;
-    if (data) setCertificates(data);
+    if (data) {
+      setCertificates(data);
+      
+      // Load user profiles for all certificate holders
+      const userIds = [...new Set(data.map((cert: any) => cert.user_id))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", userIds);
+      
+      if (profilesData) {
+        const usersMap: Record<string, any> = {};
+        profilesData.forEach((profile: any) => {
+          usersMap[profile.id] = profile;
+        });
+        setCertificateUsers(usersMap);
+      }
+    }
   };
 
   const handleManualGenerate = async () => {
@@ -115,11 +133,16 @@ export default function Certificates() {
 
     try {
       const canvas = await html2canvas(element, {
-        scale: 2,
-        backgroundColor: '#ffffff'
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
@@ -245,7 +268,7 @@ export default function Certificates() {
                   <div className="space-y-4 py-8">
                     <p className="text-lg text-muted-foreground">This is to certify that</p>
                     <p className="text-3xl font-bold text-foreground">
-                      {users.find(u => u.id === cert.user_id)?.full_name || "Student"}
+                      {certificateUsers[cert.user_id]?.full_name || certificateUsers[cert.user_id]?.email || "Student"}
                     </p>
                     <p className="text-lg text-muted-foreground">has successfully completed</p>
                     <p className="text-2xl font-semibold text-primary">
