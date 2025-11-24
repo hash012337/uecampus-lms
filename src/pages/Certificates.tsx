@@ -132,14 +132,18 @@ export default function Certificates() {
     if (!element) return;
 
     try {
+      // Get computed styles to preserve colors
+      const computedStyle = window.getComputedStyle(element);
+      const bgColor = computedStyle.backgroundColor;
+      
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
+        allowTaint: false,
+        backgroundColor: bgColor || '#ffffff',
         logging: false,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
+        imageTimeout: 0,
+        removeContainer: true
       });
       
       const imgData = canvas.toDataURL('image/png', 1.0);
@@ -149,10 +153,15 @@ export default function Certificates() {
         format: 'a4'
       });
       
-      const imgWidth = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 0;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
       pdf.save(`certificate-${certificate.certificate_number}.pdf`);
       
       toast.success("Certificate downloaded");
@@ -239,14 +248,18 @@ export default function Certificates() {
             <Card key={cert.id} className="overflow-hidden">
               <div 
                 id={`certificate-${cert.id}`}
-                className="relative bg-gradient-to-br from-primary/5 via-background to-accent/5 p-12 border-8 border-double border-primary/20"
-                style={{ minHeight: "500px" }}
+                className="relative p-12 border-8 border-double"
+                style={{ 
+                  minHeight: "500px",
+                  background: 'linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--background)) 50%, hsl(var(--accent) / 0.05) 100%)',
+                  borderColor: 'hsl(var(--primary) / 0.2)'
+                }}
               >
                 {/* Decorative corner elements */}
-                <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-primary/30" />
-                <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 border-primary/30" />
-                <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 border-primary/30" />
-                <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 border-primary/30" />
+                <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
+                <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
+                <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
+                <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4" style={{ borderColor: 'hsl(var(--primary) / 0.3)' }} />
                 
                 {/* Certificate content */}
                 <div className="text-center space-y-6 relative z-10">
@@ -262,7 +275,7 @@ export default function Certificates() {
                     <h2 className="text-4xl font-serif font-bold text-foreground tracking-wide">
                       Certificate of Completion
                     </h2>
-                    <div className="h-1 w-32 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto" />
+                    <div className="h-1 w-32 mx-auto" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--primary)), transparent)' }} />
                   </div>
 
                   <div className="space-y-4 py-8">
@@ -305,8 +318,8 @@ export default function Certificates() {
                   </div>
 
                   <div className="pt-8">
-                    <div className="inline-block border-t-2 border-foreground/20 pt-2 px-8">
-                      <p className="text-sm font-semibold text-foreground">Authorized Signature</p>
+                    <div className="inline-block pt-2 px-8" style={{ borderTop: '2px solid hsl(var(--foreground) / 0.2)' }}>
+                      <p className="text-sm font-semibold text-foreground">UE Campus</p>
                     </div>
                   </div>
                 </div>
