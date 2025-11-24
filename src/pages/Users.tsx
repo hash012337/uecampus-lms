@@ -463,11 +463,23 @@ export default function Users() {
 
       {/* Edit User Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_user_id">User ID</Label>
+              <Input
+                id="edit_user_id"
+                value={selectedUser?.user_id || "Not set"}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">
+                User ID cannot be changed once assigned
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="edit_full_name">Full Name</Label>
               <Input
@@ -477,13 +489,16 @@ export default function Users() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit_email">Email (Read-only)</Label>
+              <Label htmlFor="edit_email">Email</Label>
               <Input
                 id="edit_email"
                 value={editFormData.email}
                 disabled
                 className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">
+                Email cannot be changed (linked to authentication)
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit_role">Role</Label>
@@ -499,9 +514,32 @@ export default function Users() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleUpdateUser} className="w-full">
-              Save Changes
-            </Button>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setPasswordDialogOpen(true);
+                }}
+              >
+                <Lock className="h-4 w-4" />
+                Reset Password
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleUpdateUser} className="flex-1">
+                Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditDialogOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
