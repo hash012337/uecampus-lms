@@ -26,6 +26,8 @@ interface FileViewerProps {
     passing_marks?: number;
     due_date?: string;
     attempts?: number;
+    course?: string;
+    course_id?: string;
   } | null;
 }
 
@@ -132,6 +134,22 @@ export function FileViewer({ file }: FileViewerProps) {
         });
 
       if (submissionError) throw submissionError;
+
+      // Track progress completion for the assignment
+      const { error: progressError } = await supabase
+        .from('progress_tracking')
+        .upsert({
+          user_id: user.id,
+          course_id: file.course || file.course_id || '',
+          assignment_id: file.id,
+          item_type: 'assignment',
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,course_id,assignment_id'
+        });
+
+      if (progressError) console.error('Progress tracking error:', progressError);
 
       toast.success("Assignment submitted successfully!");
       setSubmissionFile(null);
