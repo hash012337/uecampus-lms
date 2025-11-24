@@ -347,7 +347,7 @@ export function FileViewer({ file }: FileViewerProps) {
       <div className="flex-1 overflow-auto">
         {isPdf && fileUrl && (
           <iframe
-            src={`${fileUrl}#view=FitH`}
+            src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
             className="w-full h-full border-0"
             title={file.title}
           />
