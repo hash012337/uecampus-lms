@@ -408,7 +408,8 @@ export default function CourseDetail() {
         title: newTextLesson.title,
         file_path: `text-lessons/${Date.now()}.html`,
         file_type: "text/html",
-        description: newTextLesson.content
+        description: newTextLesson.content,
+        is_hidden: false
       });
 
       if (error) throw error;
@@ -442,7 +443,8 @@ export default function CourseDetail() {
           title: fileDisplayName,
           file_path: filePath,
           file_type: file.type,
-          file_size: file.size
+          file_size: file.size,
+          is_hidden: false
         });
 
         if (dbError) throw dbError;
