@@ -25,6 +25,7 @@ interface FileViewerProps {
     points?: number;
     passing_marks?: number;
     due_date?: string;
+    attempts?: number;
   } | null;
 }
 
@@ -34,6 +35,7 @@ export function FileViewer({ file }: FileViewerProps) {
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
   const loadFile = async () => {
     if (!file || !file.file_path) return;
@@ -132,6 +134,7 @@ export function FileViewer({ file }: FileViewerProps) {
 
       toast.success("Assignment submitted successfully!");
       setSubmissionFile(null);
+      setShowSubmissionForm(false);
       loadUserSubmissions(); // Reload submissions
       
       // Trigger a page reload to update the circle in navigation
@@ -248,22 +251,54 @@ export function FileViewer({ file }: FileViewerProps) {
   // Assignment view
   if (file._isAssignment) {
     const latestSubmission = userSubmissions.length > 0 ? userSubmissions[0] : null;
+    
+    // Get total attempts (default assignment attempts + any extra attempts granted to user)
+    const getTotalAttempts = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return file.attempts || 2;
+      
+      const { data: extraAttempts } = await supabase
+        .from('assignment_extra_attempts')
+        .select('extra_attempts')
+        .eq('assignment_id', file.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      return (file.attempts || 2) + (extraAttempts?.extra_attempts || 0);
+    };
 
-    // Show submission status if student has submitted
-    if (latestSubmission) {
+    const [totalAttempts, setTotalAttempts] = React.useState(file.attempts || 2);
+    
+    React.useEffect(() => {
+      getTotalAttempts().then(setTotalAttempts);
+    }, [file.id]);
+
+    const attemptNumber = userSubmissions.length;
+    const hasAttemptsRemaining = attemptNumber < totalAttempts;
+
+    // Show submission status if there's a submission AND (form is not shown OR no attempts remaining)
+    if (latestSubmission && (!showSubmissionForm || !hasAttemptsRemaining)) {
       return (
         <div className="h-full overflow-auto bg-background">
           <div className="max-w-4xl mx-auto p-8">
             <AssignmentSubmissionStatus
               assignment={{
+                id: file.id || '',
                 title: file.title,
                 due_date: file.due_date || null,
-                points: file.points || 100
+                points: file.points || 100,
+                attempts: file.attempts || 2
               }}
               submission={latestSubmission}
+              attemptNumber={attemptNumber}
+              totalAttempts={totalAttempts}
               onResubmit={() => {
-                setUserSubmissions([]);
-                loadUserSubmissions();
+                if (hasAttemptsRemaining) {
+                  setShowSubmissionForm(true);
+                } else {
+                  setUserSubmissions([]);
+                  loadUserSubmissions();
+                }
               }}
             />
           </div>
@@ -271,7 +306,7 @@ export function FileViewer({ file }: FileViewerProps) {
       );
     }
 
-    // Show submission form if no submission yet
+    // Show submission form if no submission yet OR has attempts remaining and form is shown
     return (
       <div className="h-full overflow-auto bg-background">
         <div className="max-w-4xl mx-auto p-8">
@@ -292,8 +327,27 @@ export function FileViewer({ file }: FileViewerProps) {
                   <span className="font-semibold">Due:</span> {new Date(file.due_date).toLocaleDateString()}
                 </div>
               )}
+              <div>
+                <span className="font-semibold">Attempts:</span> {attemptNumber}/{totalAttempts}
+              </div>
             </div>
           </div>
+
+          {latestSubmission && showSubmissionForm && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Submitting attempt {attemptNumber + 1} of {totalAttempts}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSubmissionForm(false)}
+                className="mt-2"
+              >
+                View Previous Submission
+              </Button>
+            </div>
+          )}
 
           <Card>
             <CardHeader>
