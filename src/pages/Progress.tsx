@@ -23,7 +23,6 @@ interface CourseProgress {
   course_name: string;
   overall_progress: number;
   assignments_completed: number;
-  quizzes_completed: number;
   total_score: number;
 }
 
@@ -89,10 +88,6 @@ export default function Progress() {
           (item) => item.item_type === "assignment" && item.status === "completed"
         ).length;
 
-        const quizzesCompleted = courseItems.filter(
-          (item) => item.item_type === "quiz" && item.status === "completed"
-        ).length;
-
         const totalScore = courseItems.reduce((sum, item) => sum + (item.score || 0), 0);
 
         return {
@@ -100,7 +95,6 @@ export default function Progress() {
           course_name: enrollment.courses?.title || "Unknown Course",
           overall_progress: enrollment.progress || 0,
           assignments_completed: assignmentsCompleted,
-          quizzes_completed: quizzesCompleted,
           total_score: totalScore,
         };
       }) || [];
@@ -205,7 +199,6 @@ export default function Progress() {
         <TabsList>
           <TabsTrigger value="courses">Course Progress</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="courses" className="space-y-4">
@@ -222,14 +215,10 @@ export default function Progress() {
                   </div>
                   <ProgressBar value={course.overall_progress} className="h-2" />
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Assignments</p>
                     <p className="font-semibold">{course.assignments_completed}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Quizzes</p>
-                    <p className="font-semibold">{course.quizzes_completed}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Total Score</p>
@@ -259,31 +248,6 @@ export default function Progress() {
                     <p className="text-lg font-bold">
                       {item.score}/{item.max_score}
                     </p>
-                    <Badge variant={item.status === "completed" ? "default" : "secondary"}>
-                      {item.status}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </TabsContent>
-
-        <TabsContent value="quizzes" className="space-y-4">
-          {progressItems
-            .filter((item) => item.item_type === "quiz")
-            .map((item) => (
-              <Card key={item.id} className="border-border/50">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold">{item.course_name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {item.completed_at
-                        ? `Completed on ${new Date(item.completed_at).toLocaleDateString()}`
-                        : "In Progress"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">{item.percentage}%</p>
                     <Badge variant={item.status === "completed" ? "default" : "secondary"}>
                       {item.status}
                     </Badge>

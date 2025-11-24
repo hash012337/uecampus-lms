@@ -12,7 +12,6 @@ import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import Assignments from "./pages/Assignments";
-import Quizzes from "./pages/Quizzes";
 import Timetable from "./pages/Timetable";
 import Profile from "./pages/Profile";
 import Users from "./pages/Users";
@@ -41,7 +40,6 @@ const App = () => (
             <Route path="/courses" element={<DashboardLayout><Courses /></DashboardLayout>} />
             <Route path="/courses/:courseId" element={<CourseDetail />} />
             <Route path="/assignments" element={<DashboardLayout><Assignments /></DashboardLayout>} />
-            <Route path="/quizzes" element={<DashboardLayout><Quizzes /></DashboardLayout>} />
             <Route path="/timetable" element={<DashboardLayout><Timetable /></DashboardLayout>} />
             <Route path="/library" element={<DashboardLayout><Library /></DashboardLayout>} />
             <Route path="/library/:bookId" element={<BookDetail />} />
