@@ -57,15 +57,10 @@ export function useAuth() {
 
       if (data?.is_blocked) {
         await supabase.auth.signOut();
-        navigate("/auth");
-        throw new Error("Your account has been blocked. Please contact administrator.");
+        navigate("/blocked");
       }
     } catch (error: any) {
-      if (error.message.includes("blocked")) {
-        // Already handled
-      } else {
-        console.error("Error checking blocked status:", error);
-      }
+      console.error("Error checking blocked status:", error);
     }
   };
 
