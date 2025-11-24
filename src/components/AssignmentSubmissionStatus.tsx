@@ -8,9 +8,11 @@ import { useState, useEffect } from "react";
 
 interface AssignmentSubmissionStatusProps {
   assignment: {
+    id: string;
     title: string;
     due_date: string | null;
     points: number | null;
+    attempts: number;
   };
   submission: {
     id: string;
@@ -22,12 +24,15 @@ interface AssignmentSubmissionStatusProps {
     graded_at: string | null;
     graded_by: string | null;
   };
+  attemptNumber: number;
+  totalAttempts: number;
   onResubmit?: () => void;
 }
 
-export function AssignmentSubmissionStatus({ assignment, submission, onResubmit }: AssignmentSubmissionStatusProps) {
+export function AssignmentSubmissionStatus({ assignment, submission, attemptNumber, totalAttempts, onResubmit }: AssignmentSubmissionStatusProps) {
   const [graderName, setGraderName] = useState<string | null>(null);
   const canDelete = submission.graded_at === null && assignment.due_date && new Date() < new Date(assignment.due_date);
+  const hasAttemptsRemaining = attemptNumber < totalAttempts;
 
   useEffect(() => {
     if (submission.graded_by) {
@@ -135,7 +140,7 @@ export function AssignmentSubmissionStatus({ assignment, submission, onResubmit 
             <tbody>
               <tr className="border-b">
                 <td className="py-3 px-4 font-medium bg-muted/50 w-48">Attempt number</td>
-                <td className="py-3 px-4">This is attempt 1.</td>
+                <td className="py-3 px-4">This is attempt {attemptNumber} of {totalAttempts}.</td>
               </tr>
               
               <tr className="border-b">
@@ -250,23 +255,37 @@ export function AssignmentSubmissionStatus({ assignment, submission, onResubmit 
           </div>
         )}
 
-        {canDelete && (
+        {(canDelete || hasAttemptsRemaining) && (
           <div className="mt-6 pt-6 border-t">
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div>
-                <p className="font-medium">Want to resubmit?</p>
+                <p className="font-medium">
+                  {hasAttemptsRemaining ? `You have ${totalAttempts - attemptNumber} attempt(s) remaining` : 'Want to resubmit?'}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  You can delete this submission and upload a new one before the deadline.
+                  {hasAttemptsRemaining 
+                    ? 'You can submit again before the deadline.' 
+                    : 'You can delete this submission and upload a new one before the deadline.'}
                 </p>
               </div>
-              <Button 
-                variant="destructive" 
-                onClick={handleDeleteSubmission}
-                className="ml-4"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Submission
-              </Button>
+              {canDelete && (
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteSubmission}
+                  className="ml-4"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Submission
+                </Button>
+              )}
+              {hasAttemptsRemaining && !canDelete && (
+                <Button 
+                  onClick={onResubmit}
+                  className="ml-4"
+                >
+                  Submit Again
+                </Button>
+              )}
             </div>
           </div>
         )}
