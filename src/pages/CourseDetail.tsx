@@ -32,6 +32,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileViewer } from "@/components/FileViewer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DraggableMaterialList } from "@/components/DraggableMaterialList";
+import { CertificateGeneratedDialog } from "@/components/CertificateGeneratedDialog";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
@@ -89,6 +90,7 @@ export default function CourseDetail() {
   const [selectedAssignmentForDeadline, setSelectedAssignmentForDeadline] = useState<any>(null);
   const [selectedUserForDeadline, setSelectedUserForDeadline] = useState("");
   const [customDeadline, setCustomDeadline] = useState("");
+  const [certificateDialogOpen, setCertificateDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -151,8 +153,49 @@ export default function CourseDetail() {
       const totalItems = materials.length + assignments.length;
       if (totalItems > 0) {
         const completedCount = data.length;
-        setCourseProgress(Math.round((completedCount / totalItems) * 100));
+        const progress = Math.round((completedCount / totalItems) * 100);
+        setCourseProgress(progress);
+        
+        // Check if all materials are completed and generate certificate
+        if (progress === 100) {
+          checkAndGenerateCertificate();
+        }
       }
+    }
+  };
+
+  const checkAndGenerateCertificate = async () => {
+    if (!user || !courseId) return;
+
+    try {
+      // Check if certificate already exists
+      const { data: existingCert } = await supabase
+        .from('certificates' as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('course_id', courseId)
+        .maybeSingle();
+
+      if (existingCert) return; // Certificate already exists
+
+      // Generate certificate
+      const certificateNumber = `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const { error } = await supabase
+        .from('certificates' as any)
+        .insert({
+          user_id: user.id,
+          course_id: courseId,
+          certificate_number: certificateNumber,
+          completion_date: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Show congratulations dialog
+      setCertificateDialogOpen(true);
+    } catch (error: any) {
+      console.error('Error generating certificate:', error);
     }
   };
 
@@ -1562,6 +1605,12 @@ export default function CourseDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Certificate Generated Dialog */}
+      <CertificateGeneratedDialog 
+        open={certificateDialogOpen} 
+        onOpenChange={setCertificateDialogOpen}
+      />
       </div>
     </DashboardLayout>
   );

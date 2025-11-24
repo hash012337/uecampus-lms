@@ -22,6 +22,7 @@ import BookDetail from "./pages/BookDetail";
 import Submissions from "./pages/Submissions";
 import Guides from "./pages/Guides";
 import GuideDetail from "./pages/GuideDetail";
+import Certificates from "./pages/Certificates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,7 +49,7 @@ const App = () => (
             <Route path="/guides" element={<DashboardLayout><Guides /></DashboardLayout>} />
             <Route path="/guides/video/:id" element={<GuideDetail />} />
             <Route path="/guides/article/:id" element={<GuideDetail />} />
-            <Route path="/certificates" element={<DashboardLayout><div className="text-center py-12">Certificates - Coming Soon</div></DashboardLayout>} />
+            <Route path="/certificates" element={<DashboardLayout><Certificates /></DashboardLayout>} />
             <Route path="/progress" element={<DashboardLayout><Progress /></DashboardLayout>} />
             <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
             <Route path="/users" element={<DashboardLayout><Users /></DashboardLayout>} />
