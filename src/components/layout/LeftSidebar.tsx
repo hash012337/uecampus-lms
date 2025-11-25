@@ -39,14 +39,7 @@ export function LeftSidebar() {
   const { user } = useAuth();
   const [userName, setUserName] = useState("Student");
   const [userRole, setUserRole] = useState("Student");
-  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    try {
-      return localStorage.getItem("avatar_url") || "";
-    } catch {
-      return "";
-    }
-  });
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -60,10 +53,19 @@ export function LeftSidebar() {
         if (profileData?.full_name) {
           setUserName(profileData.full_name);
         }
+        
+        // Always update avatar URL from profile, clear localStorage if no avatar
         if (profileData?.avatar_url) {
           setAvatarUrl(profileData.avatar_url);
           try {
-            localStorage.setItem("avatar_url", profileData.avatar_url);
+            localStorage.setItem(`avatar_url_${user.id}`, profileData.avatar_url);
+          } catch {
+            // ignore
+          }
+        } else {
+          setAvatarUrl("");
+          try {
+            localStorage.removeItem(`avatar_url_${user.id}`);
           } catch {
             // ignore
           }
@@ -99,7 +101,14 @@ export function LeftSidebar() {
             const newUrl = payload.new.avatar_url as string;
             setAvatarUrl(newUrl);
             try {
-              localStorage.setItem("avatar_url", newUrl);
+              localStorage.setItem(`avatar_url_${user?.id}`, newUrl);
+            } catch {
+              // ignore
+            }
+          } else if (payload.new.avatar_url === null) {
+            setAvatarUrl("");
+            try {
+              localStorage.removeItem(`avatar_url_${user?.id}`);
             } catch {
               // ignore
             }
