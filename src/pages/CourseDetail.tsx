@@ -1484,6 +1484,14 @@ export default function CourseDetail() {
                                   />
                                 </div>
                               </div>
+                              <div>
+                                <Label>Deadline</Label>
+                                <Input 
+                                  type="datetime-local" 
+                                  value={newAssignment.due_date} 
+                                  onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })} 
+                                />
+                              </div>
                               <Button onClick={() => {
                                 handleAddAssignment();
                                 setActivityDialogOpen(false);
