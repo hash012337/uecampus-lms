@@ -151,28 +151,32 @@ export default function CourseDetail() {
       .eq('status', 'completed');
     
     if (data) {
-      // Create a set of completed material IDs, assignment IDs, and quiz IDs
+      // Separate completed items by type
+      const completedAssignments = data.filter(item => item.item_type === 'assignment');
+      const completedQuizzes = data.filter(item => item.item_type === 'quiz');
+      const completedMaterialsRecords = data.filter(item => item.item_type === 'material');
+      
+      // Create set of completed IDs
       const completedItemIds = new Set<string>();
-      data.forEach(item => {
+      
+      // Add assignment IDs
+      completedAssignments.forEach(item => {
         if (item.assignment_id) completedItemIds.add(item.assignment_id);
-        // For materials, we need to track by a different mechanism
-        // Since progress_tracking doesn't have material_id, we'll handle materials separately
       });
       
-      setCompletedMaterials(completedItemIds);
+      // Add quiz IDs
+      completedQuizzes.forEach(item => {
+        if (item.quiz_id) completedItemIds.add(item.quiz_id);
+      });
       
-      // Calculate progress percentage
-      const totalItems = materials.length + assignments.length;
-      if (totalItems > 0) {
-        const completedCount = data.length;
-        const progress = Math.round((completedCount / totalItems) * 100);
-        setCourseProgress(progress);
-        
-        // Check if all materials are completed and generate certificate
-        if (progress === 100) {
-          checkAndGenerateCertificate();
-        }
+      // For materials, mark the first N materials as completed based on count
+      if (completedMaterialsRecords.length > 0) {
+        materials.slice(0, completedMaterialsRecords.length).forEach(m => {
+          completedItemIds.add(m.id);
+        });
       }
+      
+      setCompletedMaterials(completedItemIds);
     }
   };
 
@@ -1045,17 +1049,6 @@ export default function CourseDetail() {
                             {section.description && (
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{section.description}</p>
                             )}
-                            <div className="flex items-center gap-2 mt-2">
-                              <div className="h-1.5 bg-muted rounded-full flex-1 overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-500"
-                                  style={{ width: `${sectionTotal > 0 ? (sectionCompleted / sectionTotal) * 100 : 0}%` }}
-                                />
-                              </div>
-                              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                                {sectionCompleted}/{sectionTotal}
-                              </span>
-                            </div>
                           </div>
                         </div>
                         {openSections[section.id] ? (
