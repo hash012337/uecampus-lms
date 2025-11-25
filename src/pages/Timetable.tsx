@@ -122,19 +122,25 @@ export default function Timetable() {
       const courseMap = new Map(coursesData?.map(c => [c.code, c.id]) || []);
       
       if (assignments) {
-        assignmentEntries = assignments.map(a => ({
-          id: `assignment-${a.id}`,
-          course_name: a.title,
-          course_code: a.course_code,
-          day_of_week: format(new Date(a.due_date!), 'EEEE'),
-          start_time: format(new Date(a.due_date!), 'h:mm a'),
-          end_time: '',
-          color: '#ef4444',
-          type: 'assignment' as const,
-          due_date: a.due_date!,
-          course_id: courseMap.get(a.course_code),
-          assignment_id: a.id
-        }));
+        assignmentEntries = assignments.map(a => {
+          const utcDate = new Date(a.due_date!);
+          // Convert UTC to UAE time (UTC+4)
+          const uaeDate = new Date(utcDate.getTime() + (4 * 60 * 60 * 1000));
+          
+          return {
+            id: `assignment-${a.id}`,
+            course_name: a.title,
+            course_code: a.course_code,
+            day_of_week: format(uaeDate, 'EEEE'),
+            start_time: format(uaeDate, 'h:mm a'),
+            end_time: '',
+            color: '#ef4444',
+            type: 'assignment' as const,
+            due_date: a.due_date!,
+            course_id: courseMap.get(a.course_code),
+            assignment_id: a.id
+          };
+        });
       }
     } else {
       // Students see assignments with either base deadline or custom deadline
@@ -164,12 +170,16 @@ export default function Timetable() {
             // Only include if there's a deadline
             if (!deadline) return null;
             
+            const utcDate = new Date(deadline);
+            // Convert UTC to UAE time (UTC+4)
+            const uaeDate = new Date(utcDate.getTime() + (4 * 60 * 60 * 1000));
+            
             return {
               id: `assignment-${a.id}`,
               course_name: a.title,
               course_code: a.course_code,
-              day_of_week: format(new Date(deadline), 'EEEE'),
-              start_time: format(new Date(deadline), 'h:mm a'),
+              day_of_week: format(uaeDate, 'EEEE'),
+              start_time: format(uaeDate, 'h:mm a'),
               end_time: '',
               color: '#ef4444',
               type: 'assignment' as const,
@@ -201,12 +211,16 @@ export default function Timetable() {
       if (quizzes) {
         quizEntries = quizzes.map(q => {
           const courseData = q.courses as any;
+          const utcDate = new Date(q.due_date!);
+          // Convert UTC to UAE time (UTC+4)
+          const uaeDate = new Date(utcDate.getTime() + (4 * 60 * 60 * 1000));
+          
           return {
             id: `quiz-${q.id}`,
             course_name: q.title,
             course_code: courseData?.code || '',
-            day_of_week: format(new Date(q.due_date!), 'EEEE'),
-            start_time: format(new Date(q.due_date!), 'h:mm a'),
+            day_of_week: format(uaeDate, 'EEEE'),
+            start_time: format(uaeDate, 'h:mm a'),
             end_time: '',
             color: '#8b5cf6',
             type: 'quiz' as const,
@@ -243,12 +257,16 @@ export default function Timetable() {
             if (!deadline) return null;
             
             const courseData = q.courses as any;
+            const utcDate = new Date(deadline);
+            // Convert UTC to UAE time (UTC+4)
+            const uaeDate = new Date(utcDate.getTime() + (4 * 60 * 60 * 1000));
+            
             return {
               id: `quiz-${q.id}`,
               course_name: q.title,
               course_code: courseData?.code || '',
-              day_of_week: format(new Date(deadline), 'EEEE'),
-              start_time: format(new Date(deadline), 'h:mm a'),
+              day_of_week: format(uaeDate, 'EEEE'),
+              start_time: format(uaeDate, 'h:mm a'),
               end_time: '',
               color: '#8b5cf6',
               type: 'quiz' as const,
@@ -569,7 +587,12 @@ export default function Timetable() {
                 <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span>
                   {selectedEntry.due_date 
-                    ? format(new Date(selectedEntry.due_date), 'EEEE, MMMM dd, yyyy h:mm a')
+                    ? (() => {
+                        const utcDate = new Date(selectedEntry.due_date);
+                        // Convert UTC to UAE time (UTC+4)
+                        const uaeDate = new Date(utcDate.getTime() + (4 * 60 * 60 * 1000));
+                        return format(uaeDate, 'EEEE, MMMM dd, yyyy h:mm a');
+                      })()
                     : `${selectedEntry.day_of_week}, ${selectedEntry.start_time}`
                   }
                 </span>
