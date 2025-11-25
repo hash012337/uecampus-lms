@@ -25,6 +25,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { FileViewer } from '@/components/FileViewer';
 import { Badge } from '@/components/ui/badge';
 import quizIcon from '@/assets/quiz-icon.png';
+import { RichTextEditor } from '@/components/RichTextEditor';
 
 interface Material {
   id: string;
@@ -157,11 +158,9 @@ function SortableItem({ material, onDelete, onUpdate, getFileIcon }: SortableIte
             </div>
             <div>
               <Label htmlFor={`desc-${material.id}`}>Description</Label>
-              <Input
-                id={`desc-${material.id}`}
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                placeholder="Material description"
+              <RichTextEditor
+                content={editedDescription}
+                onChange={setEditedDescription}
               />
             </div>
             <Button onClick={handleSave} size="sm" className="w-full">
@@ -281,12 +280,9 @@ function SortableAssignment({ assignment, onDelete, onUpdate, onToggleHide, onSe
             </div>
             <div>
               <Label htmlFor={`desc-${assignment.id}`}>Description</Label>
-              <Textarea
-                id={`desc-${assignment.id}`}
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                placeholder="Assignment description"
-                rows={3}
+              <RichTextEditor
+                content={editedDescription}
+                onChange={setEditedDescription}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -474,12 +470,9 @@ function SortableQuiz({ quiz, onDelete, onUpdate, onToggleHide }: SortableQuizPr
             </div>
             <div>
               <Label htmlFor={`desc-${quiz.id}`}>Description</Label>
-              <Textarea
-                id={`desc-${quiz.id}`}
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                placeholder="Quiz description"
-                rows={2}
+              <RichTextEditor
+                content={editedDescription}
+                onChange={setEditedDescription}
               />
             </div>
             <div>
