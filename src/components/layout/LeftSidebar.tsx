@@ -11,7 +11,8 @@ import {
   Users,
   Sparkles,
   LayoutDashboard,
-  CheckCircle2
+  CheckCircle2,
+  Package
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const navigationItems = [
   { icon: Calendar, label: "Timetable", href: "/timetable" },
   { icon: Library, label: "eLibrary", href: "/library" },
   { icon: Video, label: "Learning Guides", href: "/guides" },
+  { icon: Package, label: "Softwares", href: "/softwares" },
   { icon: Award, label: "Certificates", href: "/certificates" },
   { icon: Clock, label: "My Progress", href: "/progress" },
   { icon: Users, label: "Users", href: "/users", adminOnly: true },
