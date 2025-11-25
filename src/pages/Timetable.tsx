@@ -102,19 +102,19 @@ export default function Timetable() {
     // Load assignments with deadlines
     let assignmentEntries: TimetableEntry[] = [];
     if (isAdmin) {
-      // Admin sees all assignments
+      // Admin sees all assignments with deadlines
       const { data: assignments } = await supabase
         .from("assignments")
-        .select("id, course, course_code, due_date")
+        .select("id, title, course, course_code, due_date")
         .not("due_date", "is", null);
       
       if (assignments) {
         assignmentEntries = assignments.map(a => ({
           id: `assignment-${a.id}`,
-          course_name: a.course,
+          course_name: a.title,
           course_code: a.course_code,
           day_of_week: format(new Date(a.due_date!), 'EEEE'),
-          start_time: 'Due',
+          start_time: format(new Date(a.due_date!), 'h:mm a'),
           end_time: '',
           color: '#ef4444',
           type: 'assignment' as const,
@@ -122,11 +122,10 @@ export default function Timetable() {
         }));
       }
     } else {
-      // Students see their assignments with custom deadlines
+      // Students see assignments with either base deadline or custom deadline
       const { data: assignments } = await supabase
         .from("assignments")
-        .select("id, course, course_code, due_date")
-        .not("due_date", "is", null);
+        .select("id, title, course, course_code, due_date");
       
       const { data: customDeadlines } = await supabase
         .from("assignment_deadlines")
@@ -134,22 +133,28 @@ export default function Timetable() {
         .eq("user_id", user.id);
       
       if (assignments) {
-        assignmentEntries = assignments.map(a => {
-          const customDeadline = customDeadlines?.find(cd => cd.assignment_id === a.id);
-          const deadline = customDeadline ? customDeadline.deadline : a.due_date;
-          
-          return {
-            id: `assignment-${a.id}`,
-            course_name: a.course,
-            course_code: a.course_code,
-            day_of_week: format(new Date(deadline!), 'EEEE'),
-            start_time: 'Due',
-            end_time: '',
-            color: '#ef4444',
-            type: 'assignment' as const,
-            due_date: deadline!
-          };
-        });
+        const customDeadlineMap = new Map(customDeadlines?.map(d => [d.assignment_id, d.deadline]) || []);
+        
+        assignmentEntries = assignments
+          .map(a => {
+            const deadline = customDeadlineMap.get(a.id) || a.due_date;
+            
+            // Only include if there's a deadline
+            if (!deadline) return null;
+            
+            return {
+              id: `assignment-${a.id}`,
+              course_name: a.title,
+              course_code: a.course_code,
+              day_of_week: format(new Date(deadline), 'EEEE'),
+              start_time: format(new Date(deadline), 'h:mm a'),
+              end_time: '',
+              color: '#ef4444',
+              type: 'assignment' as const,
+              due_date: deadline
+            };
+          })
+          .filter(Boolean) as TimetableEntry[];
       }
     }
 
@@ -169,10 +174,10 @@ export default function Timetable() {
       const courseData = q.courses as any;
       return {
         id: `quiz-${q.id}`,
-        course_name: courseData?.title || q.title,
+        course_name: q.title,
         course_code: courseData?.code || '',
         day_of_week: format(new Date(q.due_date!), 'EEEE'),
-        start_time: 'Due',
+        start_time: format(new Date(q.due_date!), 'h:mm a'),
         end_time: '',
         color: '#8b5cf6',
         type: 'quiz' as const,
@@ -422,18 +427,23 @@ export default function Timetable() {
                             className="w-2 h-2 rounded-full mt-0.5 flex-shrink-0"
                             style={{ backgroundColor: entry.color }}
                           />
-                          <div className="flex-1 min-w-0 flex items-center justify-between gap-1">
-                            <span className="truncate">{entry.course_code}</span>
-                            {isAdmin && entry.type === 'class' && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteEntry(entry.id)}
-                                className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="truncate font-medium">{entry.course_name}</span>
+                              {isAdmin && entry.type === 'class' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleDeleteEntry(entry.id)}
+                                  className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {entry.start_time}
+                            </div>
                           </div>
                         </div>
                       ))}
