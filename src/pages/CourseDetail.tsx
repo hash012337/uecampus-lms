@@ -960,20 +960,12 @@ export default function CourseDetail() {
 
   // Student View - No layout, just back arrow and content
   if (!isAdmin) {
-    const totalItems = materials.length + assignments.length + sectionQuizzes.length;
+    // Only count viewable materials (exclude briefs, assignments, and quizzes from progress)
+    const viewableMaterials = materials.filter(m => m.file_type !== "application/brief");
+    const totalItems = viewableMaterials.length;
     
-    // Count completed items from all sources
-    const completedMaterialsCount = materials.filter(m => completedMaterials.has(m.id)).length;
-    
-    // Count completed assignments (from submissions)
-    const completedAssignmentsCount = assignments.filter(a => {
-      return userSubmissions.some(sub => sub.assignment_id === a.id);
-    }).length;
-    
-    // Count completed quizzes (from progress tracking)
-    const completedQuizzesCount = sectionQuizzes.filter(q => completedMaterials.has(q.id)).length;
-    
-    const completedItems = completedMaterialsCount + completedAssignmentsCount + completedQuizzesCount;
+    // Count completed viewable materials only
+    const completedItems = viewableMaterials.filter(m => completedMaterials.has(m.id)).length;
     const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
     return (
