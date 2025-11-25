@@ -337,8 +337,26 @@ export default function CourseDetail() {
       .eq("course_code", courseData?.code || "");
     
     if (assignmentsData) {
+      // Get user-specific deadlines if user exists
+      let customDeadlines: any[] = [];
+      if (user) {
+        const { data: deadlinesData } = await supabase
+          .from("assignment_deadlines")
+          .select("*")
+          .eq("user_id", user.id);
+        customDeadlines = deadlinesData || [];
+      }
+      
+      const deadlineMap = new Map(customDeadlines.map(d => [d.assignment_id, d.deadline]));
+      
+      // Add custom deadlines to assignments
+      const assignmentsWithDeadlines = assignmentsData.map(assignment => ({
+        ...assignment,
+        custom_deadline: deadlineMap.get(assignment.id) || null
+      }));
+      
       // Filter hidden assignments for non-admin users
-      const filteredAssignments = isAdmin ? assignmentsData : assignmentsData.filter(a => !a.is_hidden);
+      const filteredAssignments = isAdmin ? assignmentsWithDeadlines : assignmentsWithDeadlines.filter(a => !a.is_hidden);
       setAssignments(filteredAssignments);
     }
 
@@ -1034,6 +1052,7 @@ export default function CourseDetail() {
                           
                           {sectionAssignments.map((assignment) => {
                             const hasSubmission = userSubmissions.some(s => s.assignment_id === assignment.id);
+                            const deadline = assignment.custom_deadline || assignment.due_date;
                             return (
                               <button
                                 key={assignment.id}
@@ -1057,7 +1076,14 @@ export default function CourseDetail() {
                                   )}
                                 </div>
                                 <Upload className="h-4 w-4 flex-shrink-0 text-orange-500" />
-                                <span className="truncate text-left flex-1">{assignment.title}</span>
+                                <div className="flex flex-col items-start flex-1 min-w-0">
+                                  <span className="truncate text-left w-full">{assignment.title}</span>
+                                  {deadline && (
+                                    <span className="text-xs text-muted-foreground">
+                                      Due: {new Date(deadline).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
                               </button>
                             );
                           })}
