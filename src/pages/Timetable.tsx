@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Plus, Trash2, ChevronLeft, ChevronRight, Clock, GraduationCap, X } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Trash2, ChevronLeft, ChevronRight, Clock, GraduationCap, X, Upload, FileText } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +49,13 @@ export default function Timetable() {
     end_time: "10:00",
     color: "#8B5CF6"
   });
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedUserForUpload, setSelectedUserForUpload] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfTitle, setPdfTitle] = useState("");
+  const [userDocuments, setUserDocuments] = useState<any[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [pdfUrl, setPdfUrl] = useState<string>("");
 
   useEffect(() => {
     if (user) {
@@ -56,6 +63,7 @@ export default function Timetable() {
       loadTimetable();
       loadUsers();
       loadCourses();
+      loadUserDocuments();
     }
   }, [user]);
 
@@ -367,6 +375,111 @@ export default function Timetable() {
     setDetailDialogOpen(false);
   };
 
+  const loadUserDocuments = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("user_documents")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      setUserDocuments(data || []);
+      
+      // Auto-select the first document if available
+      if (data && data.length > 0) {
+        setSelectedDocument(data[0]);
+        await loadPdfUrl(data[0].file_path);
+      }
+    } catch (error: any) {
+      console.error("Error loading user documents:", error);
+    }
+  };
+
+  const loadPdfUrl = async (filePath: string) => {
+    try {
+      // Create a signed URL for private storage access (valid for 1 hour)
+      const { data, error } = await supabase.storage
+        .from("user-documents")
+        .createSignedUrl(filePath, 3600);
+
+      if (error) throw error;
+      if (data?.signedUrl) {
+        setPdfUrl(data.signedUrl);
+      }
+    } catch (error: any) {
+      console.error("Error loading PDF URL:", error);
+      toast.error("Failed to load PDF");
+    }
+  };
+
+  const handleUploadPDF = async () => {
+    if (!pdfFile || !selectedUserForUpload || !pdfTitle) {
+      toast.error("Please fill in all fields and select a PDF");
+      return;
+    }
+
+    try {
+      // Upload file to storage
+      const filePath = `${selectedUserForUpload}/${Date.now()}-${pdfFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("user-documents")
+        .upload(filePath, pdfFile);
+
+      if (uploadError) throw uploadError;
+
+      // Save document record
+      const { error: dbError } = await supabase
+        .from("user_documents")
+        .insert({
+          user_id: selectedUserForUpload,
+          title: pdfTitle,
+          file_path: filePath,
+          uploaded_by: user!.id
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success("PDF uploaded successfully");
+      setUploadDialogOpen(false);
+      setPdfFile(null);
+      setPdfTitle("");
+      setSelectedUserForUpload("");
+      loadUserDocuments();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload PDF");
+    }
+  };
+
+  const handleDeleteDocument = async (docId: string, filePath: string) => {
+    if (!confirm("Delete this document?")) return;
+    
+    try {
+      // Delete from storage
+      await supabase.storage
+        .from("user-documents")
+        .remove([filePath]);
+
+      // Delete from database
+      const { error } = await supabase
+        .from("user_documents")
+        .delete()
+        .eq("id", docId);
+
+      if (error) throw error;
+
+      toast.success("Document deleted");
+      loadUserDocuments();
+      if (selectedDocument?.id === docId) {
+        setSelectedDocument(null);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete document");
+    }
+  };
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
@@ -384,18 +497,72 @@ export default function Timetable() {
             Manage your schedule and deadlines
           </p>
         </div>
-        {isAdmin && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Event
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add Timetable Entry</DialogTitle>
-              </DialogHeader>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <>
+              <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload PDF for User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload PDF for User</DialogTitle>
+                    <DialogDescription>
+                      Select a user and upload a PDF document that will be displayed below their calendar
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Select User</Label>
+                      <Select value={selectedUserForUpload} onValueChange={setSelectedUserForUpload}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map(u => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.full_name || u.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Document Title</Label>
+                      <Input
+                        value={pdfTitle}
+                        onChange={(e) => setPdfTitle(e.target.value)}
+                        placeholder="e.g., Study Materials, Schedule"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>PDF File</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                      />
+                    </div>
+                    <Button onClick={handleUploadPDF} className="w-full">
+                      Upload PDF
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    New Event
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add Timetable Entry</DialogTitle>
+                  </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Select Student</Label>
@@ -470,7 +637,9 @@ export default function Timetable() {
               </div>
             </DialogContent>
           </Dialog>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -623,6 +792,77 @@ export default function Timetable() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* User Documents Section */}
+      {userDocuments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                My Documents
+              </CardTitle>
+              {userDocuments.length > 1 && (
+                <Select value={selectedDocument?.id || ""} onValueChange={async (id) => {
+                  const doc = userDocuments.find(d => d.id === id);
+                  setSelectedDocument(doc);
+                  if (doc) {
+                    await loadPdfUrl(doc.file_path);
+                  }
+                }}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Select document" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userDocuments.map(doc => (
+                      <SelectItem key={doc.id} value={doc.id}>
+                        {doc.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {selectedDocument && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold">{selectedDocument.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Added {format(new Date(selectedDocument.created_at), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                  {isAdmin && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteDocument(selectedDocument.id, selectedDocument.file_path)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+                <div className="border rounded-lg overflow-hidden bg-muted/20">
+                  {pdfUrl ? (
+                    <iframe
+                      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                      className="w-full h-[600px]"
+                      title={selectedDocument.title}
+                    />
+                  ) : (
+                    <div className="w-full h-[600px] flex items-center justify-center">
+                      <p className="text-muted-foreground">Loading PDF...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
