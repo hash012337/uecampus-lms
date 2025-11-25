@@ -300,9 +300,14 @@ export function RightSidebar() {
                     <p className="text-xs text-muted-foreground">{deadline.course}</p>
                     <div className="flex items-center gap-2 text-xs">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-muted-foreground">
+                       <span className="text-muted-foreground">
                         {deadline.due_date
-                          ? format(new Date(deadline.due_date), "MMM d")
+                          ? (() => {
+                              const utcDate = new Date(deadline.due_date);
+                              // Convert UTC to UAE time (UTC+4)
+                              const uaeDate = new Date(utcDate.getTime() + (4 * 60 * 60 * 1000));
+                              return format(uaeDate, "MMM d, h:mm a");
+                            })()
                           : "No date"}
                       </span>
                       <span

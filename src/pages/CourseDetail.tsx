@@ -506,10 +506,18 @@ export default function CourseDetail() {
         assessmentBriefPath = filePath;
       }
 
-      // Convert datetime-local to proper ISO string
-      const dueDate = newAssignment.due_date 
-        ? new Date(newAssignment.due_date).toISOString()
-        : null;
+      // Convert datetime-local to UAE timezone (UTC+4) ISO string
+      let dueDate = null;
+      if (newAssignment.due_date) {
+        // datetime-local gives us local time, treat it as UAE time
+        const localDate = new Date(newAssignment.due_date);
+        // Adjust to UAE timezone (UTC+4)
+        const uaeOffset = 4 * 60; // 4 hours in minutes
+        const localOffset = localDate.getTimezoneOffset(); // local offset in minutes (negative for UAE)
+        const totalOffset = uaeOffset + localOffset;
+        localDate.setMinutes(localDate.getMinutes() - totalOffset);
+        dueDate = localDate.toISOString();
+      }
 
       const { error } = await supabase.from("assignments").insert({
         course: courseId,
@@ -577,10 +585,18 @@ export default function CourseDetail() {
     if (!newQuiz.title || !newQuiz.quiz_url || !currentSectionId || !courseId) return;
     
     try {
-      // Convert datetime-local to proper ISO string
-      const dueDate = newQuiz.due_date 
-        ? new Date(newQuiz.due_date).toISOString()
-        : null;
+      // Convert datetime-local to UAE timezone (UTC+4) ISO string
+      let dueDate = null;
+      if (newQuiz.due_date) {
+        // datetime-local gives us local time, treat it as UAE time
+        const localDate = new Date(newQuiz.due_date);
+        // Adjust to UAE timezone (UTC+4)
+        const uaeOffset = 4 * 60; // 4 hours in minutes
+        const localOffset = localDate.getTimezoneOffset(); // local offset in minutes (negative for UAE)
+        const totalOffset = uaeOffset + localOffset;
+        localDate.setMinutes(localDate.getMinutes() - totalOffset);
+        dueDate = localDate.toISOString();
+      }
 
       const { error } = await supabase.from("section_quizzes").insert({
         course_id: courseId,
