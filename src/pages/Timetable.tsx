@@ -532,6 +532,11 @@ export default function Timetable() {
                 </span>
               </div>
 
+              <div className="flex items-center gap-3 text-sm">
+                <GraduationCap className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-primary">{selectedEntry.course_code}</span>
+              </div>
+
               <div className="flex justify-end pt-2">
                 <Button 
                   variant="link" 
