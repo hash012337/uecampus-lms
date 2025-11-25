@@ -15,6 +15,7 @@ interface Deadline {
   due_date: string;
   priority: string;
   hours_left: number;
+  type?: 'assignment' | 'quiz';
 }
 
 export function RightSidebar() {
@@ -57,35 +58,66 @@ export function RightSidebar() {
         .select("assignment_id")
         .eq("user_id", user.id);
 
+      // Get all quizzes with deadlines
+      const { data: quizzes } = await supabase
+        .from("section_quizzes")
+        .select("*, courses(code)")
+        .not("due_date", "is", null)
+        .order("due_date", { ascending: true });
+
       const submittedIds = new Set(submissions?.map(s => s.assignment_id) || []);
       const customDeadlineMap = new Map(customDeadlines?.map(d => [d.assignment_id, d.deadline]) || []);
 
-      // Filter out submitted assignments
-      const unsubmittedAssignments = assignments
-        .filter(a => !submittedIds.has(a.id))
-        .slice(0, 3);
+      // Filter out submitted assignments and map to deadline format
+      const assignmentDeadlines = assignments
+        .filter(a => !submittedIds.has(a.id) && (a.due_date || customDeadlineMap.has(a.id)))
+        .map((assignment) => {
+          const deadline = customDeadlineMap.get(assignment.id) || assignment.due_date;
+          const dueDate = new Date(deadline || new Date());
+          const now = new Date();
+          const hoursLeft = Math.max(
+            0,
+            Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60))
+          );
 
-      const deadlinesWithHours = unsubmittedAssignments.map((assignment) => {
-        // Use custom deadline if exists, otherwise use assignment due_date
-        const deadline = customDeadlineMap.get(assignment.id) || assignment.due_date;
-        const dueDate = new Date(deadline || new Date());
+          return {
+            id: `assignment-${assignment.id}`,
+            title: assignment.title,
+            course: assignment.course_code,
+            due_date: deadline || "",
+            priority: assignment.priority || "medium",
+            hours_left: hoursLeft,
+            type: 'assignment' as const
+          };
+        });
+
+      // Map quizzes to deadline format
+      const quizDeadlines = (quizzes || []).map((quiz) => {
+        const dueDate = new Date(quiz.due_date!);
         const now = new Date();
         const hoursLeft = Math.max(
           0,
           Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60))
         );
 
+        const courseData = quiz.courses as any;
+
         return {
-          id: assignment.id,
-          title: assignment.title,
-          course: assignment.course_code,
-          due_date: deadline || "",
-          priority: assignment.priority || "medium",
+          id: `quiz-${quiz.id}`,
+          title: quiz.title,
+          course: courseData?.code || '',
+          due_date: quiz.due_date!,
+          priority: hoursLeft < 24 ? 'high' : hoursLeft < 72 ? 'medium' : 'low',
           hours_left: hoursLeft,
+          type: 'quiz' as const
         };
       });
 
-      setDeadlines(deadlinesWithHours);
+      // Combine and sort all deadlines by due date
+      const allDeadlines = [...assignmentDeadlines, ...quizDeadlines]
+        .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+
+      setDeadlines(allDeadlines);
     } catch (error) {
       console.error("Error fetching deadlines:", error);
     }
@@ -224,7 +256,19 @@ export function RightSidebar() {
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-medium text-sm leading-tight">{deadline.title}</h3>
+                      <div className="flex-1">
+                        {deadline.type === 'quiz' && (
+                          <Badge variant="secondary" className="text-[10px] h-5 bg-purple-600 text-white mb-1">
+                            Quiz
+                          </Badge>
+                        )}
+                        {deadline.type === 'assignment' && (
+                          <Badge variant="destructive" className="text-[10px] h-5 mb-1">
+                            Assignment
+                          </Badge>
+                        )}
+                        <h3 className="font-medium text-sm leading-tight">{deadline.title}</h3>
+                      </div>
                       <Badge
                         variant={deadline.priority === "high" ? "destructive" : "secondary"}
                         className={deadline.priority === "high" ? "animate-pulse" : ""}

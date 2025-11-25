@@ -350,65 +350,78 @@ export default function Timetable() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            {daysOfWeek.map(day => (
-              <div key={day} className="space-y-2">
-                <div className="font-semibold text-center p-2 bg-primary/10 rounded-lg">
-                  {day}
-                </div>
-                <div className="space-y-2 min-h-[200px]">
-                  {getEntriesForDay(day).map(entry => (
-                    <Card
-                      key={entry.id}
-                      className="p-3 border-l-4 hover:shadow-lg transition-shadow"
-                      style={{ borderLeftColor: entry.color }}
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          {entry.type === 'assignment' && (
-                            <Badge variant="destructive" className="text-xs mb-1">
-                              Assignment Due
-                            </Badge>
-                          )}
-                          {entry.type === 'quiz' && (
-                            <Badge variant="secondary" className="text-xs mb-1 bg-purple-600 text-white">
-                              Quiz Due
-                            </Badge>
-                          )}
-                          <p className="font-semibold text-sm truncate">
-                            {entry.course_code}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {entry.course_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {entry.type === 'class' 
-                              ? `${entry.start_time} - ${entry.end_time}`
-                              : entry.due_date ? new Date(entry.due_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Due'
-                            }
-                          </p>
-                        </div>
-                        {isAdmin && entry.type === 'class' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteEntry(entry.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-                  {getEntriesForDay(day).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm p-4">
-                      No classes
-                    </div>
-                  )}
-                </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[800px]">
+              {/* Day Headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {daysOfWeek.map(day => (
+                  <div key={day} className="font-semibold text-center p-3 bg-primary/10 rounded-lg border-2 border-primary/20">
+                    {day}
+                  </div>
+                ))}
               </div>
-            ))}
+              
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-2">
+                {daysOfWeek.map(day => (
+                  <div key={day} className="min-h-[400px] p-2 border-2 border-muted rounded-lg bg-card/50">
+                    <div className="space-y-2">
+                      {getEntriesForDay(day).map(entry => (
+                        <Card
+                          key={entry.id}
+                          className="p-2 border-l-4 hover:shadow-md transition-shadow"
+                          style={{ borderLeftColor: entry.color }}
+                        >
+                          <div className="space-y-1">
+                            {entry.type === 'assignment' && (
+                              <Badge variant="destructive" className="text-[10px] h-5">
+                                Assignment Due
+                              </Badge>
+                            )}
+                            {entry.type === 'quiz' && (
+                              <Badge variant="secondary" className="text-[10px] h-5 bg-purple-600 text-white">
+                                Quiz Due
+                              </Badge>
+                            )}
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-xs truncate">
+                                  {entry.course_code}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground truncate">
+                                  {entry.course_name}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                                  {entry.type === 'class' 
+                                    ? `${entry.start_time} - ${entry.end_time}`
+                                    : entry.due_date ? new Date(entry.due_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Due'
+                                  }
+                                </p>
+                              </div>
+                              {isAdmin && entry.type === 'class' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleDeleteEntry(entry.id)}
+                                  className="h-5 w-5 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                      {getEntriesForDay(day).length === 0 && (
+                        <div className="text-center text-muted-foreground text-xs p-8 opacity-50">
+                          No events
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
