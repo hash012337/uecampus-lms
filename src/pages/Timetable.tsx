@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Trash2, ChevronLeft, ChevronRight, Clock, GraduationCap, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface TimetableEntry {
   id: string;
@@ -30,9 +31,12 @@ const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Sat
 
 export default function Timetable() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(null);
   const [selectedUser, setSelectedUser] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -261,6 +265,22 @@ export default function Timetable() {
     });
   };
 
+  const handleEntryClick = (entry: TimetableEntry) => {
+    setSelectedEntry(entry);
+    setDetailDialogOpen(true);
+  };
+
+  const handleGoToActivity = () => {
+    if (!selectedEntry) return;
+    
+    if (selectedEntry.type === 'assignment') {
+      navigate('/assignments');
+    } else if (selectedEntry.type === 'quiz') {
+      navigate('/courses');
+    }
+    setDetailDialogOpen(false);
+  };
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
@@ -422,6 +442,7 @@ export default function Timetable() {
                         <div
                           key={entry.id}
                           className="text-xs p-1 rounded flex items-start gap-1 hover:bg-muted/50 cursor-pointer group"
+                          onClick={() => handleEntryClick(entry)}
                         >
                           <div
                             className="w-2 h-2 rounded-full mt-0.5 flex-shrink-0"
@@ -434,7 +455,10 @@ export default function Timetable() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => handleDeleteEntry(entry.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteEntry(entry.id);
+                                  }}
                                   className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -460,6 +484,54 @@ export default function Timetable() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Event Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
+            <DialogTitle className="text-lg font-semibold">
+              {selectedEntry?.course_name}
+              {selectedEntry?.type === 'assignment' ? ' closes' : selectedEntry?.type === 'quiz' ? ' closes' : ''}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedEntry && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span>
+                  {selectedEntry.due_date 
+                    ? format(new Date(selectedEntry.due_date), 'EEEE, MMMM dd, yyyy h:mm a')
+                    : `${selectedEntry.day_of_week}, ${selectedEntry.start_time}`
+                  }
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 text-sm">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="capitalize">
+                  {selectedEntry.type === 'assignment' ? 'Assignment' : selectedEntry.type === 'quiz' ? 'Quiz' : 'Course event'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 text-sm">
+                <GraduationCap className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-primary">{selectedEntry.course_code}</span>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button 
+                  variant="link" 
+                  className="text-primary px-0"
+                  onClick={handleGoToActivity}
+                >
+                  Go to activity →
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
