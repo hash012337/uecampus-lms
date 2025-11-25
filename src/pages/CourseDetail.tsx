@@ -81,7 +81,8 @@ export default function CourseDetail() {
     title: "",
     quiz_url: "",
     description: "",
-    duration: 30
+    duration: 30,
+    due_date: ""
   });
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | "google_drive" | null>(null);
@@ -577,12 +578,13 @@ export default function CourseDetail() {
         title: newQuiz.title,
         quiz_url: newQuiz.quiz_url,
         description: newQuiz.description,
-        duration: newQuiz.duration
+        duration: newQuiz.duration,
+        due_date: newQuiz.due_date || null
       });
 
       if (error) throw error;
       toast.success("Quiz added successfully");
-      setNewQuiz({ title: "", quiz_url: "", description: "", duration: 30 });
+      setNewQuiz({ title: "", quiz_url: "", description: "", duration: 30, due_date: "" });
       loadCourseData();
     } catch (error: any) {
       toast.error(error.message || "Failed to add quiz");
@@ -1597,6 +1599,14 @@ export default function CourseDetail() {
                                   value={newQuiz.quiz_url} 
                                   onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
                                   placeholder="Paste any link (Google Forms, Quiz site, etc.)" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Deadline (Optional)</Label>
+                                <Input 
+                                  type="datetime-local" 
+                                  value={newQuiz.due_date} 
+                                  onChange={(e) => setNewQuiz({ ...newQuiz, due_date: e.target.value })} 
                                 />
                               </div>
                               <Button onClick={() => {
