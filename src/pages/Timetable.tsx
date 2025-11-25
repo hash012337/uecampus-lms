@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
 
 interface TimetableEntry {
   id: string;
@@ -37,6 +37,7 @@ export default function Timetable() {
   const [users, setUsers] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [newEntry, setNewEntry] = useState({
     course_id: "",
     end_time: "10:00",
@@ -242,15 +243,34 @@ export default function Timetable() {
     return entries.filter(e => e.day_of_week === day);
   };
 
+  const getEntriesForDate = (date: Date) => {
+    return entries.filter(e => {
+      if (e.due_date) {
+        return isSameDay(new Date(e.due_date), date);
+      }
+      if (e.day_of_week) {
+        const dayName = format(date, 'EEEE');
+        return e.day_of_week === dayName;
+      }
+      return false;
+    });
+  };
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart);
+  const calendarEnd = endOfWeek(monthEnd);
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Timetable
+            Calendar
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage your weekly schedule
+            Manage your schedule and deadlines
           </p>
         </div>
         {isAdmin && (
@@ -258,7 +278,7 @@ export default function Timetable() {
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Add Entry
+                New Event
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -343,84 +363,89 @@ export default function Timetable() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Weekly Schedule
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle className="text-2xl font-bold">
+              {format(currentMonth, 'MMMM yyyy')}
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <div className="min-w-[800px]">
-              {/* Day Headers */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
-                {daysOfWeek.map(day => (
-                  <div key={day} className="font-semibold text-center p-3 bg-primary/10 rounded-lg border-2 border-primary/20">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-2">
-                {daysOfWeek.map(day => (
-                  <div key={day} className="min-h-[400px] p-2 border-2 border-muted rounded-lg bg-card/50">
-                    <div className="space-y-2">
-                      {getEntriesForDay(day).map(entry => (
-                        <Card
+          <div className="space-y-2">
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 gap-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center font-semibold text-sm py-2 text-muted-foreground">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map((day, idx) => {
+                const dayEntries = getEntriesForDate(day);
+                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                const isToday = isSameDay(day, new Date());
+                
+                return (
+                  <div
+                    key={idx}
+                    className={`min-h-[120px] p-2 border rounded-lg ${
+                      !isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : 'bg-card'
+                    } ${isToday ? 'ring-2 ring-primary' : ''}`}
+                  >
+                    <div className={`text-sm font-semibold mb-1 ${isToday ? 'text-primary' : ''}`}>
+                      {format(day, 'd')}
+                    </div>
+                    <div className="space-y-1">
+                      {dayEntries.slice(0, 3).map(entry => (
+                        <div
                           key={entry.id}
-                          className="p-2 border-l-4 hover:shadow-md transition-shadow"
-                          style={{ borderLeftColor: entry.color }}
+                          className="text-xs p-1 rounded flex items-start gap-1 hover:bg-muted/50 cursor-pointer group"
                         >
-                          <div className="space-y-1">
-                            {entry.type === 'assignment' && (
-                              <Badge variant="destructive" className="text-[10px] h-5">
-                                Assignment Due
-                              </Badge>
+                          <div
+                            className="w-2 h-2 rounded-full mt-0.5 flex-shrink-0"
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <div className="flex-1 min-w-0 flex items-center justify-between gap-1">
+                            <span className="truncate">{entry.course_code}</span>
+                            {isAdmin && entry.type === 'class' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteEntry(entry.id)}
+                                className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             )}
-                            {entry.type === 'quiz' && (
-                              <Badge variant="secondary" className="text-[10px] h-5 bg-purple-600 text-white">
-                                Quiz Due
-                              </Badge>
-                            )}
-                            <div className="flex items-start justify-between gap-1">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-xs truncate">
-                                  {entry.course_code}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground truncate">
-                                  {entry.course_name}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                                  {entry.type === 'class' 
-                                    ? `${entry.start_time} - ${entry.end_time}`
-                                    : entry.due_date ? new Date(entry.due_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Due'
-                                  }
-                                </p>
-                              </div>
-                              {isAdmin && entry.type === 'class' && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDeleteEntry(entry.id)}
-                                  className="h-5 w-5 p-0"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              )}
-                            </div>
                           </div>
-                        </Card>
+                        </div>
                       ))}
-                      {getEntriesForDay(day).length === 0 && (
-                        <div className="text-center text-muted-foreground text-xs p-8 opacity-50">
-                          No events
+                      {dayEntries.length > 3 && (
+                        <div className="text-xs text-primary font-medium pl-3">
+                          {dayEntries.length - 3} more
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         </CardContent>

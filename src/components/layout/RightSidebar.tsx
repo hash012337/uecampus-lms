@@ -73,7 +73,11 @@ export function RightSidebar() {
         .filter(a => !submittedIds.has(a.id) && (a.due_date || customDeadlineMap.has(a.id)))
         .map((assignment) => {
           const deadline = customDeadlineMap.get(assignment.id) || assignment.due_date;
-          const dueDate = new Date(deadline || new Date());
+          
+          // Skip if no deadline exists
+          if (!deadline) return null;
+          
+          const dueDate = new Date(deadline);
           const now = new Date();
           const hoursLeft = Math.max(
             0,
@@ -84,12 +88,13 @@ export function RightSidebar() {
             id: `assignment-${assignment.id}`,
             title: assignment.title,
             course: assignment.course_code,
-            due_date: deadline || "",
+            due_date: deadline,
             priority: assignment.priority || "medium",
             hours_left: hoursLeft,
             type: 'assignment' as const
           };
-        });
+        })
+        .filter(Boolean); // Remove null entries
 
       // Map quizzes to deadline format
       const quizDeadlines = (quizzes || []).map((quiz) => {
