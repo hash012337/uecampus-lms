@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ interface TimetableEntry {
   end_time: string;
   color: string;
   user_id?: string;
+  type?: 'class' | 'assignment' | 'quiz';
+  due_date?: string;
 }
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -73,6 +76,7 @@ export default function Timetable() {
   const loadTimetable = async () => {
     if (!user) return;
 
+    // Load regular timetable entries
     const query = supabase
       .from("timetable")
       .select("*")
@@ -82,14 +86,100 @@ export default function Timetable() {
       query.eq("user_id", user.id);
     }
 
-    const { data, error } = await query;
+    const { data: timetableData, error } = await query;
 
     if (error) {
       console.error("Error loading timetable:", error);
       return;
     }
 
-    if (data) setEntries(data);
+    const timetableEntries: TimetableEntry[] = (timetableData || []).map(entry => ({
+      ...entry,
+      type: 'class' as const
+    }));
+
+    // Load assignments with deadlines
+    let assignmentEntries: TimetableEntry[] = [];
+    if (isAdmin) {
+      // Admin sees all assignments
+      const { data: assignments } = await supabase
+        .from("assignments")
+        .select("id, course, course_code, due_date")
+        .not("due_date", "is", null);
+      
+      if (assignments) {
+        assignmentEntries = assignments.map(a => ({
+          id: `assignment-${a.id}`,
+          course_name: a.course,
+          course_code: a.course_code,
+          day_of_week: format(new Date(a.due_date!), 'EEEE'),
+          start_time: 'Due',
+          end_time: '',
+          color: '#ef4444',
+          type: 'assignment' as const,
+          due_date: a.due_date!
+        }));
+      }
+    } else {
+      // Students see their assignments with custom deadlines
+      const { data: assignments } = await supabase
+        .from("assignments")
+        .select("id, course, course_code, due_date")
+        .not("due_date", "is", null);
+      
+      const { data: customDeadlines } = await supabase
+        .from("assignment_deadlines")
+        .select("*")
+        .eq("user_id", user.id);
+      
+      if (assignments) {
+        assignmentEntries = assignments.map(a => {
+          const customDeadline = customDeadlines?.find(cd => cd.assignment_id === a.id);
+          const deadline = customDeadline ? customDeadline.deadline : a.due_date;
+          
+          return {
+            id: `assignment-${a.id}`,
+            course_name: a.course,
+            course_code: a.course_code,
+            day_of_week: format(new Date(deadline!), 'EEEE'),
+            start_time: 'Due',
+            end_time: '',
+            color: '#ef4444',
+            type: 'assignment' as const,
+            due_date: deadline!
+          };
+        });
+      }
+    }
+
+    // Load quizzes with deadlines
+    const { data: quizzes } = await supabase
+      .from("section_quizzes")
+      .select(`
+        id,
+        title,
+        due_date,
+        course_id,
+        courses (title, code)
+      `)
+      .not("due_date", "is", null);
+    
+    const quizEntries: TimetableEntry[] = (quizzes || []).map(q => {
+      const courseData = q.courses as any;
+      return {
+        id: `quiz-${q.id}`,
+        course_name: courseData?.title || q.title,
+        course_code: courseData?.code || '',
+        day_of_week: format(new Date(q.due_date!), 'EEEE'),
+        start_time: 'Due',
+        end_time: '',
+        color: '#8b5cf6',
+        type: 'quiz' as const,
+        due_date: q.due_date!
+      };
+    });
+
+    setEntries([...timetableEntries, ...assignmentEntries, ...quizEntries]);
   };
 
   const handleAddEntry = async () => {
@@ -275,6 +365,16 @@ export default function Timetable() {
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex-1 min-w-0">
+                          {entry.type === 'assignment' && (
+                            <Badge variant="destructive" className="text-xs mb-1">
+                              Assignment Due
+                            </Badge>
+                          )}
+                          {entry.type === 'quiz' && (
+                            <Badge variant="secondary" className="text-xs mb-1 bg-purple-600 text-white">
+                              Quiz Due
+                            </Badge>
+                          )}
                           <p className="font-semibold text-sm truncate">
                             {entry.course_code}
                           </p>
@@ -282,10 +382,13 @@ export default function Timetable() {
                             {entry.course_name}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {entry.start_time} - {entry.end_time}
+                            {entry.type === 'class' 
+                              ? `${entry.start_time} - ${entry.end_time}`
+                              : entry.due_date ? new Date(entry.due_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Due'
+                            }
                           </p>
                         </div>
-                        {isAdmin && (
+                        {isAdmin && entry.type === 'class' && (
                           <Button
                             size="sm"
                             variant="ghost"

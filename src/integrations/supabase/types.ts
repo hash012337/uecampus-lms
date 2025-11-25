@@ -1033,6 +1033,7 @@ export type Database = {
           course_id: string
           created_at: string | null
           description: string | null
+          due_date: string | null
           duration: number | null
           id: string
           is_hidden: boolean | null
@@ -1045,6 +1046,7 @@ export type Database = {
           course_id: string
           created_at?: string | null
           description?: string | null
+          due_date?: string | null
           duration?: number | null
           id?: string
           is_hidden?: boolean | null
@@ -1057,6 +1059,7 @@ export type Database = {
           course_id?: string
           created_at?: string | null
           description?: string | null
+          due_date?: string | null
           duration?: number | null
           id?: string
           is_hidden?: boolean | null

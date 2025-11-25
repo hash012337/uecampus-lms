@@ -91,6 +91,7 @@ export default function CourseDetail() {
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
   const [deadlineDialogOpen, setDeadlineDialogOpen] = useState(false);
   const [selectedAssignmentForDeadline, setSelectedAssignmentForDeadline] = useState<any>(null);
+  const [selectedQuizForDeadline, setSelectedQuizForDeadline] = useState<any>(null);
   const [selectedUserForDeadline, setSelectedUserForDeadline] = useState("");
   const [customDeadline, setCustomDeadline] = useState("");
   const [certificateDialogOpen, setCertificateDialogOpen] = useState(false);
@@ -710,24 +711,45 @@ export default function CourseDetail() {
   };
 
   const handleSetUserDeadline = async () => {
-    if (!selectedAssignmentForDeadline || !selectedUserForDeadline || !customDeadline) {
-      toast.error("Please fill all fields");
-      return;
+    if (!selectedUserForDeadline || !customDeadline) {
+      if (selectedAssignmentForDeadline && !selectedUserForDeadline) {
+        toast.error("Please select a user");
+        return;
+      }
+      if (!customDeadline) {
+        toast.error("Please set a deadline");
+        return;
+      }
     }
     
     try {
-      const { error } = await supabase.from("assignment_deadlines").upsert({
-        assignment_id: selectedAssignmentForDeadline.id,
-        user_id: selectedUserForDeadline,
-        deadline: customDeadline
-      });
+      if (selectedAssignmentForDeadline) {
+        // Set deadline for assignment
+        const { error } = await supabase.from("assignment_deadlines").upsert({
+          assignment_id: selectedAssignmentForDeadline.id,
+          user_id: selectedUserForDeadline,
+          deadline: customDeadline
+        });
 
-      if (error) throw error;
-      toast.success("Custom deadline set successfully");
+        if (error) throw error;
+        toast.success("Custom assignment deadline set successfully");
+      } else if (selectedQuizForDeadline) {
+        // Update quiz deadline
+        const { error } = await supabase
+          .from("section_quizzes")
+          .update({ due_date: customDeadline })
+          .eq("id", selectedQuizForDeadline.id);
+
+        if (error) throw error;
+        toast.success("Quiz deadline set successfully");
+      }
+      
       setDeadlineDialogOpen(false);
       setSelectedAssignmentForDeadline(null);
+      setSelectedQuizForDeadline(null);
       setSelectedUserForDeadline("");
       setCustomDeadline("");
+      loadCourseData();
     } catch (error: any) {
       toast.error(error.message || "Failed to set deadline");
     }
@@ -1278,6 +1300,10 @@ export default function CourseDetail() {
                       onDelete={handleDeleteQuiz}
                       onUpdate={handleUpdateQuiz}
                       onToggleHide={handleToggleHideQuiz}
+                      onSetDeadline={(quiz) => {
+                        setSelectedQuizForDeadline(quiz);
+                        setDeadlineDialogOpen(true);
+                      }}
                     />
 
                     <div className="mt-4 pt-4 border-t">
@@ -1664,24 +1690,28 @@ export default function CourseDetail() {
       <Dialog open={deadlineDialogOpen} onOpenChange={setDeadlineDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Set Custom Deadline</DialogTitle>
+            <DialogTitle>
+              {selectedAssignmentForDeadline ? 'Set Custom Assignment Deadline' : 'Set Quiz Deadline'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Select User</Label>
-              <Select value={selectedUserForDeadline} onValueChange={setSelectedUserForDeadline}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map(u => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.full_name || u.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {selectedAssignmentForDeadline && (
+              <div>
+                <Label>Select User</Label>
+                <Select value={selectedUserForDeadline} onValueChange={setSelectedUserForDeadline}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>Deadline</Label>
               <Input

@@ -56,6 +56,7 @@ interface Quiz {
   quiz_url: string;
   duration?: number;
   is_hidden?: boolean;
+  due_date?: string;
 }
 
 interface SortableItemProps {
@@ -78,6 +79,7 @@ interface SortableQuizProps {
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Quiz>) => void;
   onToggleHide?: (id: string, isHidden: boolean) => void;
+  onSetDeadline?: (quiz: Quiz) => void;
 }
 
 function SortableItem({ material, onDelete, onUpdate, getFileIcon }: SortableItemProps) {
@@ -373,7 +375,7 @@ function SortableAssignment({ assignment, onDelete, onUpdate, onToggleHide, onSe
   );
 }
 
-function SortableQuiz({ quiz, onDelete, onUpdate, onToggleHide }: SortableQuizProps) {
+function SortableQuiz({ quiz, onDelete, onUpdate, onToggleHide, onSetDeadline }: SortableQuizProps) {
   const {
     attributes,
     listeners,
@@ -493,9 +495,22 @@ function SortableQuiz({ quiz, onDelete, onUpdate, onToggleHide }: SortableQuizPr
                 onChange={(e) => setEditedDuration(parseInt(e.target.value))}
               />
             </div>
-            <Button onClick={handleSave} size="sm" className="w-full">
-              Save Changes
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleSave} size="sm" className="flex-1">
+                Save Changes
+              </Button>
+              {onSetDeadline && (
+                <Button
+                  onClick={() => onSetDeadline(quiz)}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Set Deadline
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Preview Section - Show Quiz Link */}
@@ -510,6 +525,12 @@ function SortableQuiz({ quiz, onDelete, onUpdate, onToggleHide }: SortableQuizPr
                   <span className="font-semibold">Duration:</span>
                   <span>{quiz.duration} minutes</span>
                 </div>
+                {quiz.due_date && (
+                  <div className="flex justify-between">
+                    <span className="font-semibold">Due Date:</span>
+                    <span>{new Date(quiz.due_date).toLocaleDateString()}</span>
+                  </div>
+                )}
                 <div className="pt-2">
                   <a 
                     href={quiz.quiz_url} 
@@ -641,6 +662,7 @@ interface DraggableQuizListProps {
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Quiz>) => void;
   onToggleHide?: (id: string, isHidden: boolean) => void;
+  onSetDeadline?: (quiz: Quiz) => void;
 }
 
 export function DraggableQuizList({
@@ -648,6 +670,7 @@ export function DraggableQuizList({
   onDelete,
   onUpdate,
   onToggleHide,
+  onSetDeadline,
 }: DraggableQuizListProps) {
   if (!quizzes || quizzes.length === 0) {
     return null;
@@ -662,6 +685,7 @@ export function DraggableQuizList({
           onDelete={onDelete}
           onUpdate={onUpdate}
           onToggleHide={onToggleHide}
+          onSetDeadline={onSetDeadline}
         />
       ))}
     </div>
