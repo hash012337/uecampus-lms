@@ -85,10 +85,12 @@ export default function CourseDetail() {
     due_date: ""
   });
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
-  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | "google_drive" | null>(null);
+  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | "google_drive" | "video_lecture" | null>(null);
   const [fileDisplayName, setFileDisplayName] = useState("");
   const [googleDriveUrl, setGoogleDriveUrl] = useState("");
   const [googleDriveTitle, setGoogleDriveTitle] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoTitle, setVideoTitle] = useState("");
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
   const [deadlineDialogOpen, setDeadlineDialogOpen] = useState(false);
   const [selectedAssignmentForDeadline, setSelectedAssignmentForDeadline] = useState<any>(null);
@@ -1349,12 +1351,13 @@ export default function CourseDetail() {
                         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>
-                              {!activityType ? "Select Activity Type" : 
+                          {!activityType ? "Select Activity Type" : 
                                 activityType === "text" ? "Add Text Lesson" :
                                 activityType === "file" ? "Upload Files" :
                                 activityType === "assignment" ? "Add Assignment" :
                                 activityType === "brief" ? "Add Assignment Brief" :
                                 activityType === "google_drive" ? "Add Google Drive Content" :
+                                activityType === "video_lecture" ? "Add Video Lecture" :
                                 "Add Quiz"}
                             </DialogTitle>
                           </DialogHeader>
@@ -1408,6 +1411,14 @@ export default function CourseDetail() {
                               >
                                 <File className="h-8 w-8 text-green-600" />
                                 <span>Google Drive</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("video_lecture")}
+                              >
+                                <Video className="h-8 w-8 text-purple-600" />
+                                <span>Video Lecture</span>
                               </Button>
                             </div>
                           ) : activityType === "text" ? (
@@ -1660,6 +1671,70 @@ export default function CourseDetail() {
                               </div>
                               <Button onClick={handleAddGoogleDrive} className="w-full">
                                 Add Google Drive Content
+                              </Button>
+                            </div>
+                          ) : activityType === "video_lecture" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>Video Title</Label>
+                                <Input 
+                                  value={videoTitle} 
+                                  onChange={(e) => setVideoTitle(e.target.value)}
+                                  placeholder="Enter video lecture title" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Upload Video (MP4, MOV, AVI, etc.)</Label>
+                                <Input 
+                                  type="file" 
+                                  accept="video/*"
+                                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Recommended: MP4 format for best compatibility
+                                </p>
+                              </div>
+                              <Button onClick={async () => {
+                                if (!videoFile || !videoTitle || !currentSectionId) {
+                                  toast.error("Please provide video title and select a video file");
+                                  return;
+                                }
+                                
+                                try {
+                                  const filePath = `${courseId}/${currentSectionId}/videos/${Date.now()}-${videoFile.name}`;
+                                  const { error: uploadError } = await supabase.storage
+                                    .from("course-materials")
+                                    .upload(filePath, videoFile);
+
+                                  if (uploadError) throw uploadError;
+
+                                  const { error: dbError } = await supabase.from("course_materials").insert({
+                                    course_id: courseId,
+                                    section_id: currentSectionId,
+                                    title: videoTitle,
+                                    file_path: filePath,
+                                    file_type: "video/mp4",
+                                    file_size: videoFile.size,
+                                    is_hidden: false
+                                  });
+
+                                  if (dbError) throw dbError;
+
+                                  toast.success("Video lecture added");
+                                  setVideoFile(null);
+                                  setVideoTitle("");
+                                  setActivityDialogOpen(false);
+                                  setActivityType(null);
+                                  loadCourseData();
+                                } catch (error: any) {
+                                  toast.error(error.message || "Failed to upload video");
+                                }
+                              }} className="w-full">
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Video Lecture
                               </Button>
                             </div>
                           ) : null}
