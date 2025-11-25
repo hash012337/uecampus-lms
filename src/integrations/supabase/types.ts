@@ -1168,6 +1168,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_documents: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          file_type: string
+          id: string
+          title: string
+          updated_at: string | null
+          uploaded_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          file_type?: string
+          id?: string
+          title: string
+          updated_at?: string | null
+          uploaded_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          file_type?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           birthday_mode: boolean | null
