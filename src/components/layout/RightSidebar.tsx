@@ -62,11 +62,17 @@ export function RightSidebar() {
       const { data: quizzes } = await supabase
         .from("section_quizzes")
         .select("*, courses(code)")
-        .not("due_date", "is", null)
         .order("due_date", { ascending: true });
+
+      // Get user-specific quiz deadlines
+      const { data: customQuizDeadlines } = await supabase
+        .from("quiz_deadlines")
+        .select("*")
+        .eq("user_id", user.id);
 
       const submittedIds = new Set(submissions?.map(s => s.assignment_id) || []);
       const customDeadlineMap = new Map(customDeadlines?.map(d => [d.assignment_id, d.deadline]) || []);
+      const customQuizDeadlineMap = new Map(customQuizDeadlines?.map(d => [d.quiz_id, d.deadline]) || []);
 
       // Filter out submitted assignments and map to deadline format
       const assignmentDeadlines = assignments
@@ -97,26 +103,36 @@ export function RightSidebar() {
         .filter(Boolean); // Remove null entries
 
       // Map quizzes to deadline format
-      const quizDeadlines = (quizzes || []).map((quiz) => {
-        const dueDate = new Date(quiz.due_date!);
-        const now = new Date();
-        const hoursLeft = Math.max(
-          0,
-          Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60))
-        );
+      const quizDeadlines = (quizzes || [])
+        .filter(quiz => {
+          // Include if there's a base deadline or custom deadline
+          return quiz.due_date || customQuizDeadlineMap.has(quiz.id);
+        })
+        .map((quiz) => {
+          const deadline = customQuizDeadlineMap.get(quiz.id) || quiz.due_date;
+          
+          if (!deadline) return null;
+          
+          const dueDate = new Date(deadline);
+          const now = new Date();
+          const hoursLeft = Math.max(
+            0,
+            Math.floor((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60))
+          );
 
-        const courseData = quiz.courses as any;
+          const courseData = quiz.courses as any;
 
-        return {
-          id: `quiz-${quiz.id}`,
-          title: quiz.title,
-          course: courseData?.code || '',
-          due_date: quiz.due_date!,
-          priority: hoursLeft < 24 ? 'high' : hoursLeft < 72 ? 'medium' : 'low',
-          hours_left: hoursLeft,
-          type: 'quiz' as const
-        };
-      });
+          return {
+            id: `quiz-${quiz.id}`,
+            title: quiz.title,
+            course: courseData?.code || '',
+            due_date: deadline,
+            priority: hoursLeft < 24 ? 'high' : hoursLeft < 72 ? 'medium' : 'low',
+            hours_left: hoursLeft,
+            type: 'quiz' as const
+          };
+        })
+        .filter(Boolean); // Remove null entries
 
       // Combine and sort all deadlines by due date
       const allDeadlines = [...assignmentDeadlines, ...quizDeadlines]

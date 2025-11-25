@@ -989,6 +989,41 @@ export type Database = {
           },
         ]
       }
+      quiz_deadlines: {
+        Row: {
+          created_at: string | null
+          deadline: string
+          id: string
+          quiz_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          deadline: string
+          id?: string
+          quiz_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          deadline?: string
+          id?: string
+          quiz_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_deadlines_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "section_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quizzes: {
         Row: {
           best_score: number | null

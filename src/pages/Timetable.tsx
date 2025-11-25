@@ -183,32 +183,82 @@ export default function Timetable() {
     }
 
     // Load quizzes with deadlines
-    const { data: quizzes } = await supabase
-      .from("section_quizzes")
-      .select(`
-        id,
-        title,
-        due_date,
-        course_id,
-        courses (title, code)
-      `)
-      .not("due_date", "is", null);
+    let quizEntries: TimetableEntry[] = [];
     
-    const quizEntries: TimetableEntry[] = (quizzes || []).map(q => {
-      const courseData = q.courses as any;
-      return {
-        id: `quiz-${q.id}`,
-        course_name: q.title,
-        course_code: courseData?.code || '',
-        day_of_week: format(new Date(q.due_date!), 'EEEE'),
-        start_time: format(new Date(q.due_date!), 'h:mm a'),
-        end_time: '',
-        color: '#8b5cf6',
-        type: 'quiz' as const,
-        due_date: q.due_date!,
-        course_id: q.course_id
-      };
-    });
+    if (isAdmin) {
+      // Admin sees all quizzes with deadlines
+      const { data: quizzes } = await supabase
+        .from("section_quizzes")
+        .select(`
+          id,
+          title,
+          due_date,
+          course_id,
+          courses (title, code)
+        `)
+        .not("due_date", "is", null);
+      
+      if (quizzes) {
+        quizEntries = quizzes.map(q => {
+          const courseData = q.courses as any;
+          return {
+            id: `quiz-${q.id}`,
+            course_name: q.title,
+            course_code: courseData?.code || '',
+            day_of_week: format(new Date(q.due_date!), 'EEEE'),
+            start_time: format(new Date(q.due_date!), 'h:mm a'),
+            end_time: '',
+            color: '#8b5cf6',
+            type: 'quiz' as const,
+            due_date: q.due_date!,
+            course_id: q.course_id
+          };
+        });
+      }
+    } else {
+      // Students see quizzes with either base deadline or custom deadline
+      const { data: quizzes } = await supabase
+        .from("section_quizzes")
+        .select(`
+          id,
+          title,
+          due_date,
+          course_id,
+          courses (title, code)
+        `);
+      
+      const { data: customQuizDeadlines } = await supabase
+        .from("quiz_deadlines")
+        .select("*")
+        .eq("user_id", user.id);
+      
+      if (quizzes) {
+        const customDeadlineMap = new Map(customQuizDeadlines?.map(d => [d.quiz_id, d.deadline]) || []);
+        
+        quizEntries = quizzes
+          .map(q => {
+            const deadline = customDeadlineMap.get(q.id) || q.due_date;
+            
+            // Only include if there's a deadline
+            if (!deadline) return null;
+            
+            const courseData = q.courses as any;
+            return {
+              id: `quiz-${q.id}`,
+              course_name: q.title,
+              course_code: courseData?.code || '',
+              day_of_week: format(new Date(deadline), 'EEEE'),
+              start_time: format(new Date(deadline), 'h:mm a'),
+              end_time: '',
+              color: '#8b5cf6',
+              type: 'quiz' as const,
+              due_date: deadline,
+              course_id: q.course_id
+            };
+          })
+          .filter(Boolean) as TimetableEntry[];
+      }
+    }
 
     setEntries([...timetableEntries, ...assignmentEntries, ...quizEntries]);
   };
