@@ -45,6 +45,12 @@ export function RightSidebar() {
 
       if (!assignments) return;
 
+      // Get user-specific deadlines
+      const { data: customDeadlines } = await supabase
+        .from("assignment_deadlines")
+        .select("*")
+        .eq("user_id", user.id);
+
       // Get user's submissions
       const { data: submissions } = await supabase
         .from("assignment_submissions")
@@ -52,6 +58,7 @@ export function RightSidebar() {
         .eq("user_id", user.id);
 
       const submittedIds = new Set(submissions?.map(s => s.assignment_id) || []);
+      const customDeadlineMap = new Map(customDeadlines?.map(d => [d.assignment_id, d.deadline]) || []);
 
       // Filter out submitted assignments
       const unsubmittedAssignments = assignments
@@ -59,7 +66,9 @@ export function RightSidebar() {
         .slice(0, 3);
 
       const deadlinesWithHours = unsubmittedAssignments.map((assignment) => {
-        const dueDate = new Date(assignment.due_date || new Date());
+        // Use custom deadline if exists, otherwise use assignment due_date
+        const deadline = customDeadlineMap.get(assignment.id) || assignment.due_date;
+        const dueDate = new Date(deadline || new Date());
         const now = new Date();
         const hoursLeft = Math.max(
           0,
@@ -70,7 +79,7 @@ export function RightSidebar() {
           id: assignment.id,
           title: assignment.title,
           course: assignment.course_code,
-          due_date: assignment.due_date || "",
+          due_date: deadline || "",
           priority: assignment.priority || "medium",
           hours_left: hoursLeft,
         };

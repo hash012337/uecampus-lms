@@ -29,6 +29,7 @@ interface Assignment {
   grade: string | null;
   feedback: string | null;
   attempts: number;
+  custom_deadline?: string | null; // Per-user deadline
 }
 
 export default function Assignments() {
@@ -200,7 +201,24 @@ export default function Assignments() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      if (data) setAssignments(data);
+      
+      if (data && user) {
+        // Fetch user-specific deadlines
+        const { data: customDeadlines } = await supabase
+          .from("assignment_deadlines")
+          .select("*")
+          .eq("user_id", user.id);
+
+        const deadlineMap = new Map(customDeadlines?.map(d => [d.assignment_id, d.deadline]) || []);
+        
+        // Add custom deadlines to assignments
+        const assignmentsWithDeadlines = data.map(assignment => ({
+          ...assignment,
+          custom_deadline: deadlineMap.get(assignment.id) || null
+        }));
+        
+        setAssignments(assignmentsWithDeadlines);
+      }
     } catch (error) {
       console.error("Error fetching assignments:", error);
     } finally {
@@ -451,10 +469,18 @@ export default function Assignments() {
             
             return (
               <Card key={assignment.id} className="p-6">
-                <h3 className="text-lg font-semibold mb-4">{assignment.title}</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {assignment.course} ({assignment.course_code})
-                </p>
+                <div className="space-y-2 mb-4">
+                  <h3 className="text-lg font-semibold">{assignment.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {assignment.course} ({assignment.course_code})
+                  </p>
+                  {assignment.due_date && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {assignmentSubmissions.map((submission) => (
                     <div
@@ -600,15 +626,23 @@ export default function Assignments() {
                     <h3 className="text-xl font-semibold">{a.title}</h3>
                     <p className="text-sm text-muted-foreground">{a.course} ({a.course_code})</p>
                     <p className="text-sm">{a.description}</p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {(a.custom_deadline || a.due_date) && (
+                        <Badge variant="outline" className="bg-primary/10">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          Due: {new Date(a.custom_deadline || a.due_date).toLocaleDateString()}
+                        </Badge>
+                      )}
                       <Badge variant={a.priority === "high" ? "destructive" : "secondary"}>
                         {a.priority}
                       </Badge>
                       <Badge variant="outline">{a.points} pts</Badge>
-                      <Badge variant="outline">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {a.hours_left}h left
-                      </Badge>
+                      {a.hours_left && (
+                        <Badge variant="outline">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {a.hours_left}h left
+                        </Badge>
+                      )}
                       <Badge variant="outline">
                         {a.attempts} attempt(s) allowed
                       </Badge>
