@@ -42,7 +42,7 @@ export default function Assignments() {
   const [selectedUser, setSelectedUser] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [users, setUsers] = useState<any[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [filterUserId, setFilterUserId] = useState<string>("all");
   const [extraAttemptsDialogOpen, setExtraAttemptsDialogOpen] = useState(false);
   const [selectedAssignmentForAttempts, setSelectedAssignmentForAttempts] = useState<string>("");
@@ -52,11 +52,17 @@ export default function Assignments() {
   useEffect(() => {
     if (user) {
       fetchAssignments();
-      fetchSubmissions();
       fetchUsers();
       checkAdminStatus();
     }
   }, [user]);
+
+  // Fetch submissions after admin status is determined
+  useEffect(() => {
+    if (user && isAdmin !== null) {
+      fetchSubmissions();
+    }
+  }, [user, isAdmin]);
 
   const checkAdminStatus = async () => {
     if (!user) return;
@@ -66,12 +72,7 @@ export default function Assignments() {
       .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle();
-    const adminStatus = !!data;
-    setIsAdmin(adminStatus);
-    // Refetch submissions after admin status is determined
-    if (adminStatus) {
-      fetchSubmissions();
-    }
+    setIsAdmin(!!data);
   };
 
   const fetchUsers = async () => {
