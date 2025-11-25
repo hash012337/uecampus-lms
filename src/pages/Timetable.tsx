@@ -25,6 +25,8 @@ interface TimetableEntry {
   user_id?: string;
   type?: 'class' | 'assignment' | 'quiz';
   due_date?: string;
+  course_id?: string;
+  assignment_id?: string;
 }
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -112,6 +114,13 @@ export default function Timetable() {
         .select("id, title, course, course_code, due_date")
         .not("due_date", "is", null);
       
+      // Get course IDs for assignments
+      const { data: coursesData } = await supabase
+        .from("courses")
+        .select("id, code");
+      
+      const courseMap = new Map(coursesData?.map(c => [c.code, c.id]) || []);
+      
       if (assignments) {
         assignmentEntries = assignments.map(a => ({
           id: `assignment-${a.id}`,
@@ -122,7 +131,9 @@ export default function Timetable() {
           end_time: '',
           color: '#ef4444',
           type: 'assignment' as const,
-          due_date: a.due_date!
+          due_date: a.due_date!,
+          course_id: courseMap.get(a.course_code),
+          assignment_id: a.id
         }));
       }
     } else {
@@ -135,6 +146,13 @@ export default function Timetable() {
         .from("assignment_deadlines")
         .select("*")
         .eq("user_id", user.id);
+      
+      // Get course IDs for assignments
+      const { data: coursesData } = await supabase
+        .from("courses")
+        .select("id, code");
+      
+      const courseMap = new Map(coursesData?.map(c => [c.code, c.id]) || []);
       
       if (assignments) {
         const customDeadlineMap = new Map(customDeadlines?.map(d => [d.assignment_id, d.deadline]) || []);
@@ -155,7 +173,9 @@ export default function Timetable() {
               end_time: '',
               color: '#ef4444',
               type: 'assignment' as const,
-              due_date: deadline
+              due_date: deadline,
+              course_id: courseMap.get(a.course_code),
+              assignment_id: a.id
             };
           })
           .filter(Boolean) as TimetableEntry[];
@@ -185,7 +205,8 @@ export default function Timetable() {
         end_time: '',
         color: '#8b5cf6',
         type: 'quiz' as const,
-        due_date: q.due_date!
+        due_date: q.due_date!,
+        course_id: q.course_id
       };
     });
 
@@ -271,13 +292,10 @@ export default function Timetable() {
   };
 
   const handleGoToActivity = () => {
-    if (!selectedEntry) return;
+    if (!selectedEntry || !selectedEntry.course_id) return;
     
-    if (selectedEntry.type === 'assignment') {
-      navigate('/assignments');
-    } else if (selectedEntry.type === 'quiz') {
-      navigate('/courses');
-    }
+    // Navigate to the course detail page where the assignment/quiz is located
+    navigate(`/courses/${selectedEntry.course_id}`);
     setDetailDialogOpen(false);
   };
 
@@ -512,11 +530,6 @@ export default function Timetable() {
                 <span className="capitalize">
                   {selectedEntry.type === 'assignment' ? 'Assignment' : selectedEntry.type === 'quiz' ? 'Quiz' : 'Course event'}
                 </span>
-              </div>
-
-              <div className="flex items-center gap-3 text-sm">
-                <GraduationCap className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-primary">{selectedEntry.course_code}</span>
               </div>
 
               <div className="flex justify-end pt-2">
