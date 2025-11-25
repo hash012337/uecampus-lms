@@ -466,6 +466,7 @@ export default function Assignments() {
               s => s.assignment_id === assignment.id
             );
             
+            // Show assignment if it has submissions
             if (assignmentSubmissions.length === 0) return null;
             
             return (
@@ -481,6 +482,9 @@ export default function Assignments() {
                       <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
                     </div>
                   )}
+                  <p className="text-xs text-muted-foreground">
+                    Total Submissions: {assignmentSubmissions.length}
+                  </p>
                 </div>
                 <div className="space-y-3">
                   {assignmentSubmissions.map((submission) => (
