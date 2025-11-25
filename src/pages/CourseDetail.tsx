@@ -33,6 +33,7 @@ import { FileViewer } from "@/components/FileViewer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DraggableMaterialList } from "@/components/DraggableMaterialList";
 import { CertificateGeneratedDialog } from "@/components/CertificateGeneratedDialog";
+import quizIcon from "@/assets/quiz-icon.png";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
@@ -1041,7 +1042,7 @@ export default function CourseDetail() {
                                 selectedFile?._isQuiz && selectedFile?.id === quiz.id ? 'bg-accent' : ''
                               }`}
                             >
-                              <FileQuestion className="h-4 w-4 flex-shrink-0 text-purple-600" />
+                              <img src={quizIcon} alt="Quiz" className="h-5 w-5 flex-shrink-0 object-contain" />
                               <span className="truncate text-left flex-1">{quiz.title}</span>
                             </button>
                           ))}
@@ -1287,7 +1288,7 @@ export default function CourseDetail() {
                       <div key={quiz.id} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <FileQuestion className="h-4 w-4 text-purple-600" />
+                            <img src={quizIcon} alt="Quiz" className="h-5 w-5 object-contain" />
                             <span className="font-medium">{quiz.title}</span>
                           </div>
                           <div className="flex gap-2">
@@ -1395,7 +1396,7 @@ export default function CourseDetail() {
                                 className="h-24 flex flex-col gap-2"
                                 onClick={() => setActivityType("quiz")}
                               >
-                                <FileQuestion className="h-8 w-8 text-purple-600" />
+                                <img src={quizIcon} alt="Quiz" className="h-12 w-12 object-contain" />
                                 <span>Quiz</span>
                               </Button>
                               <Button
