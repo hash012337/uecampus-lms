@@ -31,7 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileViewer } from "@/components/FileViewer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DraggableMaterialList } from "@/components/DraggableMaterialList";
+import { DraggableMaterialList, DraggableAssignmentList, DraggableQuizList } from "@/components/DraggableMaterialList";
 import { CertificateGeneratedDialog } from "@/components/CertificateGeneratedDialog";
 import quizIcon from "@/assets/quiz-icon.png";
 
@@ -659,6 +659,38 @@ export default function CourseDetail() {
     }
   };
 
+  const handleUpdateAssignment = async (assignmentId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('assignments')
+        .update(updates)
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast.success('Assignment updated');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update assignment');
+    }
+  };
+
+  const handleUpdateQuiz = async (quizId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('section_quizzes')
+        .update(updates)
+        .eq('id', quizId);
+
+      if (error) throw error;
+
+      toast.success('Quiz updated');
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update quiz');
+    }
+  };
+
   const handleSetUserDeadline = async () => {
     if (!selectedAssignmentForDeadline || !selectedUserForDeadline || !customDeadline) {
       toast.error("Please fill all fields");
@@ -1203,127 +1235,24 @@ export default function CourseDetail() {
                       onUpdate={handleUpdateMaterial}
                       getFileIcon={getFileIcon}
                     />
-                    {materials.filter(m => m.section_id === section.id).map((material) => (
-                      <div key={material.id} className="flex items-center justify-between p-2 border rounded">
-                        <span className="text-sm">{material.title}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleHideMaterial(material.id, material.is_hidden)}
-                        >
-                          {material.is_hidden ? 'Show' : 'Hide'}
-                        </Button>
-                      </div>
-                    ))}
                     
-                    {assignments.filter(a => a.unit_name === section.id).map((assignment) => (
-                      <div key={assignment.id} className="p-4 bg-accent/50 rounded-lg border border-border">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <FileQuestion className="h-5 w-5 text-primary" />
-                            <span className="font-semibold text-lg">{assignment.title}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge variant="secondary">
-                              {assignment.points} marks
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleHideAssignment(assignment.id, assignment.is_hidden)}
-                            >
-                              {assignment.is_hidden ? 'Show' : 'Hide'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedAssignmentForDeadline(assignment);
-                                setDeadlineDialogOpen(true);
-                              }}
-                            >
-                              Set Deadline
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteAssignment(assignment.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {assignment.assessment_brief && (
-                          <div className="mb-3 p-3 bg-background rounded border border-border">
-                            <h4 className="font-medium text-sm mb-2">Assessment Brief</h4>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{assignment.assessment_brief}</p>
-                          </div>
-                        )}
-                        
-                        {assignment.description && (
-                          <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
-                        )}
-                        
-                        <div className="flex flex-wrap gap-3 text-xs">
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold">Total Marks:</span>
-                            <span>{assignment.points}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold">Passing Marks:</span>
-                            <span className="text-green-600 dark:text-green-400">{assignment.passing_marks || '50'}</span>
-                          </div>
-                          {assignment.due_date && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-semibold">Due:</span>
-                              <span>{new Date(assignment.due_date).toLocaleDateString()}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    <DraggableAssignmentList
+                      assignments={assignments.filter(a => a.unit_name === section.id)}
+                      onDelete={handleDeleteAssignment}
+                      onUpdate={handleUpdateAssignment}
+                      onToggleHide={handleToggleHideAssignment}
+                      onSetDeadline={(assignment) => {
+                        setSelectedAssignmentForDeadline(assignment);
+                        setDeadlineDialogOpen(true);
+                      }}
+                    />
 
-                    {sectionQuizzes.filter(q => q.section_id === section.id).map((quiz) => (
-                      <div key={quiz.id} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <img src={quizIcon} alt="Quiz" className="h-5 w-5 object-contain" />
-                            <span className="font-medium">{quiz.title}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleHideQuiz(quiz.id, quiz.is_hidden)}
-                            >
-                              {quiz.is_hidden ? 'Show' : 'Hide'}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteQuiz(quiz.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                        {quiz.description && (
-                          <p className="text-sm text-muted-foreground mb-2">{quiz.description}</p>
-                        )}
-                        <div className="text-xs">
-                          <span className="font-semibold">Duration:</span> {quiz.duration} minutes
-                        </div>
-                        <a 
-                          href={quiz.quiz_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-purple-600 hover:underline"
-                        >
-                          Open Quiz →
-                        </a>
-                      </div>
-                    ))}
+                    <DraggableQuizList
+                      quizzes={sectionQuizzes.filter(q => q.section_id === section.id)}
+                      onDelete={handleDeleteQuiz}
+                      onUpdate={handleUpdateQuiz}
+                      onToggleHide={handleToggleHideQuiz}
+                    />
 
                     <div className="mt-4 pt-4 border-t">
                       <Dialog 
