@@ -506,6 +506,11 @@ export default function CourseDetail() {
         assessmentBriefPath = filePath;
       }
 
+      // Convert datetime-local to proper ISO string
+      const dueDate = newAssignment.due_date 
+        ? new Date(newAssignment.due_date).toISOString()
+        : null;
+
       const { error } = await supabase.from("assignments").insert({
         course: courseId,
         course_code: course.code,
@@ -516,7 +521,7 @@ export default function CourseDetail() {
         feedback: assessmentBriefPath,
         points: newAssignment.points,
         passing_marks: newAssignment.passing_marks,
-        due_date: newAssignment.due_date || null
+        due_date: dueDate
       });
 
       if (error) throw error;
@@ -572,6 +577,11 @@ export default function CourseDetail() {
     if (!newQuiz.title || !newQuiz.quiz_url || !currentSectionId || !courseId) return;
     
     try {
+      // Convert datetime-local to proper ISO string
+      const dueDate = newQuiz.due_date 
+        ? new Date(newQuiz.due_date).toISOString()
+        : null;
+
       const { error } = await supabase.from("section_quizzes").insert({
         course_id: courseId,
         section_id: currentSectionId,
@@ -579,7 +589,7 @@ export default function CourseDetail() {
         quiz_url: newQuiz.quiz_url,
         description: newQuiz.description,
         duration: newQuiz.duration,
-        due_date: newQuiz.due_date || null
+        due_date: dueDate
       });
 
       if (error) throw error;
