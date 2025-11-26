@@ -198,10 +198,12 @@ export function FileViewer({ file }: FileViewerProps) {
 
   useEffect(() => {
     // Load file for regular materials and briefs with actual file paths
-    if (file && !file._isAssignment && !file._isQuiz && file.file_type !== "google_drive") {
+    if (file && !file._isAssignment && !file._isQuiz) {
       if (file._isBrief && file.file_path && file.file_path.includes('.')) {
+        // For briefs with real files, always load
         loadFile();
-      } else if (!file._isBrief) {
+      } else if (!file._isBrief && file.file_type !== "google_drive") {
+        // For regular materials (not briefs, not google drive)
         loadFile();
       }
     }
@@ -445,10 +447,15 @@ export function FileViewer({ file }: FileViewerProps) {
   const isImage = file.file_type?.includes("image");
   const isTextLesson = file.file_type?.includes("text/html");
   const isWord = file.file_type?.includes("word") || file.file_type?.includes("document");
-  const isPowerpoint = file.file_type?.includes("presentation") || file.file_type?.includes("powerpoint");
+  const isPowerpoint = 
+    file.file_type?.includes("presentation") || 
+    file.file_type?.includes("powerpoint") ||
+    file.file_type?.includes("vnd.openxmlformats-officedocument.presentationml") ||
+    file.file_type?.includes("vnd.ms-powerpoint");
   const isPptx =
     file.file_path?.toLowerCase().endsWith(".pptx") ||
-    file.title.toLowerCase().endsWith(".pptx");
+    file.title?.toLowerCase().endsWith(".pptx") ||
+    file.file_type?.includes("openxmlformats-officedocument.presentationml");
   const isGoogleDrive = file.file_type === "google_drive";
 
   return (
