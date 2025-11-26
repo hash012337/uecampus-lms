@@ -16,6 +16,7 @@ export const PowerPointPreview: React.FC<PowerPointPreviewProps> = ({ fileUrl, t
   useEffect(() => {
     let isCancelled = false;
     let viewer: any;
+    let timeout: number | undefined;
 
     const load = async () => {
       if (!containerRef.current) return;
@@ -32,14 +33,15 @@ export const PowerPointPreview: React.FC<PowerPointPreviewProps> = ({ fileUrl, t
         const pptx = await import("pptx-preview");
         const init = (pptx as any).init ?? (pptx as any).default ?? pptx;
 
-        viewer = init(containerRef.current, {
-          width: containerRef.current.clientWidth || 960,
-          height: containerRef.current.clientHeight || 540,
+        viewer = init(containerRef.current!, {
+          width: containerRef.current!.clientWidth || 960,
+          height: containerRef.current!.clientHeight || 540,
         });
 
         await viewer.preview(buffer);
         if (!isCancelled) {
           setLoading(false);
+          if (timeout) window.clearTimeout(timeout);
         }
       } catch (err) {
         console.error("PowerPoint preview error:", err);
@@ -48,9 +50,19 @@ export const PowerPointPreview: React.FC<PowerPointPreviewProps> = ({ fileUrl, t
             "We couldn't render this presentation for online preview. Please download the file to view it on your device."
           );
           setLoading(false);
+          if (timeout) window.clearTimeout(timeout);
         }
       }
     };
+
+    timeout = window.setTimeout(() => {
+      if (!isCancelled) {
+        setError(
+          "We couldn't finish loading this presentation. Please download the file to view it on your device."
+        );
+        setLoading(false);
+      }
+    }, 15000);
 
     load();
 
@@ -58,6 +70,9 @@ export const PowerPointPreview: React.FC<PowerPointPreviewProps> = ({ fileUrl, t
       isCancelled = true;
       if (viewer && typeof viewer.destroy === "function") {
         viewer.destroy();
+      }
+      if (timeout) {
+        window.clearTimeout(timeout);
       }
     };
   }, [fileUrl]);

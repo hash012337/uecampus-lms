@@ -446,6 +446,9 @@ export function FileViewer({ file }: FileViewerProps) {
   const isTextLesson = file.file_type?.includes("text/html");
   const isWord = file.file_type?.includes("word") || file.file_type?.includes("document");
   const isPowerpoint = file.file_type?.includes("presentation") || file.file_type?.includes("powerpoint");
+  const isPptx =
+    file.file_path?.toLowerCase().endsWith(".pptx") ||
+    file.title.toLowerCase().endsWith(".pptx");
   const isGoogleDrive = file.file_type === "google_drive";
 
   return (
@@ -531,7 +534,26 @@ export function FileViewer({ file }: FileViewerProps) {
           </div>
         )}
         {isPowerpoint && fileUrl && (
-          <PowerPointPreview fileUrl={fileUrl} title={file.title} />
+          isPptx ? (
+            <PowerPointPreview fileUrl={fileUrl} title={file.title} />
+          ) : (
+            <div className="relative w-full h-full">
+              <iframe
+                src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
+                className="w-full h-full border-0"
+                title={file.title}
+                onLoad={() => setLoading(false)}
+              />
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background">
+                  <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground">Loading presentation...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
         )}
         {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && !isGoogleDrive && (
           <div className="flex items-center justify-center h-full">
