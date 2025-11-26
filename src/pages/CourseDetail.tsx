@@ -879,6 +879,127 @@ export default function CourseDetail() {
     }
   };
 
+  const handleAddPowerPoint = async () => {
+    if (!pptFile || !pptTitle || !currentSectionId) {
+      toast.error("Please provide title and PowerPoint file");
+      return;
+    }
+    
+    try {
+      const filePath = `${courseId}/${currentSectionId}/${Date.now()}-${pptFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("course-materials")
+        .upload(filePath, pptFile);
+
+      if (uploadError) throw uploadError;
+
+      const { error } = await supabase.from("course_materials").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: pptTitle,
+        file_path: filePath,
+        file_type: pptFile.type,
+        file_size: pptFile.size,
+        is_hidden: false
+      });
+
+      if (error) throw error;
+      
+      toast.success("PowerPoint added");
+      setPptTitle("");
+      setPptFile(null);
+      setActivityDialogOpen(false);
+      setActivityType(null);
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add PowerPoint");
+    }
+  };
+
+  const handleAddVideoLecture = async () => {
+    if (!videoFile || !videoTitle || !currentSectionId) {
+      toast.error("Please provide title and video file");
+      return;
+    }
+    
+    try {
+      const filePath = `${courseId}/${currentSectionId}/${Date.now()}-${videoFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("course-materials")
+        .upload(filePath, videoFile);
+
+      if (uploadError) throw uploadError;
+
+      const { error } = await supabase.from("course_materials").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: videoTitle,
+        file_path: filePath,
+        file_type: videoFile.type,
+        file_size: videoFile.size,
+        is_hidden: false
+      });
+
+      if (error) throw error;
+      
+      toast.success("Video lecture added");
+      setVideoTitle("");
+      setVideoFile(null);
+      setActivityDialogOpen(false);
+      setActivityType(null);
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add video lecture");
+    }
+  };
+
+  const handleAddAssessmentBrief = async () => {
+    if (!newAssignment.title || !currentSectionId) return;
+    
+    try {
+      let briefFilePath = null;
+      
+      if (assignmentFile) {
+        const filePath = `${courseId}/${currentSectionId}/briefs/${Date.now()}-${assignmentFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("course-materials")
+          .upload(filePath, assignmentFile);
+
+        if (uploadError) throw uploadError;
+        briefFilePath = filePath;
+      }
+
+      const { error } = await supabase.from("course_materials").insert({
+        course_id: courseId,
+        section_id: currentSectionId,
+        title: newAssignment.title,
+        file_path: briefFilePath || `briefs/${Date.now()}.html`,
+        file_type: "application/brief",
+        description: newAssignment.assessment_brief,
+        is_hidden: false
+      });
+
+      if (error) throw error;
+      
+      toast.success("Assessment brief added");
+      setNewAssignment({
+        title: "",
+        unit_name: "",
+        description: "",
+        points: 100,
+        passing_marks: 50,
+        assessment_brief: "",
+        due_date: ""
+      });
+      setAssignmentFile(null);
+      setActivityDialogOpen(false);
+      setActivityType(null);
+      loadCourseData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add assessment brief");
+    }
+  };
+
   const handleAddGoogleDrive = async () => {
     if (!googleDriveUrl || !googleDriveTitle || !currentSectionId) {
       toast.error("Please provide both title and URL");
@@ -994,7 +1115,600 @@ export default function CourseDetail() {
   ).length;
   const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
-  // Unified layout for both admin and student
+  // Admin view - old layout with tabs
+  if (isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">{course.title}</h1>
+              <p className="text-muted-foreground">{course.code}</p>
+            </div>
+            <div className="flex gap-2">
+              <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Enroll User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Enroll User</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.filter(u => !enrolledStudents.find(s => s.id === u.id)).map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.full_name || u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={handleEnrollUser}>Enroll</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button variant="destructive" onClick={handleDeleteCourse} className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete Course
+              </Button>
+            </div>
+          </div>
+
+          <Tabs defaultValue="content" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="students">Students</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="content" className="space-y-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Course Sections</CardTitle>
+                  <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Section
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Section</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Title</Label>
+                          <Input
+                            value={newSection.title}
+                            onChange={(e) => setNewSection({ ...newSection, title: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea
+                            value={newSection.description}
+                            onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
+                          />
+                        </div>
+                        <Button onClick={handleAddSection}>Add Section</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {sections.map((section) => (
+                    <Card key={section.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{section.title}</CardTitle>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setCurrentSectionId(section.id);
+                              setActivityDialogOpen(true);
+                            }}
+                            className="gap-2"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add an activity
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <DraggableMaterialList
+                          materials={materials.filter(m => m.section_id === section.id)}
+                          onReorder={async (reordered) => {
+                            setMaterials(materials.map(m => 
+                              m.section_id === section.id 
+                                ? reordered.find(r => r.id === m.id) || m 
+                                : m
+                            ));
+                          }}
+                          onDelete={async (id) => {
+                            const material = materials.find(m => m.id === id);
+                            if (!material) return;
+                            if (material.file_path && material.file_path.startsWith(`${courseId}/`)) {
+                              await supabase.storage.from("course-materials").remove([material.file_path]);
+                            }
+                            await supabase.from("course_materials").delete().eq("id", id);
+                            loadCourseData();
+                          }}
+                          onUpdate={async (id, updates) => {
+                            await supabase.from("course_materials")
+                              .update(updates)
+                              .eq("id", id);
+                            loadCourseData();
+                          }}
+                          getFileIcon={getFileIcon}
+                        />
+                        
+                        <DraggableAssignmentList
+                          assignments={assignments.filter(a => a.unit_name === section.id)}
+                          onDelete={async (id) => {
+                            await supabase.from("assignments").delete().eq("id", id);
+                            loadCourseData();
+                          }}
+                          onUpdate={async (id, updates) => {
+                            await supabase.from("assignments")
+                              .update(updates)
+                              .eq("id", id);
+                            loadCourseData();
+                          }}
+                          onToggleHide={async (id, isHidden) => {
+                            await supabase.from("assignments")
+                              .update({ is_hidden: isHidden })
+                              .eq("id", id);
+                            loadCourseData();
+                          }}
+                        />
+                        
+                        <DraggableQuizList
+                          quizzes={sectionQuizzes.filter(q => q.section_id === section.id)}
+                          onDelete={async (id) => {
+                            await supabase.from("section_quizzes").delete().eq("id", id);
+                            loadCourseData();
+                          }}
+                          onUpdate={async (id, updates) => {
+                            await supabase.from("section_quizzes")
+                              .update(updates)
+                              .eq("id", id);
+                            loadCourseData();
+                          }}
+                          onToggleHide={async (id, isHidden) => {
+                            await supabase.from("section_quizzes")
+                              .update({ is_hidden: isHidden })
+                              .eq("id", id);
+                            loadCourseData();
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="students">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Enrolled Students</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {enrolledStudents.map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell>{student.full_name || "N/A"}</TableCell>
+                          <TableCell>{student.email}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Activity Dialog */}
+        <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Activity</DialogTitle>
+            </DialogHeader>
+            {!activityType ? (
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("text")}
+                >
+                  <FileText className="h-8 w-8" />
+                  Text Lesson
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("file")}
+                >
+                  <File className="h-8 w-8" />
+                  File
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("ppt")}
+                >
+                  <FileText className="h-8 w-8" />
+                  PowerPoint
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("assignment")}
+                >
+                  <Upload className="h-8 w-8" />
+                  Assignment
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("brief")}
+                >
+                  <FileQuestion className="h-8 w-8" />
+                  Assessment Brief
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("quiz")}
+                >
+                  <BookOpen className="h-8 w-8" />
+                  Quiz
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("google_drive")}
+                >
+                  <File className="h-8 w-8" />
+                  Google Drive
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2"
+                  onClick={() => setActivityType("video_lecture")}
+                >
+                  <Video className="h-8 w-8" />
+                  Video Lecture
+                </Button>
+              </div>
+            ) : activityType === "text" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={newTextLesson.title}
+                    onChange={(e) => setNewTextLesson({ ...newTextLesson, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Content</Label>
+                  <RichTextEditor
+                    content={newTextLesson.content}
+                    onChange={(content) => setNewTextLesson({ ...newTextLesson, content })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddTextLesson}>Add</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setNewTextLesson({ title: "", content: "" });
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "file" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Display Name</Label>
+                  <Input
+                    value={fileDisplayName}
+                    onChange={(e) => setFileDisplayName(e.target.value)}
+                    placeholder="Enter display name for the file"
+                  />
+                </div>
+                <div>
+                  <Label>Upload Files</Label>
+                  <Input
+                    type="file"
+                    multiple
+                    onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => handleUploadMaterials(currentSectionId)}>Upload</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setFileDisplayName("");
+                    setUploadFiles([]);
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "ppt" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={pptTitle}
+                    onChange={(e) => setPptTitle(e.target.value)}
+                    placeholder="Enter PowerPoint title"
+                  />
+                </div>
+                <div>
+                  <Label>Upload PowerPoint</Label>
+                  <Input
+                    type="file"
+                    accept=".ppt,.pptx"
+                    onChange={(e) => setPptFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddPowerPoint}>Add PowerPoint</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setPptTitle("");
+                    setPptFile(null);
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "google_drive" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={googleDriveTitle}
+                    onChange={(e) => setGoogleDriveTitle(e.target.value)}
+                    placeholder="Enter title"
+                  />
+                </div>
+                <div>
+                  <Label>Google Drive Link</Label>
+                  <Input
+                    value={googleDriveUrl}
+                    onChange={(e) => setGoogleDriveUrl(e.target.value)}
+                    placeholder="Paste Google Drive link"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddGoogleDrive}>Add</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setGoogleDriveUrl("");
+                    setGoogleDriveTitle("");
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "video_lecture" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={videoTitle}
+                    onChange={(e) => setVideoTitle(e.target.value)}
+                    placeholder="Enter video title"
+                  />
+                </div>
+                <div>
+                  <Label>Upload Video</Label>
+                  <Input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddVideoLecture}>Add Video</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setVideoTitle("");
+                    setVideoFile(null);
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "assignment" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={newAssignment.title}
+                    onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <RichTextEditor
+                    content={newAssignment.description || ""}
+                    onChange={(content) => setNewAssignment({ ...newAssignment, description: content })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Points</Label>
+                    <Input
+                      type="number"
+                      value={newAssignment.points}
+                      onChange={(e) => setNewAssignment({ ...newAssignment, points: parseInt(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Passing Marks</Label>
+                    <Input
+                      type="number"
+                      value={newAssignment.passing_marks}
+                      onChange={(e) => setNewAssignment({ ...newAssignment, passing_marks: parseInt(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Due Date</Label>
+                  <Input
+                    type="datetime-local"
+                    value={newAssignment.due_date}
+                    onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddAssignment}>Add Assignment</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setNewAssignment({
+                      title: "",
+                      unit_name: "",
+                      description: "",
+                      points: 100,
+                      passing_marks: 50,
+                      assessment_brief: "",
+                      due_date: ""
+                    });
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "brief" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={newAssignment.title}
+                    onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Assessment Brief Content</Label>
+                  <RichTextEditor
+                    content={newAssignment.assessment_brief || ""}
+                    onChange={(content) => setNewAssignment({ ...newAssignment, assessment_brief: content })}
+                  />
+                </div>
+                <div>
+                  <Label>Upload File (Optional)</Label>
+                  <Input
+                    type="file"
+                    onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddAssessmentBrief}>Add Brief</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setNewAssignment({
+                      title: "",
+                      unit_name: "",
+                      description: "",
+                      points: 100,
+                      passing_marks: 50,
+                      assessment_brief: "",
+                      due_date: ""
+                    });
+                    setAssignmentFile(null);
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : activityType === "quiz" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={newQuiz.title}
+                    onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Quiz URL</Label>
+                  <Input
+                    value={newQuiz.quiz_url}
+                    onChange={(e) => setNewQuiz({ ...newQuiz, quiz_url: e.target.value })}
+                    placeholder="Enter external quiz URL"
+                  />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <RichTextEditor
+                    content={newQuiz.description || ""}
+                    onChange={(content) => setNewQuiz({ ...newQuiz, description: content })}
+                  />
+                </div>
+                <div>
+                  <Label>Duration (minutes)</Label>
+                  <Input
+                    type="number"
+                    value={newQuiz.duration}
+                    onChange={(e) => setNewQuiz({ ...newQuiz, duration: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>Due Date</Label>
+                  <Input
+                    type="datetime-local"
+                    value={newQuiz.due_date}
+                    onChange={(e) => setNewQuiz({ ...newQuiz, due_date: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddQuiz}>Add Quiz</Button>
+                  <Button variant="outline" onClick={() => {
+                    setActivityType(null);
+                    setNewQuiz({
+                      title: "",
+                      quiz_url: "",
+                      description: "",
+                      duration: 30,
+                      due_date: ""
+                    });
+                  }}>
+                    Back
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+        
+        <CertificateGeneratedDialog 
+          open={certificateDialogOpen} 
+          onOpenChange={setCertificateDialogOpen}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  // Student view - new layout with file viewer
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Navigation Bar */}
@@ -1085,7 +1799,8 @@ export default function CourseDetail() {
                     </CollapsibleTrigger>
                     
                     <CollapsibleContent className="border-t bg-muted/20">
-                      <div className="p-2 space-y-1">{sectionMaterials.map((material) => (
+                      <div className="p-2 space-y-1">
+                        {sectionMaterials.map((material) => (
                           <button
                             key={material.id}
                             onClick={() => setSelectedFile(material.file_type === "application/brief" ? {
@@ -1205,6 +1920,11 @@ export default function CourseDetail() {
           </Button>
         </div>
       )}
+      
+      <CertificateGeneratedDialog 
+        open={certificateDialogOpen} 
+        onOpenChange={setCertificateDialogOpen}
+      />
     </div>
   );
 }
