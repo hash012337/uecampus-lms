@@ -192,8 +192,13 @@ export function FileViewer({ file }: FileViewerProps) {
   };
 
   useEffect(() => {
-    if (file && !file._isAssignment && !file._isQuiz && !file._isBrief && file.file_type !== "google_drive") {
-      loadFile();
+    // Load file for regular materials and briefs with actual file paths
+    if (file && !file._isAssignment && !file._isQuiz && file.file_type !== "google_drive") {
+      if (file._isBrief && file.file_path && file.file_path.includes('.')) {
+        loadFile();
+      } else if (!file._isBrief) {
+        loadFile();
+      }
     }
     if (file && file._isAssignment) {
       loadUserSubmissions();
@@ -256,12 +261,11 @@ export function FileViewer({ file }: FileViewerProps) {
 
   // Assignment Brief view
   if (file._isBrief) {
-    // Always show text content for briefs, but allow file download if available
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="p-4 border-b flex items-center justify-between bg-background sticky top-0 z-10">
           <h3 className="font-semibold text-lg">{file.title}</h3>
-          {file.file_path && (
+          {file.file_path && file.file_path.includes('.') && (
             <Button variant="outline" size="sm" onClick={downloadFile}>
               <Download className="h-4 w-4 mr-2" />
               Download Brief
@@ -270,18 +274,30 @@ export function FileViewer({ file }: FileViewerProps) {
         </div>
         
         <div className="flex-1 overflow-auto">
-          <div className="max-w-4xl mx-auto p-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Assessment Brief</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="prose dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-wrap">{file.description || "No brief content available"}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {file.file_path && file.file_path.includes('.') && fileUrl ? (
+            // Show file preview if a real file was uploaded
+            <div className="h-full">
+              <iframe
+                src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+                className="w-full h-full border-0"
+                title={file.title}
+              />
+            </div>
+          ) : (
+            // Show text content
+            <div className="max-w-4xl mx-auto p-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Assessment Brief</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose dark:prose-invert max-w-none">
+                    <p className="whitespace-pre-wrap">{file.assessment_brief || file.description || "No brief content available"}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -467,11 +483,13 @@ export function FileViewer({ file }: FileViewerProps) {
           </div>
         )}
         {(isWord || isPowerpoint) && fileUrl && (
-          <iframe
-            src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
-            className="w-full h-full border-0"
-            title={file.title}
-          />
+          <div className="h-full flex flex-col">
+            <iframe
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+              className="w-full h-full border-0"
+              title={file.title}
+            />
+          </div>
         )}
         {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && !isGoogleDrive && (
           <div className="flex items-center justify-center h-full">
