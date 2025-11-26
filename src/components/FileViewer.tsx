@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AssignmentSubmissionStatus } from "@/components/AssignmentSubmissionStatus";
+import { PowerPointPreview } from "@/components/PowerPointPreview";
 
 interface FileViewerProps {
   file: {
@@ -511,7 +512,7 @@ export function FileViewer({ file }: FileViewerProps) {
             />
           </div>
         )}
-        {(isWord || isPowerpoint) && fileUrl && (
+        {isWord && fileUrl && (
           <div className="relative w-full h-full">
             <iframe
               src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
@@ -523,11 +524,14 @@ export function FileViewer({ file }: FileViewerProps) {
               <div className="absolute inset-0 flex items-center justify-center bg-background">
                 <div className="text-center space-y-4">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground">Loading {isPowerpoint ? 'presentation' : 'document'}...</p>
+                  <p className="text-muted-foreground">Loading document...</p>
                 </div>
               </div>
             )}
           </div>
+        )}
+        {isPowerpoint && fileUrl && (
+          <PowerPointPreview fileUrl={fileUrl} title={file.title} />
         )}
         {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && !isGoogleDrive && (
           <div className="flex items-center justify-center h-full">
