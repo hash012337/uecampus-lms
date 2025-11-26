@@ -514,7 +514,7 @@ export function FileViewer({ file }: FileViewerProps) {
         {(isWord || isPowerpoint) && fileUrl && (
           <div className="relative w-full h-full">
             <iframe
-              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
               className="w-full h-full border-0"
               title={file.title}
               onLoad={() => setLoading(false)}
