@@ -33,7 +33,7 @@ interface FileViewerProps {
 
 export function FileViewer({ file }: FileViewerProps) {
   const [fileUrl, setFileUrl] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
@@ -41,13 +41,17 @@ export function FileViewer({ file }: FileViewerProps) {
   const [totalAttempts, setTotalAttempts] = useState(file?.attempts || 2);
 
   const loadFile = async () => {
-    if (!file || !file.file_path) return;
+    if (!file || !file.file_path) {
+      setLoading(false);
+      return;
+    }
     
-    setLoading(true);
     try {
-      const { data } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from("course-materials")
         .createSignedUrl(file.file_path, 3600);
+
+      if (error) throw error;
 
       if (data?.signedUrl) {
         setFileUrl(data.signedUrl);
@@ -276,12 +280,21 @@ export function FileViewer({ file }: FileViewerProps) {
         <div className="flex-1 overflow-auto">
           {file.file_path && file.file_path.includes('.') && fileUrl ? (
             // Show file preview if a real file was uploaded
-            <div className="h-full">
+            <div className="relative h-full">
               <iframe
                 src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
                 className="w-full h-full border-0"
                 title={file.title}
+                onLoad={() => setLoading(false)}
               />
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background">
+                  <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground">Loading brief...</p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             // Show text content
@@ -410,10 +423,18 @@ export function FileViewer({ file }: FileViewerProps) {
     );
   }
 
-  if (loading) {
+  if (loading && !file._isQuiz && !file._isBrief && !file._isAssignment) {
     return (
-      <div className="h-full flex items-center justify-center bg-background">
-        <p>Loading...</p>
+      <div className="h-full flex flex-col bg-background">
+        <div className="p-4 border-b bg-card animate-pulse">
+          <div className="h-6 bg-muted rounded w-1/3"></div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Loading file preview...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -437,11 +458,19 @@ export function FileViewer({ file }: FileViewerProps) {
       </div>
       <div className="flex-1 overflow-auto">
         {isPdf && fileUrl && (
-          <iframe
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
-            className="w-full h-full border-0"
-            title={file.title}
-          />
+          <div className="relative w-full h-full">
+            <iframe
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+              className="w-full h-full border-0"
+              title={file.title}
+              onLoad={() => setLoading(false)}
+            />
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            )}
+          </div>
         )}
         {isVideo && fileUrl && (
           <div className="flex items-center justify-center h-full p-8">
@@ -483,12 +512,21 @@ export function FileViewer({ file }: FileViewerProps) {
           </div>
         )}
         {(isWord || isPowerpoint) && fileUrl && (
-          <div className="h-full flex flex-col">
+          <div className="relative w-full h-full">
             <iframe
               src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
               className="w-full h-full border-0"
               title={file.title}
+              onLoad={() => setLoading(false)}
             />
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background">
+                <div className="text-center space-y-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-muted-foreground">Loading {isPowerpoint ? 'presentation' : 'document'}...</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
         {!isPdf && !isVideo && !isImage && !isTextLesson && !isWord && !isPowerpoint && !isGoogleDrive && (
