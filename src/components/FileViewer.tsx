@@ -277,7 +277,7 @@ export function FileViewer({ file }: FileViewerProps) {
               </CardHeader>
               <CardContent>
                 <div className="prose dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-wrap">{file.assessment_brief || file.description || "No brief content available"}</p>
+                  <p className="whitespace-pre-wrap">{file.description || "No brief content available"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -468,7 +468,7 @@ export function FileViewer({ file }: FileViewerProps) {
         )}
         {(isWord || isPowerpoint) && fileUrl && (
           <iframe
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+            src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`}
             className="w-full h-full border-0"
             title={file.title}
           />
