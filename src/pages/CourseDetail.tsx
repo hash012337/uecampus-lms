@@ -1246,7 +1246,13 @@ export default function CourseDetail() {
                               .eq("id", id);
                             loadCourseData();
                           }}
-                          getFileIcon={getFileIcon}
+                          getFileIcon={(fileType: string) => {
+                            if (fileType?.includes("video")) return <Video className="h-4 w-4" />;
+                            if (fileType?.includes("pdf")) return <FileText className="h-4 w-4" />;
+                            if (fileType?.includes("text/html")) return <BookOpen className="h-4 w-4" />;
+                            if (fileType === "google_drive") return <File className="h-4 w-4" />;
+                            return <File className="h-4 w-4" />;
+                          }}
                         />
                         
                         <DraggableAssignmentList
