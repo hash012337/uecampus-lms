@@ -313,9 +313,18 @@ export default function CourseDetail() {
       const filteredMaterials = isAdmin ? materialsData : materialsData.filter(m => !m.is_hidden);
       setMaterials(filteredMaterials);
       
-      // Auto-select first material for students
+      // Auto-select first material for students (handle briefs correctly)
       if (!isAdmin && filteredMaterials.length > 0) {
-        setSelectedFile(filteredMaterials[0]);
+        const first = filteredMaterials[0];
+        const initialFile = first.file_type === "application/brief"
+          ? {
+              ...first,
+              _isBrief: true,
+              assessment_brief: first.description,
+              file_path: first.file_path,
+            }
+          : first;
+        setSelectedFile(initialFile);
       }
     }
 
