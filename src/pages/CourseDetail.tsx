@@ -85,12 +85,14 @@ export default function CourseDetail() {
     due_date: ""
   });
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
-  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | "google_drive" | "video_lecture" | null>(null);
+  const [activityType, setActivityType] = useState<"text" | "file" | "assignment" | "quiz" | "brief" | "google_drive" | "video_lecture" | "ppt" | null>(null);
   const [fileDisplayName, setFileDisplayName] = useState("");
   const [googleDriveUrl, setGoogleDriveUrl] = useState("");
   const [googleDriveTitle, setGoogleDriveTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState("");
+  const [pptFile, setPptFile] = useState<File | null>(null);
+  const [pptTitle, setPptTitle] = useState("");
   const [userSubmissions, setUserSubmissions] = useState<any[]>([]);
   const [deadlineDialogOpen, setDeadlineDialogOpen] = useState(false);
   const [selectedAssignmentForDeadline, setSelectedAssignmentForDeadline] = useState<any>(null);
@@ -1412,6 +1414,14 @@ export default function CourseDetail() {
                                 <Video className="h-8 w-8 text-purple-600" />
                                 <span>Video Lecture</span>
                               </Button>
+                              <Button
+                                variant="outline"
+                                className="h-24 flex flex-col gap-2"
+                                onClick={() => setActivityType("ppt")}
+                              >
+                                <FileText className="h-8 w-8 text-red-600" />
+                                <span>PowerPoint</span>
+                              </Button>
                             </div>
                           ) : activityType === "text" ? (
                             <div className="space-y-4">
@@ -1727,6 +1737,70 @@ export default function CourseDetail() {
                               }} className="w-full">
                                 <Upload className="h-4 w-4 mr-2" />
                                 Upload Video Lecture
+                              </Button>
+                            </div>
+                          ) : activityType === "ppt" ? (
+                            <div className="space-y-4">
+                              <Button variant="ghost" size="sm" onClick={() => setActivityType(null)}>
+                                ← Back
+                              </Button>
+                              <div>
+                                <Label>PowerPoint Title</Label>
+                                <Input 
+                                  value={pptTitle} 
+                                  onChange={(e) => setPptTitle(e.target.value)}
+                                  placeholder="Enter presentation title" 
+                                />
+                              </div>
+                              <div>
+                                <Label>Upload PowerPoint (.ppt or .pptx)</Label>
+                                <Input 
+                                  type="file" 
+                                  accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                  onChange={(e) => setPptFile(e.target.files?.[0] || null)}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Supports both .ppt and .pptx formats
+                                </p>
+                              </div>
+                              <Button onClick={async () => {
+                                if (!pptFile || !pptTitle || !currentSectionId) {
+                                  toast.error("Please provide presentation title and select a PowerPoint file");
+                                  return;
+                                }
+                                
+                                try {
+                                  const filePath = `${courseId}/${currentSectionId}/presentations/${Date.now()}-${pptFile.name}`;
+                                  const { error: uploadError } = await supabase.storage
+                                    .from("course-materials")
+                                    .upload(filePath, pptFile);
+
+                                  if (uploadError) throw uploadError;
+
+                                  const { error: dbError } = await supabase.from("course_materials").insert({
+                                    course_id: courseId,
+                                    section_id: currentSectionId,
+                                    title: pptTitle,
+                                    file_path: filePath,
+                                    file_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                    file_size: pptFile.size,
+                                    is_hidden: false
+                                  });
+
+                                  if (dbError) throw dbError;
+
+                                  toast.success("PowerPoint presentation added");
+                                  setPptFile(null);
+                                  setPptTitle("");
+                                  setActivityDialogOpen(false);
+                                  setActivityType(null);
+                                  loadCourseData();
+                                } catch (error: any) {
+                                  toast.error(error.message || "Failed to upload presentation");
+                                }
+                              }} className="w-full">
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload PowerPoint
                               </Button>
                             </div>
                           ) : null}
