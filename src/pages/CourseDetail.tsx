@@ -147,6 +147,19 @@ export default function CourseDetail() {
   const loadUserProgress = async () => {
     if (!user || !courseId) return;
     
+    // Load from localStorage first
+    const localKey = `completed_materials_${user.id}_${courseId}`;
+    const localCompleted = localStorage.getItem(localKey);
+    
+    if (localCompleted) {
+      try {
+        const completedIds = JSON.parse(localCompleted);
+        setCompletedMaterials(new Set(completedIds));
+      } catch (e) {
+        console.error('Error parsing local storage:', e);
+      }
+    }
+    
     const { data } = await supabase
       .from('progress_tracking')
       .select('*')
@@ -158,7 +171,6 @@ export default function CourseDetail() {
       // Separate completed items by type
       const completedAssignments = data.filter(item => item.item_type === 'assignment');
       const completedQuizzes = data.filter(item => item.item_type === 'quiz');
-      const completedMaterialsRecords = data.filter(item => item.item_type === 'material');
       
       // Create set of completed IDs
       const completedItemIds = new Set<string>();
@@ -173,11 +185,14 @@ export default function CourseDetail() {
         if (item.quiz_id) completedItemIds.add(item.quiz_id);
       });
       
-      // For materials, mark the first N materials as completed based on count
-      if (completedMaterialsRecords.length > 0) {
-        materials.slice(0, completedMaterialsRecords.length).forEach(m => {
-          completedItemIds.add(m.id);
-        });
+      // Merge with localStorage completed materials
+      if (localCompleted) {
+        try {
+          const localIds = JSON.parse(localCompleted);
+          localIds.forEach((id: string) => completedItemIds.add(id));
+        } catch (e) {
+          console.error('Error parsing local storage:', e);
+        }
       }
       
       setCompletedMaterials(completedItemIds);
@@ -244,17 +259,15 @@ export default function CourseDetail() {
 
       if (error) throw error;
 
-      // Update the material's completed status
-      setMaterials(prev => prev.map(m => 
-        m.id === materialId ? { ...m, completed: true } : m
-      ));
-
       // Update local state
-      setCompletedMaterials(prev => new Set([...prev, materialId]));
-      toast.success("Marked as complete");
+      const newCompleted = new Set([...completedMaterials, materialId]);
+      setCompletedMaterials(newCompleted);
       
-      // Reload progress to update the progress bar
-      loadUserProgress();
+      // Save to localStorage
+      const localKey = `completed_materials_${user.id}_${courseId}`;
+      localStorage.setItem(localKey, JSON.stringify(Array.from(newCompleted)));
+      
+      toast.success("Marked as complete");
     } catch (error: any) {
       console.error("Error marking complete:", error);
       toast.error(error.message || "Failed to mark as complete");
@@ -969,10 +982,16 @@ export default function CourseDetail() {
 
   if (!course) return <div className="flex justify-center items-center min-h-96">Loading...</div>;
 
-  // Calculate progress for all users
-  const viewableMaterials = materials.filter(m => m.file_type !== "application/brief");
+  // Calculate progress based on completed materials
+  const viewableMaterials = materials.filter(m => 
+    m.file_type !== "application/brief" && 
+    m.file_type !== "assignment" &&
+    !m.file_type?.includes('quiz')
+  );
   const totalItems = viewableMaterials.length;
-  const completedItems = viewableMaterials.filter(m => completedMaterials.has(m.id)).length;
+  const completedItems = Array.from(completedMaterials).filter(id => 
+    viewableMaterials.some(m => m.id === id)
+  ).length;
   const progressPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
   // Unified layout for both admin and student
@@ -1002,25 +1021,7 @@ export default function CourseDetail() {
             </Link>
             <Badge variant="secondary">{course.category}</Badge>
           </div>
-        </div>
-        
-        {/* Tabs Row */}
-        <div className="px-6 flex gap-6 border-t">
-          <button className="py-3 px-4 text-sm font-medium border-b-2 border-primary text-primary">
-            <FileText className="inline h-4 w-4 mr-2" />
-            Content
-          </button>
-          <button className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <Upload className="inline h-4 w-4 mr-2" />
-            Assessment  
-          </button>
-          <Link to="/certificates">
-            <button className="py-3 px-4 text-sm font-medium text-muted-foreground hover:text-foreground">
-              <FileText className="inline h-4 w-4 mr-2" />
-              Certificates
-            </button>
-          </Link>
-        </div>
+      </div>
       </div>
 
       {/* Main Content Area */}
@@ -1107,15 +1108,15 @@ export default function CourseDetail() {
                             <label className="flex items-center gap-1 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="checkbox"
-                                checked={material.completed || false}
+                                checked={completedMaterials.has(material.id)}
                                 onChange={(e) => {
                                   e.stopPropagation();
                                   handleMarkComplete(material.id);
                                 }}
                                 className="sr-only"
                               />
-                              <div className={`w-9 h-5 rounded-full transition-colors ${material.completed ? 'bg-primary' : 'bg-muted'} relative`}>
-                                <div className={`absolute top-0.5 ${material.completed ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full transition-all shadow`} />
+                              <div className={`w-9 h-5 rounded-full transition-colors ${completedMaterials.has(material.id) ? 'bg-primary' : 'bg-muted'} relative`}>
+                                <div className={`absolute top-0.5 ${completedMaterials.has(material.id) ? 'right-0.5' : 'left-0.5'} w-4 h-4 bg-white rounded-full transition-all shadow`} />
                               </div>
                             </label>
                           </button>
@@ -1186,17 +1187,17 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* Download Section at Bottom */}
-      {selectedFile && selectedFile.file_path && !selectedFile._isQuiz && (
+      {/* Download Section - Only show for file materials, not assignments or quizzes */}
+      {selectedFile && 
+       selectedFile.file_path && 
+       !selectedFile._isQuiz && 
+       !selectedFile._isAssignment && 
+       selectedFile.file_type !== "text/html" && (
         <div className="border-t bg-card p-4 flex items-center justify-between">
           <span className="text-sm font-medium">Download the file</span>
           <Button onClick={() => {
             if (selectedFile.file_path) {
-              if (selectedFile._isAssignment || selectedFile._isBrief) {
-                downloadMaterial(selectedFile.file_path, selectedFile.title);
-              } else {
-                downloadMaterial(selectedFile.file_path, selectedFile.title);
-              }
+              downloadMaterial(selectedFile.file_path, selectedFile.title);
             }
           }}>
             <Download className="h-4 w-4 mr-2" />
